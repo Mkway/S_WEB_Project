@@ -27,6 +27,7 @@ services:
       MYSQL_PASSWORD: 'my_password'
     volumes:
       - ./src:/var/www/html
+      - ./src/uploads:/var/www/html/uploads
     depends_on:
       db:
         condition: service_healthy

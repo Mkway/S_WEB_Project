@@ -57,6 +57,13 @@ $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $posts = $stmt->fetchAll();
 
+// Function to get the first image attachment for a post
+function getFirstImageAttachment($pdo, $post_id) {
+    $stmt = $pdo->prepare("SELECT filepath FROM files WHERE post_id = ? AND (filename LIKE '%.jpg' OR filename LIKE '%.jpeg' OR filename LIKE '%.png' OR filename LIKE '%.gif' OR filename LIKE '%.webp') LIMIT 1");
+    $stmt->execute([$post_id]);
+    return $stmt->fetchColumn();
+}
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -95,14 +102,26 @@ $posts = $stmt->fetchAll();
         <table>
             <thead>
                 <tr>
+                    <th style="width: 60px;"></th> <!-- For thumbnail -->
                     <th>Title</th>
                     <th>Author</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($posts as $post):
+                    $thumbnail_path = getFirstImageAttachment($pdo, $post['id']);
                 ?>
                     <tr>
+                        <td>
+                            <?php if ($thumbnail_path): ?>
+                                <div class="thumbnail-container">
+                                    <img src="<?php echo htmlspecialchars($thumbnail_path); ?>" alt="Thumbnail" class="post-thumbnail">
+                                    <div class="thumbnail-popup">
+                                        <img src="<?php echo htmlspecialchars($thumbnail_path); ?>" alt="Full Image">
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </td>
                         <td><a href="view_post.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($post['title']); ?></a></td>
                         <td><a href="profile.php?id=<?php echo $post['user_id']; ?>"><?php echo htmlspecialchars($post['username']); ?></a></td>
                     </tr>
@@ -124,5 +143,19 @@ $posts = $stmt->fetchAll();
             <?php endif; ?>
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll('.thumbnail-container').forEach(container => {
+            const popup = container.querySelector('.thumbnail-popup');
+
+            container.addEventListener('mouseenter', () => {
+                popup.style.display = 'block';
+            });
+
+            container.addEventListener('mouseleave', () => {
+                popup.style.display = 'none';
+            });
+        });
+    </script>
 </body>
 </html>

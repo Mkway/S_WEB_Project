@@ -102,3 +102,40 @@ form button {
     justify-content: space-between;
     align-items: center;
 }
+
+.post-thumbnail {
+    width: 50px !important; /* Adjust as needed */
+    height: 50px !important; /* Adjust as needed */
+    object-fit: cover !important;
+    border-radius: 4px !important;
+    margin-right: 10px !important;
+    vertical-align: middle !important;
+    max-width: 100% !important;
+    max-height: 50px !important; /* Ensure max height is also constrained */
+    display: block !important;
+}
+
+.thumbnail-container {
+    position: relative;
+    display: inline-block;
+}
+
+.thumbnail-popup {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 60px; /* Adjust to position next to thumbnail */
+    z-index: 100;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.thumbnail-popup img {
+    max-width: 50vw; /* Max width of the enlarged image, 50% of viewport width */
+    max-height: 50vh; /* Max height of the enlarged image, 50% of viewport height */
+    height: auto;
+    display: block;
+}

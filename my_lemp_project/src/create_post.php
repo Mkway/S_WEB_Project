@@ -19,6 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // File upload
     if (isset($_FILES['files'])) {
         $upload_dir = 'uploads/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
         foreach ($_FILES['files']['name'] as $key => $name) {
             if ($_FILES['files']['error'][$key] == UPLOAD_ERR_OK) {
                 $tmp_name = $_FILES['files']['tmp_name'][$key];

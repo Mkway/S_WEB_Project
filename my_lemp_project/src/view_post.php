@@ -42,7 +42,16 @@ $comments = $comments_stmt->fetchAll();
             <h3>Attachments:</h3>
             <ul>
                 <?php foreach ($files as $file): ?>
-                    <li><a href="<?php echo htmlspecialchars($file['filepath']); ?>" download><?php echo htmlspecialchars($file['filename']); ?></a></li>
+                    <li>
+                        <?php
+                        $file_extension = pathinfo($file['filename'], PATHINFO_EXTENSION);
+                        $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                        if (in_array(strtolower($file_extension), $image_extensions)) {
+                            echo '<img src="' . htmlspecialchars($file['filepath']) . '" alt="' . htmlspecialchars($file['filename']) . '" style="max-width: 100%; height: auto;"><br>';
+                        }
+                        ?>
+                        <a href="<?php echo htmlspecialchars($file['filepath']); ?>" download><?php echo htmlspecialchars($file['filename']); ?></a>
+                    </li>
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
