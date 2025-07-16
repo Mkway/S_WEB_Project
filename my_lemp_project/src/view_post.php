@@ -33,7 +33,7 @@ $comments = $comments_stmt->fetchAll();
 <body>
     <div class="container">
         <h1><?php echo htmlspecialchars($post['title']); ?></h1>
-        <p>By <?php echo htmlspecialchars($post['username']); ?> on <?php echo $post['created_at']; ?></p>
+        <p>By <a href="profile.php?id=<?php echo $post['user_id']; ?>"><?php echo htmlspecialchars($post['username']); ?></a> on <?php echo $post['created_at']; ?></p>
         <div class="post-content">
             <?php echo nl2br(htmlspecialchars($post['content'])); ?>
         </div>

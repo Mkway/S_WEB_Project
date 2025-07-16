@@ -45,7 +45,7 @@ $total_posts = $total_posts_stmt->fetchColumn();
 $total_pages = ceil($total_posts / $posts_per_page);
 
 // Fetch posts for the current page (with search filter)
-$posts_sql = "SELECT posts.id, posts.title, users.username FROM posts JOIN users ON posts.user_id = users.id" . $where_clause . " ORDER BY posts.created_at DESC LIMIT :limit OFFSET :offset";
+$posts_sql = "SELECT posts.id, posts.title, posts.user_id, users.username FROM posts JOIN users ON posts.user_id = users.id" . $where_clause . " ORDER BY posts.created_at DESC LIMIT :limit OFFSET :offset";
 $stmt = $pdo->prepare($posts_sql);
 
 if (!empty($search_query)) {
@@ -104,7 +104,7 @@ $posts = $stmt->fetchAll();
                 ?>
                     <tr>
                         <td><a href="view_post.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($post['title']); ?></a></td>
-                        <td><?php echo htmlspecialchars($post['username']); ?></td>
+                        <td><a href="profile.php?id=<?php echo $post['user_id']; ?>"><?php echo htmlspecialchars($post['username']); ?></a></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
