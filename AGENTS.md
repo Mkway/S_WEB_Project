@@ -10,8 +10,8 @@
     # 1. Update log file (manual step before calling this command)
     # 2. Stage all changes
     git add .
-    # 3. Commit with provided message
-    git commit -m "$1"
+    # 3. Commit with provided message from stdin
+    echo "$1" | git commit -F -
     # 4. Push to main branch
     git push origin main
     ```
