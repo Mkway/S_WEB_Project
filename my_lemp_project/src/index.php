@@ -1,31 +1,48 @@
+<?php session_start(); ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LEMP Stack Test</title>
+    <title>My Board</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Hello from LEMP Stack!</h1>
+    <div class="container">
+        <div class="nav">
+            <h1>My Board</h1>
+            <div>
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <span>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
+                    <a href="logout.php" class="btn">Logout</a>
+                    <a href="create_post.php" class="btn">New Post</a>
+                <?php else: ?>
+                    <a href="login.php" class="btn">Login</a>
+                    <a href="register.php" class="btn">Register</a>
+                <?php endif; ?>
+            </div>
+        </div>
 
-    <h2>PHP Info</h2>
-    <?php
-        // PHP 정보 출력 (보안을 위해 실제 운영 환경에서는 이 부분을 제거하세요)
-        // phpinfo(); 
-        echo "<p>PHP version: " . phpversion() . "</p>";
-    ?>
-
-    <h2>MySQL (MariaDB) Connection Test</h2>
-    <?php
-    $host = 'db'; // docker-compose에 정의된 DB 서비스 이름
-    $dbname = getenv('MYSQL_DATABASE');
-    $user = getenv('MYSQL_USER');
-    $pass = getenv('MYSQL_PASSWORD');
-
-    try {
-        $dbh = new PDO("mysql:host=$host;dbname=$dbname", $user, $pass);
-        echo "<p style='color:green;'>Successfully connected to the database '{$dbname}'!</p>";
-    } catch (PDOException $e) {
-        echo "<p style='color:red;'>Database connection failed: " . $e->getMessage() . "</p>";
-    }
-    ?>
+        <h2>Posts</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                require_once 'db.php';
+                $stmt = $pdo->query("SELECT posts.id, posts.title, users.username FROM posts JOIN users ON posts.user_id = users.id ORDER BY posts.created_at DESC");
+                $posts = $stmt->fetchAll();
+                foreach ($posts as $post):
+                ?>
+                    <tr>
+                        <td><a href="view_post.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($post['title']); ?></a></td>
+                        <td><?php echo htmlspecialchars($post['username']); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>
