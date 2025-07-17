@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post" enctype="multipart/form-data">
             <input type="text" name="title" placeholder="Title" required><br>
                         <textarea name="content" id="content" placeholder="Content" required></textarea><br>
-            <script src="https://cdn.ckeditor.com/4.25.1-lts/standard/ckeditor.js"></script>
+            <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
             <script>
                 CKEDITOR.replace( 'content' );
             </script>
