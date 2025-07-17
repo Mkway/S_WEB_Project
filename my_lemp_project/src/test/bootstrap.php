@@ -23,6 +23,7 @@ function setupTestDatabase($pdo) {
     $pdo->exec("DROP TABLE IF EXISTS comments");
     $pdo->exec("DROP TABLE IF EXISTS posts");
     $pdo->exec("DROP TABLE IF EXISTS users");
+    $pdo->exec("DROP TABLE IF EXISTS notifications"); // notifications 테이블 추가
 
     // users 테이블 생성
     $pdo->exec("CREATE TABLE users (
@@ -52,6 +53,16 @@ function setupTestDatabase($pdo) {
         comment_text TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )");
+
+    // notifications 테이블 생성
+    $pdo->exec("CREATE TABLE notifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        message TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )");
 

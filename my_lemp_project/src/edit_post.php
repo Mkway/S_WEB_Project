@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <label for="content">Content:</label>
                         <textarea id="content" name="content" required><?php echo htmlspecialchars($post['content']); ?></textarea><br>
-            <script src="https://cdn.ckeditor.com/4.16.2/standard/ckeditor.js"></script>
+            <script src="https://cdn.ckeditor.com/4.25.1-lts/standard/ckeditor.js"></script>
             <script>
                 CKEDITOR.replace( 'content' );
             </script>
