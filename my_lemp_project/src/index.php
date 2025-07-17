@@ -98,7 +98,7 @@ function getFirstImageAttachment($pdo, $post_id) {
             <div>
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <span>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
-                    <a href="notifications.php" class="btn">Notifications <?php if ($unread_notifications_count > 0) echo '(<span style="color: red;'>' . $unread_notifications_count . '</span>)'; ?></a>
+                    <a href="notifications.php" class="btn">Notifications <?php if ($unread_notifications_count > 0): ?>(<span style="color: red;"><?php echo $unread_notifications_count; ?></span>)<?php endif; ?></a>
                     <a href="logout.php" class="btn">Logout</a>
                     <a href="create_post.php" class="btn">New Post</a>
                 <?php else: ?>
