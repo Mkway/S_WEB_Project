@@ -83,6 +83,15 @@ try {
 
     echo "Tables created successfully!";
 
+    // Insert default categories if not exist
+    $stmt = $pdo->prepare("INSERT IGNORE INTO categories (name) VALUES (?)");
+    $stmt->execute(['Technology']);
+    $stmt->execute(['Science']);
+    $stmt->execute(['Art']);
+    $stmt->execute(['Sports']);
+
+    echo "Default categories inserted successfully!";
+
 } catch (PDOException $e) {
     die("Table creation failed: " . $e->getMessage());
 }
