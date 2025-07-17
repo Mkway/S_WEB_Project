@@ -27,7 +27,7 @@ services:
       MYSQL_PASSWORD: 'my_password'
     volumes:
       - ./src:/var/www/html
-      - ./src/uploads:/var/www/html/uploads
+      - uploads_data:/var/www/html/uploads # 명시적 볼륨 사용
     depends_on:
       db:
         condition: service_healthy
@@ -51,3 +51,4 @@ services:
 
 volumes:
   db_data: # 데이터베이스 데이터를 영구적으로 저장하기 위한 볼륨
+  uploads_data: # 업로드 파일을 위한 볼륨 추가

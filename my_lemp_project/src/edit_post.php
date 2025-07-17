@@ -32,6 +32,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $pdo->prepare("UPDATE posts SET title = ?, content = ? WHERE id = ?");
     $stmt->execute([$title, $content, $post_id]);
 
+    // Update categories
+    $pdo->prepare("DELETE FROM post_categories WHERE post_id = ?")->execute([$post_id]);
+    if (isset($_POST['categories']) && is_array($_POST['categories'])) {
+        $stmt = $pdo->prepare("INSERT INTO post_categories (post_id, category_id) VALUES (?, ?)");
+        foreach ($_POST['categories'] as $category_id) {
+            $stmt->execute([$post_id, $category_id]);
+        }
+    }
+
     // Handle file deletions
     if (isset($_POST['delete_files']) && is_array($_POST['delete_files'])) {
         foreach ($_POST['delete_files'] as $file_id) {
@@ -86,7 +95,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="text" id="title" name="title" value="<?php echo htmlspecialchars($post['title']); ?>" required><br>
 
             <label for="content">Content:</label>
-            <textarea id="content" name="content" required><?php echo htmlspecialchars($post['content']); ?></textarea><br>
+                        <textarea id="content" name="content" required><?php echo htmlspecialchars($post['content']); ?></textarea><br>
+            <script src="https://cdn.ckeditor.com/4.16.2/standard/ckeditor.js"></script>
+            <script>
+                CKEDITOR.replace( 'content' );
+            </script>
+
+            <div class="form-group">
+                <h3>Categories</h3>
+                <?php
+                // Fetch all categories
+                $all_categories_stmt = $pdo->query("SELECT * FROM categories ORDER BY name");
+                $all_categories = $all_categories_stmt->fetchAll();
+
+                // Fetch categories for the current post
+                $post_categories_stmt = $pdo->prepare("SELECT category_id FROM post_categories WHERE post_id = ?");
+                $post_categories_stmt->execute([$post_id]);
+                $post_category_ids = $post_categories_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                foreach ($all_categories as $category):
+                    $checked = in_array($category['id'], $post_category_ids) ? 'checked' : '';
+                ?>
+                    <label>
+                        <input type="checkbox" name="categories[]" value="<?php echo $category['id']; ?>" <?php echo $checked; ?>>
+                        <?php echo htmlspecialchars($category['name']); ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
 
             <h3>Current Attachments:</h3>
             <?php if (empty($existing_files)): ?>

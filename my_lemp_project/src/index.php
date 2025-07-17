@@ -2,6 +2,14 @@
 session_start();
 require_once 'db.php';
 
+// Fetch unread notification count for logged-in user
+$unread_notifications_count = 0;
+if (isset($_SESSION['user_id'])) {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+    $stmt->execute([$_SESSION['user_id']]);
+    $unread_notifications_count = $stmt->fetchColumn();
+}
+
 // Search parameters
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 $search_by = isset($_GET['search_by']) ? $_GET['search_by'] : 'all'; // Default to 'all'
@@ -29,8 +37,20 @@ if (!empty($search_query)) {
             break;
         case 'all':
         default:
-            $where_clause = " WHERE posts.title LIKE :search_param OR posts.content LIKE :search_param OR users.username LIKE :search_param";
+            $where_clause = " WHERE (posts.title LIKE :search_param OR posts.content LIKE :search_param OR users.username LIKE :search_param)";
             break;
+    }
+}
+
+// Category filter
+$category_filter_clause = '';
+if (isset($_GET['category']) && !empty($_GET['category'])) {
+    $category_id = (int)$_GET['category'];
+    $category_filter_clause = " JOIN post_categories pc ON posts.id = pc.post_id WHERE pc.category_id = :category_id";
+    if (!empty($where_clause)) {
+        $category_filter_clause = str_replace('WHERE', 'AND', $category_filter_clause); // Change JOIN...WHERE to JOIN...AND if search is also active
+    } else {
+        $category_filter_clause = str_replace('JOIN', ' JOIN', $category_filter_clause); // Ensure space before JOIN
     }
 }
 
@@ -78,6 +98,7 @@ function getFirstImageAttachment($pdo, $post_id) {
             <div>
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <span>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
+                    <a href="notifications.php" class="btn">Notifications <?php if ($unread_notifications_count > 0) echo '(<span style="color: red;'>' . $unread_notifications_count . '</span>)'; ?></a>
                     <a href="logout.php" class="btn">Logout</a>
                     <a href="create_post.php" class="btn">New Post</a>
                 <?php else: ?>
@@ -105,6 +126,7 @@ function getFirstImageAttachment($pdo, $post_id) {
                     <th style="width: 60px;"></th> <!-- For thumbnail -->
                     <th>Title</th>
                     <th>Author</th>
+                    <th>Categories</th>
                 </tr>
             </thead>
             <tbody>
@@ -124,6 +146,19 @@ function getFirstImageAttachment($pdo, $post_id) {
                         </td>
                         <td><a href="view_post.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($post['title']); ?></a></td>
                         <td><a href="profile.php?id=<?php echo $post['user_id']; ?>"><?php echo htmlspecialchars($post['username']); ?></a></td>
+                        <td>
+                            <?php
+                            $categories_stmt = $pdo->prepare("SELECT c.id, c.name FROM categories c JOIN post_categories pc ON c.id = pc.category_id WHERE pc.post_id = ?");
+                            $categories_stmt->execute([$post['id']]);
+                            $categories = $categories_stmt->fetchAll();
+                            foreach ($categories as $index => $category) {
+                                echo '<a href="index.php?category=' . $category['id'] . '">' . htmlspecialchars($category['name']) . '</a>';
+                                if ($index < count($categories) - 1) {
+                                    echo ', ';
+                                }
+                            }
+                            ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

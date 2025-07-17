@@ -34,8 +34,26 @@ $comments = $comments_stmt->fetchAll();
     <div class="container">
         <h1><?php echo htmlspecialchars($post['title']); ?></h1>
         <p>By <a href="profile.php?id=<?php echo $post['user_id']; ?>"><?php echo htmlspecialchars($post['username']); ?></a> on <?php echo $post['created_at']; ?></p>
+        <div class="categories">
+            <strong>Categories:</strong>
+            <?php
+            $categories_stmt = $pdo->prepare("SELECT c.id, c.name FROM categories c JOIN post_categories pc ON c.id = pc.category_id WHERE pc.post_id = ?");
+            $categories_stmt->execute([$post_id]);
+            $categories = $categories_stmt->fetchAll();
+            if ($categories) {
+                foreach ($categories as $index => $category) {
+                    echo '<a href="index.php?category=' . $category['id'] . '">' . htmlspecialchars($category['name']) . '</a>';
+                    if ($index < count($categories) - 1) {
+                        echo ', ';
+                    }
+                }
+            } else {
+                echo 'Uncategorized';
+            }
+            ?>
+        </div>
         <div class="post-content">
-            <?php echo nl2br(htmlspecialchars($post['content'])); ?>
+            <?php echo $post['content']; ?>
         </div>
 
         <?php if ($files): ?>
