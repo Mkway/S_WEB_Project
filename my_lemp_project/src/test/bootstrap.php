@@ -60,6 +60,8 @@ function setupTestDatabase($pdo) {
     $pdo->exec("CREATE TABLE notifications (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        source_id INT,
         message TEXT NOT NULL,
         is_read BOOLEAN DEFAULT FALSE,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
