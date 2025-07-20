@@ -29,8 +29,7 @@ services:
       - ./src:/var/www/html
       - uploads_data:/var/www/html/uploads # 명시적 볼륨 사용
     depends_on:
-      db:
-        condition: service_healthy
+      - db
 
   # MariaDB 데이터베이스 서비스
   db:
