@@ -12,6 +12,9 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=INNODB;");
 
+    // Add email column if it doesn't exist
+    $pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255) NOT NULL UNIQUE AFTER username;");
+
     // Posts table
     $pdo->exec("CREATE TABLE IF NOT EXISTS posts (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -82,7 +85,10 @@ try {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=INNODB;");
 
-    echo "Tables created successfully!";
+    // Modify expires_at column type to DATETIME if it's not already
+    $pdo->exec("ALTER TABLE password_resets MODIFY COLUMN expires_at DATETIME NOT NULL;");
+
+    echo "Tables created/updated successfully!";
 
     // Insert default categories if not exist
     $stmt = $pdo->prepare("INSERT IGNORE INTO categories (name) VALUES (?)");
@@ -94,6 +100,6 @@ try {
     echo "Default categories inserted successfully!";
 
 } catch (PDOException $e) {
-    die("Table creation failed: " . $e->getMessage());
+    die("Table creation/update failed: " . $e->getMessage());
 }
 ?>
