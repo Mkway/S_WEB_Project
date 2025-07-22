@@ -53,7 +53,8 @@ S_WEB_Project/
 ├── my_lemp_project/
 │   ├── docker-compose.yml   # Docker 서비스 정의
 │   ├── nginx/               # Nginx 설정
-│   │   └── default.conf
+│   │   ├── default.conf
+│   │   └── ssl/             # SSL 인증서
 │   ├── src/                 # PHP 소스 코드
 │   │   ├── index.php        # 메인 페이지
 │   │   ├── login.php        # 로그인
@@ -63,7 +64,15 @@ S_WEB_Project/
 │   │   ├── test/            # PHPUnit 테스트 코드
 │   │   └── vendor/          # Composer 패키지
 │   └── php.Dockerfile       # PHP Docker 이미지 설정
-├── log/                     # 개발 로그
+├── log/                     # 개발 로그 파일
+├── webhacking/              # 웹 해킹 취약점 테스트 페이지
+│   ├── auth_bypass.php      # 인증 우회 취약점
+│   ├── csrf.php             # CSRF 취약점
+│   ├── directory_traversal.php # 디렉토리 트래버설 취약점
+│   ├── file_upload.php      # 파일 업로드 취약점
+│   ├── index.php            # 웹 해킹 테스트 페이지 인덱스
+│   ├── sqli.php             # SQL Injection 취약점
+│   └── xss.php              # XSS 취약점
 └── ...
 ```
 
