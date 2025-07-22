@@ -101,6 +101,7 @@ function getFirstImageAttachment($pdo, $post_id) {
                     <a href="notifications.php" class="btn">Notifications <?php if ($unread_notifications_count > 0): ?>(<span style="color: red;"><?php echo $unread_notifications_count; ?></span>)<?php endif; ?></a>
                     <a href="logout.php" class="btn">Logout</a>
                     <a href="create_post.php" class="btn">New Post</a>
+                    <a href="../webhacking/index.php" class="btn">Security Tests</a>
                 <?php else: ?>
                     <a href="login.php" class="btn">Login</a>
                     <a href="register.php" class="btn">Register</a>
