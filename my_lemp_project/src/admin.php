@@ -2,11 +2,7 @@
 session_start();
 require_once 'db.php';
 
-// Admin check
-$allowed_ips = ['127.0.0.1', '::1', '172.22.0.1'];
-if (!in_array($_SERVER['REMOTE_ADDR'], $allowed_ips) && (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin'])) {
-    die("Access denied. You are not an admin.");
-}
+
 
 // Fetch all users
 $users_stmt = $pdo->query("SELECT id, username, created_at, is_admin FROM users ORDER BY created_at DESC");
