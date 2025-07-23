@@ -37,7 +37,7 @@ if (!file_exists($dummy_dir . 'normal.txt')) {
 <head>
     <meta charset="UTF-8">
     <title>Directory Traversal Test</title>
-    <link rel="stylesheet" href="../my_lemp_project/src/style.css">
+    <link rel="stylesheet" href="../style.css">
     <style>
         .container { max-width: 800px; }
         .file-content-display {
@@ -80,7 +80,7 @@ if (!file_exists($dummy_dir . 'normal.txt')) {
             <h3>테스트 아이디어</h3>
             <ul>
                 <li>`secret.txt` 파일을 읽어보세요.</li>
-                <li>`../my_lemp_project/src/db.php`와 같이 상위 디렉토리로 이동하여 중요한 설정 파일을 읽을 수 있을까요?</li>
+                <li>`../db.php`와 같이 상위 디렉토리로 이동하여 중요한 설정 파일을 읽을 수 있을까요?</li>
                 <li>`../../../../etc/passwd`와 같이 시스템 파일을 읽을 수 있을까요? (리눅스 환경)</li>
             </ul>
         </div>

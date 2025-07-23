@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../my_lemp_project/src/db.php';
+require_once '../db.php';
 
 $message = '';
 $error = '';
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>CSRF Test</title>
-    <link rel="stylesheet" href="../my_lemp_project/src/style.css">
+    <link rel="stylesheet" href="../style.css">
     <style>
         .container { max-width: 600px; }
     </style>

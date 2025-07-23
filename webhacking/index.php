@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Web Hacking Test Site</title>
-    <link rel="stylesheet" href="../my_lemp_project/src/style.css">
+    <link rel="stylesheet" href="../style.css">
     <style>
         .container { max-width: 800px; }
         h1 { text-align: center; }

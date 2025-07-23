@@ -28,7 +28,7 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
 <head>
     <meta charset="UTF-8">
     <title>Authentication Bypass Test</title>
-    <link rel="stylesheet" href="../my_lemp_project/src/style.css">
+    <link rel="stylesheet" href="../style.css">
     <style>
         .container { max-width: 800px; }
         .admin-content {

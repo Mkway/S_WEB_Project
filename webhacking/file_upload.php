@@ -1,11 +1,7 @@
 <?php
 $message = '';
 $error = '';
-$upload_dir = '../my_lemp_project/src/uploads/'; // 기존 업로드 디렉토리 사용
-
-if (!is_dir($upload_dir)) {
-    mkdir($upload_dir, 0777, true);
-}
+$upload_dir = '../uploads/'; // Use existing upload directory
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_FILES['uploaded_file'])) {
@@ -38,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>File Upload Vulnerability Test</title>
-    <link rel="stylesheet" href="../my_lemp_project/src/style.css">
+    <link rel="stylesheet" href="../style.css">
     <style>
         .container { max-width: 600px; }
     </style>

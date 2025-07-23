@@ -1,5 +1,5 @@
 <?php
-require_once '../my_lemp_project/src/db.php'; // 기존 DB 연결 사용
+require_once '../db.php'; // Use existing DB connection
 
 $results = [];
 $error = null;
@@ -26,7 +26,7 @@ if (isset($_GET['username']) && $_GET['username'] !== '') {
 <head>
     <meta charset="UTF-8">
     <title>SQL Injection Test</title>
-    <link rel="stylesheet" href="../my_lemp_project/src/style.css">
+    <link rel="stylesheet" href="../style.css">
     <style>
         .container { max-width: 800px; }
         .query-display { 

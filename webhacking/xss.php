@@ -31,7 +31,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'reset') {
 <head>
     <meta charset="UTF-8">
     <title>XSS Test</title>
-    <link rel="stylesheet" href="../my_lemp_project/src/style.css">
+    <link rel="stylesheet" href="../style.css">
     <style>
         .container { max-width: 800px; }
         .guestbook-entry {
