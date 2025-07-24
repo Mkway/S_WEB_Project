@@ -12,6 +12,7 @@ services:
       - ../:/app # S_WEB_Project 전체를 /app에 마운트
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - ./nginx/ssl:/etc/nginx/ssl # SSL 인증서 및 키 마운트
+      - uploads_data:/app/my_lemp_project/src/uploads
     depends_on:
       - php
 
