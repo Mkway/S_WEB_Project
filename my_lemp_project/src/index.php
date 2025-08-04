@@ -89,6 +89,7 @@ function getFirstImageAttachment($pdo, $post_id) {
 <html>
 <head>
     <title>My Board</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -121,49 +122,51 @@ function getFirstImageAttachment($pdo, $post_id) {
         </form>
 
         <h2>Posts</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 60px;"></th> <!-- For thumbnail -->
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>Categories</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($posts as $post):
-                    $thumbnail_path = getFirstImageAttachment($pdo, $post['id']);
-                ?>
+        <div class="table-container">
+            <table>
+                <thead>
                     <tr>
-                        <td>
-                            <?php if ($thumbnail_path): ?>
-                                <div class="thumbnail-container">
-                                    <img src="<?php echo htmlspecialchars($thumbnail_path); ?>" alt="Thumbnail" class="post-thumbnail">
-                                    <div class="thumbnail-popup">
-                                        <img src="<?php echo htmlspecialchars($thumbnail_path); ?>" alt="Full Image">
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-                        </td>
-                        <td><a href="view_post.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($post['title']); ?></a></td>
-                        <td><a href="profile.php?id=<?php echo $post['user_id']; ?>"><?php echo htmlspecialchars($post['username']); ?></a></td>
-                        <td>
-                            <?php
-                            $categories_stmt = $pdo->prepare("SELECT c.id, c.name FROM categories c JOIN post_categories pc ON c.id = pc.category_id WHERE pc.post_id = ?");
-                            $categories_stmt->execute([$post['id']]);
-                            $categories = $categories_stmt->fetchAll();
-                            foreach ($categories as $index => $category) {
-                                echo '<a href="index.php?category=' . $category['id'] . '">' . htmlspecialchars($category['name']) . '</a>';
-                                if ($index < count($categories) - 1) {
-                                    echo ', ';
-                                }
-                            }
-                            ?>
-                        </td>
+                        <th style="width: 60px;"></th> <!-- For thumbnail -->
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Categories</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php foreach ($posts as $post):
+                        $thumbnail_path = getFirstImageAttachment($pdo, $post['id']);
+                    ?>
+                        <tr>
+                            <td data-label="Thumbnail">
+                                <?php if ($thumbnail_path): ?>
+                                    <div class="thumbnail-container">
+                                        <img src="<?php echo htmlspecialchars($thumbnail_path); ?>" alt="Thumbnail" class="post-thumbnail">
+                                        <div class="thumbnail-popup">
+                                            <img src="<?php echo htmlspecialchars($thumbnail_path); ?>" alt="Full Image">
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            <td data-label="Title"><a href="view_post.php?id=<?php echo $post['id']; ?>" class="post-title"><?php echo htmlspecialchars($post['title']); ?></a></td>
+                            <td data-label="Author"><a href="profile.php?id=<?php echo $post['user_id']; ?>"><?php echo htmlspecialchars($post['username']); ?></a></td>
+                            <td data-label="Categories">
+                                <?php
+                                $categories_stmt = $pdo->prepare("SELECT c.id, c.name FROM categories c JOIN post_categories pc ON c.id = pc.category_id WHERE pc.post_id = ?");
+                                $categories_stmt->execute([$post['id']]);
+                                $categories = $categories_stmt->fetchAll();
+                                foreach ($categories as $index => $category) {
+                                    echo '<a href="index.php?category=' . $category['id'] . '">' . htmlspecialchars($category['name']) . '</a>';
+                                    if ($index < count($categories) - 1) {
+                                        echo ', ';
+                                    }
+                                }
+                                ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
 
         <div class="pagination" style="margin-top: 20px; text-align: center;">
             <?php if ($current_page > 1): ?>

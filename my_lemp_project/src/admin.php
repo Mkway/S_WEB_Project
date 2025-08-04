@@ -22,6 +22,7 @@ $categories = $categories_stmt->fetchAll();
 <html>
 <head>
     <title>Admin Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -29,75 +30,93 @@ $categories = $categories_stmt->fetchAll();
     <h1>Admin Page</h1>
 
     <h2>Users</h2>
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Registered At</th>
-            <th>Action</th>
-        </tr>
-        <?php foreach ($users as $user): ?>
-            <tr>
-                <td><?php echo $user['id']; ?></td>
-                <td><?php echo htmlspecialchars($user['username']); ?></td>
-                <td><?php echo $user['created_at']; ?></td>
-                <td>
-                    <a href="admin_actions.php?action=delete_user&id=<?php echo $user['id']; ?>" onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
-                    <?php if ($user['is_admin']): ?>
-                        <a href="admin_actions.php?action=unset_admin&id=<?php echo $user['id']; ?>">Unset Admin</a>
-                    <?php else: ?>
-                        <a href="set_admin.php?id=<?php echo $user['id']; ?>">Set Admin</a>
-                    <?php endif; ?>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    </table>
+    <div class="table-container">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Registered At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($users as $user): ?>
+                    <tr>
+                        <td data-label="ID"><?php echo $user['id']; ?></td>
+                        <td data-label="Username"><?php echo htmlspecialchars($user['username']); ?></td>
+                        <td data-label="Registered At"><?php echo $user['created_at']; ?></td>
+                        <td data-label="Action">
+                            <a href="admin_actions.php?action=delete_user&id=<?php echo $user['id']; ?>" onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
+                            <?php if ($user['is_admin']): ?>
+                                <a href="admin_actions.php?action=unset_admin&id=<?php echo $user['id']; ?>">Unset Admin</a>
+                            <?php else: ?>
+                                <a href="set_admin.php?id=<?php echo $user['id']; ?>">Set Admin</a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
     <h2>Posts</h2>
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Author</th>
-            <th>Action</th>
-        </tr>
-        <?php foreach ($posts as $post): ?>
-            <tr>
-                <td><?php echo $post['id']; ?></td>
-                <td><?php echo htmlspecialchars($post['title']); ?></td>
-                <td><?php echo htmlspecialchars($post['username']); ?></td>
-                <td>
-                    <a href="edit_post.php?id=<?php echo $post['id']; ?>">Edit</a>
-                    <a href="admin_actions.php?action=delete_post&id=<?php echo $post['id']; ?>" onclick="return confirm('Are you sure you want to delete this post?')">Delete</a>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    </table>
+    <div class="table-container">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($posts as $post): ?>
+                    <tr>
+                        <td data-label="ID"><?php echo $post['id']; ?></td>
+                        <td data-label="Title"><?php echo htmlspecialchars($post['title']); ?></td>
+                        <td data-label="Author"><?php echo htmlspecialchars($post['username']); ?></td>
+                        <td data-label="Action">
+                            <a href="edit_post.php?id=<?php echo $post['id']; ?>">Edit</a>
+                            <a href="admin_actions.php?action=delete_post&id=<?php echo $post['id']; ?>" onclick="return confirm('Are you sure you want to delete this post?')">Delete</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
     <h2>Categories</h2>
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Action</th>
-        </tr>
-        <?php foreach ($categories as $category): ?>
-            <tr>
-                <td><?php echo $category['id']; ?></td>
-                <td><?php echo htmlspecialchars($category['name']); ?></td>
-                <td>
-                    <a href="#" onclick="
-                        let newName = prompt('Edit category name:', '<?php echo htmlspecialchars($category['name']); ?>');
-                        if (newName !== null && newName.trim() !== '') {
-                            window.location.href = 'admin_actions.php?action=edit_category&id=<?php echo $category['id']; ?>&name=' + encodeURIComponent(newName);
-                        }
-                        return false;
-                    ">Edit</a>
-                    <a href="admin_actions.php?action=delete_category&id=<?php echo $category['id']; ?>" onclick="return confirm('Are you sure you want to delete this category? This will also remove it from all posts.')">Delete</a>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    </table>
+    <div class="table-container">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($categories as $category): ?>
+                    <tr>
+                        <td data-label="ID"><?php echo $category['id']; ?></td>
+                        <td data-label="Name"><?php echo htmlspecialchars($category['name']); ?></td>
+                        <td data-label="Action">
+                            <a href="#" onclick="
+                                let newName = prompt('Edit category name:', '<?php echo htmlspecialchars($category['name']); ?>');
+                                if (newName !== null && newName.trim() !== '') {
+                                    window.location.href = 'admin_actions.php?action=edit_category&id=<?php echo $category['id']; ?>&name=' + encodeURIComponent(newName);
+                                }
+                                return false;
+                            ">Edit</a>
+                            <a href="admin_actions.php?action=delete_category&id=<?php echo $category['id']; ?>" onclick="return confirm('Are you sure you want to delete this category? This will also remove it from all posts.')">Delete</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
     <h3>Add New Category</h3>
     <form action="admin_actions.php" method="post">

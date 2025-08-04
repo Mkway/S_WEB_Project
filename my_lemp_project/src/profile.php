@@ -27,6 +27,7 @@ $user_posts = $posts_stmt->fetchAll();
 <html>
 <head>
     <title><?php echo htmlspecialchars($profile_user['username']); ?>'s Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -38,22 +39,24 @@ $user_posts = $posts_stmt->fetchAll();
         <?php if (empty($user_posts)): ?>
             <p>No posts found for this user.</p>
         <?php else: ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($user_posts as $post): ?>
+            <div class="table-container">
+                <table>
+                    <thead>
                         <tr>
-                            <td><a href="view_post.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($post['title']); ?></a></td>
-                            <td><?php echo $post['created_at']; ?></td>
+                            <th>Title</th>
+                            <th>Date</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($user_posts as $post): ?>
+                            <tr>
+                                <td data-label="Title"><a href="view_post.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($post['title']); ?></a></td>
+                                <td data-label="Date"><?php echo $post['created_at']; ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php endif; ?>
 
         <br>
