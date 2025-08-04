@@ -21,6 +21,8 @@ $categories = $categories_stmt->fetchAll();
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Page</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -29,7 +31,8 @@ $categories = $categories_stmt->fetchAll();
     <h1>Admin Page</h1>
 
     <h2>Users</h2>
-    <table border="1">
+    <div class="table-container">
+        <table border="1">
         <tr>
             <th>ID</th>
             <th>Username</th>
@@ -51,10 +54,12 @@ $categories = $categories_stmt->fetchAll();
                 </td>
             </tr>
         <?php endforeach; ?>
-    </table>
+        </table>
+    </div>
 
     <h2>Posts</h2>
-    <table border="1">
+    <div class="table-container">
+        <table border="1">
         <tr>
             <th>ID</th>
             <th>Title</th>
@@ -72,10 +77,12 @@ $categories = $categories_stmt->fetchAll();
                 </td>
             </tr>
         <?php endforeach; ?>
-    </table>
+        </table>
+    </div>
 
     <h2>Categories</h2>
-    <table border="1">
+    <div class="table-container">
+        <table border="1">
         <tr>
             <th>ID</th>
             <th>Name</th>
@@ -97,7 +104,8 @@ $categories = $categories_stmt->fetchAll();
                 </td>
             </tr>
         <?php endforeach; ?>
-    </table>
+        </table>
+    </div>
 
     <h3>Add New Category</h3>
     <form action="admin_actions.php" method="post">

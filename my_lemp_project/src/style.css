@@ -139,3 +139,349 @@ form button {
     height: auto;
     display: block;
 }
+
+/* 반응형 디자인 - Mobile First Approach */
+
+/* 태블릿 (768px 이하) */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        padding: 15px;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    
+    .nav {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .nav a {
+        text-align: center;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border-radius: 4px;
+        margin: 2px 0;
+    }
+    
+    .nav a:hover {
+        background-color: #0056b3;
+        text-decoration: none;
+    }
+    
+    table {
+        font-size: 14px;
+    }
+    
+    th, td {
+        padding: 8px 4px;
+    }
+    
+    .btn, button {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+    
+    .thumbnail-popup {
+        left: 10px;
+        right: 10px;
+        top: 60px;
+    }
+    
+    .thumbnail-popup img {
+        max-width: 90vw;
+        max-height: 60vh;
+    }
+}
+
+/* 모바일 (480px 이하) */
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+        font-size: 14px;
+    }
+    
+    .container {
+        padding: 10px;
+    }
+    
+    h1 {
+        font-size: 24px;
+    }
+    
+    h2 {
+        font-size: 20px;
+    }
+    
+    /* 테이블을 스크롤 가능하게 만들기 */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    table {
+        min-width: 600px;
+        font-size: 12px;
+    }
+    
+    th, td {
+        padding: 6px 3px;
+        white-space: nowrap;
+    }
+    
+    /* 긴 텍스트 줄임표 처리 */
+    .post-title {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .btn, button {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    form input[type="text"],
+    form input[type="password"],
+    form textarea {
+        font-size: 16px; /* iOS zoom 방지 */
+    }
+    
+    .post-thumbnail {
+        width: 40px !important;
+        height: 40px !important;
+    }
+}
+
+/* 큰 화면 (1200px 이상) */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1000px;
+    }
+}
+
+/* 알림 관련 스타일 */
+.alert {
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+/* 네비게이션 개선 */
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.notification-count {
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+/* 검색 폼 스타일 */
+.search-form {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.search-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-controls select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.search-controls input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+/* 게시물 테이블 개선 */
+.posts-section h2 {
+    margin-bottom: 20px;
+    color: #343a40;
+}
+
+.posts-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.posts-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.posts-table td {
+    padding: 12px;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+
+.thumbnail-col { width: 80px; }
+.title-col { width: auto; }
+.author-col { width: 120px; }
+.date-col { width: 140px; }
+.category-col { width: 150px; }
+
+.thumbnail-cell {
+    text-align: center;
+}
+
+.author-cell a, .post-title a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.author-cell a:hover, .post-title a:hover {
+    text-decoration: underline;
+}
+
+.date-cell {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+/* 카테고리 태그 */
+.category-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background-color: #e9ecef;
+    color: #495057;
+    text-decoration: none;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-right: 4px;
+}
+
+.category-tag:hover {
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+}
+
+.category-separator {
+    margin: 0 2px;
+}
+
+.no-category {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* 게시물 없음 메시지 */
+.no-posts {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.no-posts p {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+/* 페이지네이션 개선 */
+.pagination-wrapper {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.pagination {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.pagination .btn {
+    padding: 8px 12px;
+    text-decoration: none;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    color: #007bff;
+    background-color: white;
+}
+
+.pagination .btn:hover {
+    background-color: #e9ecef;
+    text-decoration: none;
+}
+
+.pagination .btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* 프린트 스타일 */
+@media print {
+    body {
+        background-color: white;
+        color: black;
+        padding: 0;
+    }
+    
+    .container {
+        box-shadow: none;
+        max-width: none;
+    }
+    
+    .nav, .btn, button, .search-form, .pagination-wrapper {
+        display: none;
+    }
+    
+    a {
+        color: black;
+        text-decoration: none;
+    }
+    
+    table {
+        border: 1px solid black;
+    }
+    
+    th, td {
+        border: 1px solid black;
+    }
+}

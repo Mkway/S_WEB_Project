@@ -1,196 +1,339 @@
 <?php
+/**
+ * 메인 게시판 페이지
+ * 게시물 목록을 표시하고 검색 및 페이지네이션을 제공합니다.
+ */
+
 session_start();
 require_once 'db.php';
+require_once 'utils.php';
 
-// Fetch unread notification count for logged-in user
-$unread_notifications_count = 0;
-if (isset($_SESSION['user_id'])) {
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
-    $stmt->execute([$_SESSION['user_id']]);
-    $unread_notifications_count = $stmt->fetchColumn();
-}
-
-// Search parameters
-$search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
-$search_by = isset($_GET['search_by']) ? $_GET['search_by'] : 'all'; // Default to 'all'
-
-// Pagination settings
-$posts_per_page = 10;
-$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$offset = ($current_page - 1) * $posts_per_page;
-
-// Build WHERE clause for search
-$where_clause = '';
-$search_param_value = '';
-
-if (!empty($search_query)) {
-    $search_param_value = '%' . $search_query . '%';
+/**
+ * 검색 조건에 따른 WHERE 절 생성
+ * @param string $search_query 검색어
+ * @param string $search_by 검색 필드
+ * @return array WHERE 절과 매개변수
+ */
+function build_search_condition($search_query, $search_by) {
+    if (empty($search_query)) {
+        return ['where_clause' => '', 'param_value' => ''];
+    }
+    
+    $param_value = '%' . $search_query . '%';
+    
     switch ($search_by) {
         case 'title':
-            $where_clause = " WHERE posts.title LIKE :search_param";
-            break;
+            return [
+                'where_clause' => ' WHERE posts.title LIKE :search_param',
+                'param_value' => $param_value
+            ];
         case 'content':
-            $where_clause = " WHERE posts.content LIKE :search_param";
-            break;
+            return [
+                'where_clause' => ' WHERE posts.content LIKE :search_param',
+                'param_value' => $param_value
+            ];
         case 'author':
-            $where_clause = " WHERE users.username LIKE :search_param";
-            break;
+            return [
+                'where_clause' => ' WHERE users.username LIKE :search_param',
+                'param_value' => $param_value
+            ];
         case 'all':
         default:
-            $where_clause = " WHERE (posts.title LIKE :search_param OR posts.content LIKE :search_param OR users.username LIKE :search_param)";
-            break;
+            return [
+                'where_clause' => ' WHERE (posts.title LIKE :search_param OR posts.content LIKE :search_param OR users.username LIKE :search_param)',
+                'param_value' => $param_value
+            ];
     }
 }
 
-// Category filter
-$category_filter_clause = '';
-if (isset($_GET['category']) && !empty($_GET['category'])) {
-    $category_id = (int)$_GET['category'];
-    $category_filter_clause = " JOIN post_categories pc ON posts.id = pc.post_id WHERE pc.category_id = :category_id";
-    if (!empty($where_clause)) {
-        $category_filter_clause = str_replace('WHERE', 'AND', $category_filter_clause); // Change JOIN...WHERE to JOIN...AND if search is also active
-    } else {
-        $category_filter_clause = str_replace('JOIN', ' JOIN', $category_filter_clause); // Ensure space before JOIN
+/**
+ * 게시물 총 개수 조회
+ * @param PDO $pdo 데이터베이스 연결
+ * @param string $where_clause WHERE 절
+ * @param string $param_value 검색 매개변수
+ * @return int 총 게시물 수
+ */
+function get_total_posts_count($pdo, $where_clause, $param_value) {
+    $sql = "SELECT COUNT(*) FROM posts JOIN users ON posts.user_id = users.id" . $where_clause;
+    $stmt = $pdo->prepare($sql);
+    
+    if (!empty($param_value)) {
+        $stmt->bindValue(':search_param', $param_value, PDO::PARAM_STR);
     }
+    
+    $stmt->execute();
+    return (int)$stmt->fetchColumn();
 }
 
-// Get total number of posts (with search filter)
-$total_posts_sql = "SELECT COUNT(*) FROM posts JOIN users ON posts.user_id = users.id" . $where_clause;
-$total_posts_stmt = $pdo->prepare($total_posts_sql);
-if (!empty($search_query)) {
-    $total_posts_stmt->bindValue(':search_param', $search_param_value, PDO::PARAM_STR);
+/**
+ * 페이지에 표시할 게시물 목록 조회
+ * @param PDO $pdo 데이터베이스 연결
+ * @param string $where_clause WHERE 절
+ * @param string $param_value 검색 매개변수
+ * @param int $limit 조회할 개수
+ * @param int $offset 시작 위치
+ * @return array 게시물 목록
+ */
+function get_posts_for_page($pdo, $where_clause, $param_value, $limit, $offset) {
+    $sql = "SELECT posts.id, posts.title, posts.user_id, users.username, posts.created_at 
+            FROM posts 
+            JOIN users ON posts.user_id = users.id" 
+            . $where_clause . 
+            " ORDER BY posts.created_at DESC LIMIT :limit OFFSET :offset";
+    
+    $stmt = $pdo->prepare($sql);
+    
+    if (!empty($param_value)) {
+        $stmt->bindValue(':search_param', $param_value, PDO::PARAM_STR);
+    }
+    
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    
+    $stmt->execute();
+    return $stmt->fetchAll();
 }
-$total_posts_stmt->execute();
-$total_posts = $total_posts_stmt->fetchColumn();
-$total_pages = ceil($total_posts / $posts_per_page);
 
-// Fetch posts for the current page (with search filter)
-$posts_sql = "SELECT posts.id, posts.title, posts.user_id, users.username FROM posts JOIN users ON posts.user_id = users.id" . $where_clause . " ORDER BY posts.created_at DESC LIMIT :limit OFFSET :offset";
-$stmt = $pdo->prepare($posts_sql);
-
-if (!empty($search_query)) {
-    $stmt->bindValue(':search_param', $search_param_value, PDO::PARAM_STR);
+/**
+ * 페이지네이션 링크 생성
+ * @param int $current_page 현재 페이지
+ * @param int $total_pages 총 페이지 수
+ * @param string $search_query 검색어
+ * @param string $search_by 검색 필드
+ * @return string 페이지네이션 HTML
+ */
+function generate_pagination_links($current_page, $total_pages, $search_query, $search_by) {
+    $html = '<div class="pagination">';
+    
+    $query_params = '';
+    if (!empty($search_query)) {
+        $query_params = '&search=' . urlencode($search_query) . '&search_by=' . urlencode($search_by);
+    }
+    
+    // 이전 페이지 링크
+    if ($current_page > 1) {
+        $prev_page = $current_page - 1;
+        $html .= '<a href="?page=' . $prev_page . $query_params . '" class="btn">이전</a>';
+    }
+    
+    // 페이지 번호 링크
+    $start_page = max(1, $current_page - 2);
+    $end_page = min($total_pages, $current_page + 2);
+    
+    for ($i = $start_page; $i <= $end_page; $i++) {
+        $active_class = ($i == $current_page) ? ' active' : '';
+        $html .= '<a href="?page=' . $i . $query_params . '" class="btn' . $active_class . '">' . $i . '</a>';
+    }
+    
+    // 다음 페이지 링크
+    if ($current_page < $total_pages) {
+        $next_page = $current_page + 1;
+        $html .= '<a href="?page=' . $next_page . $query_params . '" class="btn">다음</a>';
+    }
+    
+    $html .= '</div>';
+    return $html;
 }
-$stmt->bindValue(':limit', $posts_per_page, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 
-$stmt->execute();
-$posts = $stmt->fetchAll();
-
-// Function to get the first image attachment for a post
-function getFirstImageAttachment($pdo, $post_id) {
-    $stmt = $pdo->prepare("SELECT filepath FROM files WHERE post_id = ? AND (filename LIKE '%.jpg' OR filename LIKE '%.jpeg' OR filename LIKE '%.png' OR filename LIKE '%.gif' OR filename LIKE '%.webp') LIMIT 1");
-    $stmt->execute([$post_id]);
-    return $stmt->fetchColumn();
+// 메인 로직 시작
+try {
+    // 사용자 입력 처리
+    $search_query = clean_input($_GET['search'] ?? '');
+    $search_by = clean_input($_GET['search_by'] ?? 'all');
+    $current_page = max(1, (int)($_GET['page'] ?? 1));
+    
+    // 읽지 않은 알림 수 조회
+    $unread_notifications_count = 0;
+    if (is_logged_in()) {
+        $unread_notifications_count = get_unread_notifications_count($pdo, $_SESSION['user_id']);
+    }
+    
+    // 검색 조건 생성
+    $search_condition = build_search_condition($search_query, $search_by);
+    
+    // 페이지네이션 계산
+    $total_posts = get_total_posts_count($pdo, $search_condition['where_clause'], $search_condition['param_value']);
+    $pagination = calculate_pagination($total_posts, POSTS_PER_PAGE, $current_page);
+    
+    // 게시물 목록 조회
+    $posts = get_posts_for_page(
+        $pdo, 
+        $search_condition['where_clause'], 
+        $search_condition['param_value'], 
+        POSTS_PER_PAGE, 
+        $pagination['offset']
+    );
+    
+} catch (Exception $e) {
+    error_log("Error in index.php: " . $e->getMessage());
+    $error_message = DEBUG_MODE ? $e->getMessage() : "페이지를 불러오는 중 오류가 발생했습니다.";
 }
-
 ?>
+
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-    <title>My Board</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo SITE_NAME; ?></title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <div class="nav">
-            <h1>My Board</h1>
-            <div>
-                <?php if (isset($_SESSION['user_id'])): ?>
-                    <span>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
-                    <a href="notifications.php" class="btn">Notifications <?php if ($unread_notifications_count > 0): ?>(<span style="color: red;"><?php echo $unread_notifications_count; ?></span>)<?php endif; ?></a>
-                    <a href="logout.php" class="btn">Logout</a>
-                    <a href="create_post.php" class="btn">New Post</a>
-                    <a href="../webhacking/index.php" class="btn">Security Tests</a>
+        <!-- 네비게이션 바 -->
+        <nav class="nav">
+            <h1><?php echo SITE_NAME; ?></h1>
+            <div class="nav-links">
+                <?php if (is_logged_in()): ?>
+                    <span>환영합니다, <?php echo safe_output($_SESSION['username']); ?>님!</span>
+                    <a href="notifications.php" class="btn">
+                        알림 
+                        <?php if ($unread_notifications_count > 0): ?>
+                            <span class="notification-count"><?php echo $unread_notifications_count; ?></span>
+                        <?php endif; ?>
+                    </a>
+                    <a href="logout.php" class="btn">로그아웃</a>
+                    <a href="create_post.php" class="btn">새 게시물</a>
+                    <?php if (is_admin()): ?>
+                        <a href="admin.php" class="btn">관리</a>
+                    <?php endif; ?>
+                    <a href="../webhacking/index.php" class="btn">보안 테스트</a>
                 <?php else: ?>
-                    <a href="login.php" class="btn">Login</a>
-                    <a href="register.php" class="btn">Register</a>
+                    <a href="login.php" class="btn">로그인</a>
+                    <a href="register.php" class="btn">회원가입</a>
                 <?php endif; ?>
             </div>
-        </div>
+        </nav>
 
-        <form method="get" action="index.php" style="margin-bottom: 20px;">
-            <select name="search_by">
-                <option value="all" <?php echo ($search_by == 'all') ? 'selected' : ''; ?>>All</option>
-                <option value="title" <?php echo ($search_by == 'title') ? 'selected' : ''; ?>>Title</option>
-                <option value="content" <?php echo ($search_by == 'content') ? 'selected' : ''; ?>>Content</option>
-                <option value="author" <?php echo ($search_by == 'author') ? 'selected' : ''; ?>>Author</option>
-            </select>
-            <input type="text" name="search" placeholder="Search keyword" value="<?php echo htmlspecialchars($search_query); ?>">
-            <button type="submit" class="btn">Search</button>
+        <!-- 에러 메시지 표시 -->
+        <?php if (isset($error_message)): ?>
+            <?php echo show_error_message($error_message); ?>
+        <?php endif; ?>
+
+        <!-- 검색 폼 -->
+        <form method="get" action="index.php" class="search-form">
+            <div class="search-controls">
+                <select name="search_by" aria-label="검색 범위">
+                    <option value="all" <?php echo ($search_by === 'all') ? 'selected' : ''; ?>>전체</option>
+                    <option value="title" <?php echo ($search_by === 'title') ? 'selected' : ''; ?>>제목</option>
+                    <option value="content" <?php echo ($search_by === 'content') ? 'selected' : ''; ?>>내용</option>
+                    <option value="author" <?php echo ($search_by === 'author') ? 'selected' : ''; ?>>작성자</option>
+                </select>
+                <input type="text" 
+                       name="search" 
+                       placeholder="검색어를 입력하세요" 
+                       value="<?php echo safe_output($search_query); ?>"
+                       aria-label="검색어">
+                <button type="submit" class="btn">검색</button>
+            </div>
         </form>
 
-        <h2>Posts</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 60px;"></th> <!-- For thumbnail -->
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>Categories</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($posts as $post):
-                    $thumbnail_path = getFirstImageAttachment($pdo, $post['id']);
-                ?>
-                    <tr>
-                        <td>
-                            <?php if ($thumbnail_path): ?>
-                                <div class="thumbnail-container">
-                                    <img src="<?php echo htmlspecialchars($thumbnail_path); ?>" alt="Thumbnail" class="post-thumbnail">
-                                    <div class="thumbnail-popup">
-                                        <img src="<?php echo htmlspecialchars($thumbnail_path); ?>" alt="Full Image">
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-                        </td>
-                        <td><a href="view_post.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($post['title']); ?></a></td>
-                        <td><a href="profile.php?id=<?php echo $post['user_id']; ?>"><?php echo htmlspecialchars($post['username']); ?></a></td>
-                        <td>
-                            <?php
-                            $categories_stmt = $pdo->prepare("SELECT c.id, c.name FROM categories c JOIN post_categories pc ON c.id = pc.category_id WHERE pc.post_id = ?");
-                            $categories_stmt->execute([$post['id']]);
-                            $categories = $categories_stmt->fetchAll();
-                            foreach ($categories as $index => $category) {
-                                echo '<a href="index.php?category=' . $category['id'] . '">' . htmlspecialchars($category['name']) . '</a>';
-                                if ($index < count($categories) - 1) {
-                                    echo ', ';
-                                }
-                            }
-                            ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-
-        <div class="pagination" style="margin-top: 20px; text-align: center;">
-            <?php if ($current_page > 1): ?>
-                <a href="?page=<?php echo $current_page - 1; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) . '&search_by=' . urlencode($search_by) : ''; ?>" class="btn">Previous</a>
+        <!-- 게시물 목록 -->
+        <section class="posts-section">
+            <h2>게시물 목록 (총 <?php echo number_format($total_posts); ?>개)</h2>
+            
+            <?php if (empty($posts)): ?>
+                <div class="no-posts">
+                    <p>게시물이 없습니다.</p>
+                    <?php if (is_logged_in()): ?>
+                        <a href="create_post.php" class="btn">첫 번째 게시물 작성하기</a>
+                    <?php endif; ?>
+                </div>
+            <?php else: ?>
+                <div class="table-container">
+                    <table class="posts-table">
+                        <thead>
+                            <tr>
+                                <th class="thumbnail-col">미리보기</th>
+                                <th class="title-col">제목</th>
+                                <th class="author-col">작성자</th>
+                                <th class="date-col">작성일</th>
+                                <th class="category-col">카테고리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($posts as $post): ?>
+                                <?php 
+                                $thumbnail_path = get_first_image_attachment($pdo, $post['id']);
+                                $categories = get_post_categories($pdo, $post['id']);
+                                ?>
+                                <tr>
+                                    <td class="thumbnail-cell">
+                                        <?php if ($thumbnail_path): ?>
+                                            <div class="thumbnail-container">
+                                                <img src="<?php echo safe_output($thumbnail_path); ?>" 
+                                                     alt="게시물 미리보기" 
+                                                     class="post-thumbnail">
+                                                <div class="thumbnail-popup">
+                                                    <img src="<?php echo safe_output($thumbnail_path); ?>" 
+                                                         alt="게시물 이미지">
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="post-title">
+                                        <a href="view_post.php?id=<?php echo $post['id']; ?>">
+                                            <?php echo safe_output($post['title']); ?>
+                                        </a>
+                                    </td>
+                                    <td class="author-cell">
+                                        <a href="profile.php?id=<?php echo $post['user_id']; ?>">
+                                            <?php echo safe_output($post['username']); ?>
+                                        </a>
+                                    </td>
+                                    <td class="date-cell">
+                                        <?php echo format_date($post['created_at']); ?>
+                                    </td>
+                                    <td class="category-cell">
+                                        <?php if (!empty($categories)): ?>
+                                            <?php foreach ($categories as $index => $category): ?>
+                                                <a href="index.php?category=<?php echo $category['id']; ?>" class="category-tag">
+                                                    <?php echo safe_output($category['name']); ?>
+                                                </a>
+                                                <?php if ($index < count($categories) - 1): ?>
+                                                    <span class="category-separator">,</span>
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <span class="no-category">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 페이지네이션 -->
+                <?php if ($pagination['total_pages'] > 1): ?>
+                    <div class="pagination-wrapper">
+                        <?php echo generate_pagination_links($current_page, $pagination['total_pages'], $search_query, $search_by); ?>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
-
-            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                <a href="?page=<?php echo $i; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) . '&search_by=' . urlencode($search_by) : ''; ?>" class="btn <?php echo ($i == $current_page) ? 'active' : ''; ?>"><?php echo $i; ?></a>
-            <?php endfor; ?>
-
-            <?php if ($current_page < $total_pages): ?>
-                <a href="?page=<?php echo $current_page + 1; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) . '&search_by=' . urlencode($search_by) : ''; ?>" class="btn">Next</a>
-            <?php endif; ?>
-        </div>
+        </section>
     </div>
 
+    <!-- JavaScript -->
     <script>
+        // 썸네일 팝업 기능
         document.querySelectorAll('.thumbnail-container').forEach(container => {
             const popup = container.querySelector('.thumbnail-popup');
-
+            
             container.addEventListener('mouseenter', () => {
                 popup.style.display = 'block';
             });
-
+            
             container.addEventListener('mouseleave', () => {
                 popup.style.display = 'none';
             });
+        });
+        
+        // 검색 폼 자동 제출 (엔터키)
+        document.querySelector('input[name="search"]').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.target.closest('form').submit();
+            }
         });
     </script>
 </body>

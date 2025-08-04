@@ -26,6 +26,8 @@ $user_posts = $posts_stmt->fetchAll();
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($profile_user['username']); ?>'s Profile</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -38,7 +40,8 @@ $user_posts = $posts_stmt->fetchAll();
         <?php if (empty($user_posts)): ?>
             <p>No posts found for this user.</p>
         <?php else: ?>
-            <table>
+            <div class="table-container">
+                <table>
                 <thead>
                     <tr>
                         <th>Title</th>
@@ -53,7 +56,8 @@ $user_posts = $posts_stmt->fetchAll();
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
-            </table>
+                </table>
+            </div>
         <?php endif; ?>
 
         <br>
