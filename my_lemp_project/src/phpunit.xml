@@ -18,4 +18,19 @@
         <ini name="display_startup_errors" value="On" />
         <ini name="error_reporting" value="E_ALL" />
     </php>
+    
+    <!-- Coverage configuration (requires xdebug or pcov extension) -->
+    <coverage>
+        <include>
+            <directory suffix=".php">.</directory>
+        </include>
+        <exclude>
+            <directory>test</directory>
+            <directory>vendor</directory>
+        </exclude>
+        <report>
+            <text outputFile="coverage.txt" showUncoveredFiles="true"/>
+            <html outputDirectory="coverage-html"/>
+        </report>
+    </coverage>
 </phpunit>
