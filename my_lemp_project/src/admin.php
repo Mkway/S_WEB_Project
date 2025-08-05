@@ -1,6 +1,11 @@
 <?php
 session_start();
 require_once 'db.php';
+require_once 'config.php';
+require_once 'utils.php';
+
+// 관리자 권한 확인
+require_admin();
 
 
 
@@ -29,6 +34,48 @@ $categories = $categories_stmt->fetchAll();
 <body>
 <div class="container">
     <h1>Admin Page</h1>
+    
+    <!-- 성공/에러 메시지 표시 -->
+    <?php if (isset($_SESSION['success_message'])): ?>
+        <div class="alert alert-success">
+            <?php echo htmlspecialchars($_SESSION['success_message']); ?>
+            <?php unset($_SESSION['success_message']); ?>
+        </div>
+    <?php endif; ?>
+    
+    <?php if (isset($_SESSION['error_message'])): ?>
+        <div class="alert alert-error">
+            <?php echo htmlspecialchars($_SESSION['error_message']); ?>
+            <?php unset($_SESSION['error_message']); ?>
+        </div>
+    <?php endif; ?>
+    
+    <!-- 취약점 모드 토글 섹션 -->
+    <div class="vulnerability-toggle-section" style="margin-bottom: 30px; padding: 20px; border: 2px solid #ddd; border-radius: 8px;">
+        <h2>🔧 취약점 테스트 모드 설정</h2>
+        <div style="margin-bottom: 15px;">
+            <strong>현재 상태:</strong> 
+            <?php if (defined('VULNERABILITY_MODE') && VULNERABILITY_MODE === true): ?>
+                <span style="color: #ff6b6b; font-weight: bold;">⚠️ 취약점 모드 활성화</span>
+                <p style="color: #666; margin: 5px 0;">SQL Injection, XSS, CSRF, 파일 업로드 취약점이 허용됩니다.</p>
+            <?php else: ?>
+                <span style="color: #51cf66; font-weight: bold;">🛡️ 보안 모드 활성화</span>
+                <p style="color: #666; margin: 5px 0;">모든 보안 기능이 활성화되어 있습니다.</p>
+            <?php endif; ?>
+        </div>
+        
+        <form method="post" action="vulnerability_toggle.php" style="display: inline;">
+            <input type="hidden" name="action" value="toggle_vulnerability">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+            <button type="submit" class="btn" style="background-color: #ff6b6b; color: white;" onclick="return confirm('취약점 모드를 변경하시겠습니까?')">
+                <?php echo (defined('VULNERABILITY_MODE') && VULNERABILITY_MODE === true) ? '🛡️ 보안 모드로 전환' : '⚠️ 취약점 모드로 전환'; ?>
+            </button>
+        </form>
+        
+        <div style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+            <small><strong>주의:</strong> 취약점 모드는 교육 목적으로만 사용하세요. 운영 환경에서는 절대 활성화하지 마세요.</small>
+        </div>
+    </div>
 
     <h2>Users</h2>
     <div class="table-container">
