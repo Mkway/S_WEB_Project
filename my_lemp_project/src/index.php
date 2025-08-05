@@ -16,32 +16,87 @@ require_once 'utils.php';
  */
 function build_search_condition($search_query, $search_by) {
     if (empty($search_query)) {
-        return ['where_clause' => '', 'param_value' => ''];
+        return ['where_clause' => '', 'param_value' => '', 'is_vulnerable' => false];
     }
     
+    // 취약점 모드일 때 SQL Injection 허용 (교육 목적)
+    if (defined('VULNERABILITY_MODE') && VULNERABILITY_MODE === true) {
+        // 위험한 패턴 감지 (로깅 목적)
+        $dangerous_patterns = ['union', 'select', '--', ';', 'drop', 'delete', 'update', 'insert'];
+        $is_suspicious = false;
+        foreach ($dangerous_patterns as $pattern) {
+            if (stripos($search_query, $pattern) !== false) {
+                $is_suspicious = true;
+                break;
+            }
+        }
+        
+        if ($is_suspicious && function_exists('log_security')) {
+            log_security('sql_injection_attempt', 'Potential SQL injection in search', [
+                'search_query' => $search_query,
+                'search_by' => $search_by,
+                'vulnerability_mode' => true
+            ]);
+        }
+        
+        // 취약한 쿼리 생성 (직접 문자열 삽입)
+        switch ($search_by) {
+            case 'title':
+                return [
+                    'where_clause' => " WHERE posts.title LIKE '%" . $search_query . "%'",
+                    'param_value' => '',
+                    'is_vulnerable' => true
+                ];
+            case 'content':
+                return [
+                    'where_clause' => " WHERE posts.content LIKE '%" . $search_query . "%'",
+                    'param_value' => '',
+                    'is_vulnerable' => true
+                ];
+            case 'author':
+                return [
+                    'where_clause' => " WHERE users.username LIKE '%" . $search_query . "%'",
+                    'param_value' => '',
+                    'is_vulnerable' => true
+                ];
+            case 'all':
+            default:
+                return [
+                    'where_clause' => " WHERE (posts.title LIKE '%" . $search_query . "%' OR posts.content LIKE '%" . $search_query . "%' OR users.username LIKE '%" . $search_query . "%')",
+                    'param_value' => '',
+                    'is_vulnerable' => true
+                ];
+        }
+    }
+    
+    // 안전한 모드 - 기존 prepared statement 사용
     $param_value = '%' . $search_query . '%';
     
     switch ($search_by) {
         case 'title':
             return [
                 'where_clause' => ' WHERE posts.title LIKE :search_param',
-                'param_value' => $param_value
+                'param_value' => $param_value,
+                'is_vulnerable' => false
             ];
         case 'content':
             return [
                 'where_clause' => ' WHERE posts.content LIKE :search_param',
-                'param_value' => $param_value
+                'param_value' => $param_value,
+                'is_vulnerable' => false
             ];
         case 'author':
             return [
                 'where_clause' => ' WHERE users.username LIKE :search_param',
-                'param_value' => $param_value
+                'param_value' => $param_value,
+                'is_vulnerable' => false
             ];
         case 'all':
         default:
             return [
                 'where_clause' => ' WHERE (posts.title LIKE :search_param OR posts.content LIKE :search_param OR users.username LIKE :search_param)',
-                'param_value' => $param_value
+                'param_value' => $param_value,
+                'is_vulnerable' => false
             ];
     }
 }
@@ -51,18 +106,34 @@ function build_search_condition($search_query, $search_by) {
  * @param PDO $pdo 데이터베이스 연결
  * @param string $where_clause WHERE 절
  * @param string $param_value 검색 매개변수
+ * @param bool $is_vulnerable 취약점 모드 여부
  * @return int 총 게시물 수
  */
-function get_total_posts_count($pdo, $where_clause, $param_value) {
+function get_total_posts_count($pdo, $where_clause, $param_value, $is_vulnerable = false) {
     $sql = "SELECT COUNT(*) FROM posts JOIN users ON posts.user_id = users.id" . $where_clause;
-    $stmt = $pdo->prepare($sql);
     
-    if (!empty($param_value)) {
-        $stmt->bindValue(':search_param', $param_value, PDO::PARAM_STR);
+    if ($is_vulnerable) {
+        // 취약한 쿼리 실행 (교육 목적)
+        try {
+            $result = $pdo->query($sql);
+            return (int)$result->fetchColumn();
+        } catch (PDOException $e) {
+            if (function_exists('log_database_error')) {
+                log_database_error($sql, $e->getMessage(), ['vulnerability_mode' => true]);
+            }
+            return 0;
+        }
+    } else {
+        // 안전한 prepared statement 사용
+        $stmt = $pdo->prepare($sql);
+        
+        if (!empty($param_value)) {
+            $stmt->bindValue(':search_param', $param_value, PDO::PARAM_STR);
+        }
+        
+        $stmt->execute();
+        return (int)$stmt->fetchColumn();
     }
-    
-    $stmt->execute();
-    return (int)$stmt->fetchColumn();
 }
 
 /**
@@ -72,26 +143,47 @@ function get_total_posts_count($pdo, $where_clause, $param_value) {
  * @param string $param_value 검색 매개변수
  * @param int $limit 조회할 개수
  * @param int $offset 시작 위치
+ * @param bool $is_vulnerable 취약점 모드 여부
  * @return array 게시물 목록
  */
-function get_posts_for_page($pdo, $where_clause, $param_value, $limit, $offset) {
-    $sql = "SELECT posts.id, posts.title, posts.user_id, users.username, posts.created_at 
-            FROM posts 
-            JOIN users ON posts.user_id = users.id" 
-            . $where_clause . 
-            " ORDER BY posts.created_at DESC LIMIT :limit OFFSET :offset";
-    
-    $stmt = $pdo->prepare($sql);
-    
-    if (!empty($param_value)) {
-        $stmt->bindValue(':search_param', $param_value, PDO::PARAM_STR);
+function get_posts_for_page($pdo, $where_clause, $param_value, $limit, $offset, $is_vulnerable = false) {
+    if ($is_vulnerable) {
+        // 취약한 쿼리 실행 (교육 목적)
+        $sql = "SELECT posts.id, posts.title, posts.user_id, users.username, posts.created_at 
+                FROM posts 
+                JOIN users ON posts.user_id = users.id" 
+                . $where_clause . 
+                " ORDER BY posts.created_at DESC LIMIT $limit OFFSET $offset";
+        
+        try {
+            $result = $pdo->query($sql);
+            return $result->fetchAll();
+        } catch (PDOException $e) {
+            if (function_exists('log_database_error')) {
+                log_database_error($sql, $e->getMessage(), ['vulnerability_mode' => true]);
+            }
+            return [];
+        }
+    } else {
+        // 안전한 prepared statement 사용
+        $sql = "SELECT posts.id, posts.title, posts.user_id, users.username, posts.created_at 
+                FROM posts 
+                JOIN users ON posts.user_id = users.id" 
+                . $where_clause . 
+                " ORDER BY posts.created_at DESC LIMIT :limit OFFSET :offset";
+        
+        $stmt = $pdo->prepare($sql);
+        
+        if (!empty($param_value)) {
+            $stmt->bindValue(':search_param', $param_value, PDO::PARAM_STR);
+        }
+        
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
-    
-    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-    
-    $stmt->execute();
-    return $stmt->fetchAll();
 }
 
 /**
@@ -150,9 +242,10 @@ try {
     
     // 검색 조건 생성
     $search_condition = build_search_condition($search_query, $search_by);
+    $is_vulnerable = $search_condition['is_vulnerable'] ?? false;
     
     // 페이지네이션 계산
-    $total_posts = get_total_posts_count($pdo, $search_condition['where_clause'], $search_condition['param_value']);
+    $total_posts = get_total_posts_count($pdo, $search_condition['where_clause'], $search_condition['param_value'], $is_vulnerable);
     $pagination = calculate_pagination($total_posts, POSTS_PER_PAGE, $current_page);
     
     // 게시물 목록 조회
@@ -161,7 +254,8 @@ try {
         $search_condition['where_clause'], 
         $search_condition['param_value'], 
         POSTS_PER_PAGE, 
-        $pagination['offset']
+        $pagination['offset'],
+        $is_vulnerable
     );
     
 } catch (Exception $e) {
@@ -183,6 +277,11 @@ try {
         <!-- 네비게이션 바 -->
         <nav class="nav">
             <h1><?php echo SITE_NAME; ?></h1>
+            <?php if (defined('VULNERABILITY_MODE') && VULNERABILITY_MODE === true): ?>
+                <div class="vulnerability-mode-warning">
+                    ⚠️ 취약점 테스트 모드 활성화 (교육 목적)
+                </div>
+            <?php endif; ?>
             <div class="nav-links">
                 <?php if (is_logged_in()): ?>
                     <span>환영합니다, <?php echo safe_output($_SESSION['username']); ?>님!</span>

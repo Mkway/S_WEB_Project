@@ -44,6 +44,9 @@ define('LOG_MAX_FILES', 5);
 define('DEBUG_MODE', true);
 define('SHOW_ERRORS', DEBUG_MODE);
 
+// 취약점 테스트 모드 (교육 목적)
+define('VULNERABILITY_MODE', true); // true: 취약점 허용, false: 보안 강화
+
 // 타임존 설정
 date_default_timezone_set(DEFAULT_TIMEZONE);
 

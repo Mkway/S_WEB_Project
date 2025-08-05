@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once 'db.php';
+require_once 'config.php';
+require_once 'utils.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -34,15 +36,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0777, true);
         }
+        
         foreach ($_FILES['files']['name'] as $key => $name) {
             if ($_FILES['files']['error'][$key] == UPLOAD_ERR_OK) {
                 $tmp_name = $_FILES['files']['tmp_name'][$key];
                 $filename = basename($name);
                 $filepath = $upload_dir . $filename;
-                move_uploaded_file($tmp_name, $filepath);
-
-                $stmt = $pdo->prepare("INSERT INTO files (post_id, filename, filepath, filesize) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$post_id, $filename, $filepath, $_FILES['files']['size'][$key]]);
+                
+                // 파일 확장자 검사 (취약점 모드가 아닐 때만)
+                $upload_allowed = true;
+                $upload_error = '';
+                
+                if (!(defined('VULNERABILITY_MODE') && VULNERABILITY_MODE === true)) {
+                    // 안전한 모드: 파일 확장자 및 크기 검증
+                    $file_extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                    $allowed_extensions = array_merge(ALLOWED_IMAGE_EXTENSIONS, ALLOWED_DOCUMENT_EXTENSIONS);
+                    
+                    if (!in_array($file_extension, $allowed_extensions)) {
+                        $upload_allowed = false;
+                        $upload_error = "허용되지 않는 파일 형식입니다: $file_extension";
+                    }
+                    
+                    if ($_FILES['files']['size'][$key] > MAX_FILE_SIZE) {
+                        $upload_allowed = false;
+                        $upload_error = "파일 크기가 너무 큽니다.";
+                    }
+                    
+                    // 위험한 파일 내용 검사
+                    $file_content = file_get_contents($tmp_name);
+                    if (strpos($file_content, '<?php') !== false || strpos($file_content, '<script') !== false) {
+                        $upload_allowed = false;
+                        $upload_error = "위험한 파일 내용이 감지되었습니다.";
+                    }
+                } else {
+                    // 취약점 모드: 파일 업로드 제한 없음 (교육 목적)
+                    $dangerous_extensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'js', 'exe', 'bat', 'sh'];
+                    $file_extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                    
+                    if (in_array($file_extension, $dangerous_extensions) && function_exists('log_security')) {
+                        log_security('malicious_upload', 'Potentially malicious file uploaded', [
+                            'filename' => $filename,
+                            'extension' => $file_extension,
+                            'size' => $_FILES['files']['size'][$key],
+                            'vulnerability_mode' => true
+                        ]);
+                    }
+                }
+                
+                if ($upload_allowed) {
+                    move_uploaded_file($tmp_name, $filepath);
+                    $stmt = $pdo->prepare("INSERT INTO files (post_id, filename, filepath, filesize) VALUES (?, ?, ?, ?)");
+                    $stmt->execute([$post_id, $filename, $filepath, $_FILES['files']['size'][$key]]);
+                    
+                    log_file_upload($filename, true);
+                } else {
+                    log_file_upload($filename, false, $upload_error);
+                    // 취약점 모드가 아닐 때만 에러 표시
+                    if (!(defined('VULNERABILITY_MODE') && VULNERABILITY_MODE === true)) {
+                        $_SESSION['upload_error'] = $upload_error;
+                    }
+                }
             }
         }
     }
@@ -61,6 +114,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
+        <?php if (defined('VULNERABILITY_MODE') && VULNERABILITY_MODE === true): ?>
+            <div class="vulnerability-mode-warning">
+                ⚠️ 취약점 테스트 모드 활성화 (교육 목적) - 파일 업로드 제한 없음
+            </div>
+        <?php endif; ?>
+        
+        <?php if (isset($_SESSION['upload_error'])): ?>
+            <div class="alert alert-error">
+                <?php echo htmlspecialchars($_SESSION['upload_error']); ?>
+                <?php unset($_SESSION['upload_error']); ?>
+            </div>
+        <?php endif; ?>
+        
         <h1>Create New Post</h1>
         <form method="post" enctype="multipart/form-data">
             <input type="text" name="title" placeholder="Title" required><br>
