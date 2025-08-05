@@ -179,6 +179,79 @@ class SecurityTest extends TestCase
         $this->assertFalse($this->isValidContentLength($tooLongContent), "Excessively long content should be rejected.");
     }
 
+    public function testAdvancedSQLInjectionPayloads()
+    {
+        // UNION-based SQL injection payloads
+        $unionPayloads = [
+            "1' UNION SELECT null,username,password FROM users--",
+            "1' UNION SELECT 1,2,3,4,5--",
+            "' UNION SELECT null,null,null--",
+            "1' UNION ALL SELECT null,null,null--"
+        ];
+        
+        foreach ($unionPayloads as $payload) {
+            $stmt = self::$pdo->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt->execute([$payload]);
+            $result = $stmt->fetch();
+            $this->assertFalse($result, "UNION injection should not return results: " . $payload);
+        }
+        
+        // Boolean-based blind SQL injection payloads
+        $booleanPayloads = [
+            "1' AND '1'='1",
+            "1' AND '1'='2",
+            "1' AND (SELECT COUNT(*) FROM users)>0--",
+            "1' AND ASCII(SUBSTRING((SELECT username FROM users LIMIT 1),1,1))>64--",
+            "1' AND SLEEP(5)--"
+        ];
+        
+        foreach ($booleanPayloads as $payload) {
+            $stmt = self::$pdo->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt->execute([$payload]);
+            $result = $stmt->fetch();
+            $this->assertFalse($result, "Boolean injection should not return results: " . $payload);
+        }
+        
+        // Time-based blind SQL injection payloads
+        $timePayloads = [
+            "1'; WAITFOR DELAY '00:00:05'--",
+            "1' AND (SELECT SLEEP(5))--",
+            "1'; SELECT pg_sleep(5)--",
+            "1' AND BENCHMARK(5000000,MD5(1))--"
+        ];
+        
+        foreach ($timePayloads as $payload) {
+            $startTime = microtime(true);
+            $stmt = self::$pdo->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt->execute([$payload]);
+            $result = $stmt->fetch();
+            $endTime = microtime(true);
+            
+            $this->assertFalse($result, "Time-based injection should not return results: " . $payload);
+            $this->assertLessThan(1, $endTime - $startTime, "Time-based injection should not cause delays: " . $payload);
+        }
+        
+        // Error-based SQL injection payloads
+        $errorPayloads = [
+            "1' AND EXTRACTVALUE(1,CONCAT(0x7e,(SELECT version()),0x7e))--",
+            "1' AND (SELECT * FROM (SELECT COUNT(*),CONCAT(version(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--",
+            "1' AND UPDATEXML(1,CONCAT(0x7e,(SELECT version()),0x7e),1)--",
+            "1' AND EXP(~(SELECT * FROM (SELECT version())a))--"
+        ];
+        
+        foreach ($errorPayloads as $payload) {
+            $stmt = self::$pdo->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt->execute([$payload]);
+            $result = $stmt->fetch();
+            $this->assertFalse($result, "Error-based injection should not return results: " . $payload);
+        }
+        
+        // Verify data integrity after all injection attempts
+        $stmt = self::$pdo->query("SELECT COUNT(*) FROM users");
+        $userCount = $stmt->fetchColumn();
+        $this->assertEquals(2, $userCount, "User count should remain unchanged after injection attempts.");
+    }
+
     public function testDatabaseInjectionWithPreparedStatements()
     {
         // Test that prepared statements prevent injection

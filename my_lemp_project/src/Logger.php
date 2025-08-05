@@ -39,9 +39,9 @@ class Logger {
         $this->max_files = $max_files;
         $this->current_level = $current_level;
         
-        // 로그 디렉토리 생성
+        // 로그 디렉토리 생성 (에러 무시)
         if (!is_dir($this->log_dir)) {
-            mkdir($this->log_dir, 0755, true);
+            @mkdir($this->log_dir, 0755, true);
         }
         
         // .htaccess 파일 생성 (웹 접근 차단)
@@ -53,9 +53,9 @@ class Logger {
      */
     private function create_htaccess() {
         $htaccess_path = $this->log_dir . '.htaccess';
-        if (!file_exists($htaccess_path)) {
+        if (!file_exists($htaccess_path) && is_dir($this->log_dir)) {
             $content = "Order Deny,Allow\nDeny from all\n";
-            file_put_contents($htaccess_path, $content);
+            @file_put_contents($htaccess_path, $content);
         }
     }
     
@@ -173,12 +173,12 @@ class Logger {
         // 로그 파일 크기 확인 및 로테이션
         $this->rotate_log_if_needed($log_file);
         
-        // 로그 기록
-        file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+        // 로그 기록 (에러 무시)
+        @file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
         
-        // 권한 설정 (처음 생성시에만)
-        if (filesize($log_file) === strlen($log_entry)) {
-            chmod($log_file, 0640);
+        // 권한 설정 (처음 생성시에만, 에러 무시)
+        if (@filesize($log_file) === strlen($log_entry)) {
+            @chmod($log_file, 0640);
         }
     }
     

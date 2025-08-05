@@ -56,9 +56,11 @@ if (SHOW_ERRORS) {
     ini_set('display_errors', 0);
 }
 
-// 세션 보안 설정
-ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_secure', 0); // HTTPS 환경에서는 1로 설정
-ini_set('session.use_strict_mode', 1);
-ini_set('session.cookie_samesite', 'Strict');
+// 세션 보안 설정 (세션이 시작되지 않은 경우에만)
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_secure', 0); // HTTPS 환경에서는 1로 설정
+    ini_set('session.use_strict_mode', 1);
+    ini_set('session.cookie_samesite', 'Strict');
+}
 ?>
