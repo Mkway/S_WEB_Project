@@ -86,7 +86,7 @@ footer {
     }
 }
 
-/* 취약점 경고 스타일 유지 */
+/* 취약점 경고 스타일 */
 .vulnerability-mode-warning {
     animation: pulse 2s infinite;
 }
