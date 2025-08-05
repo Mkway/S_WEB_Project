@@ -26,7 +26,7 @@
 - **관리자 패널**: 사용자 및 콘텐츠 관리
 - **알림 시스템**: 사용자 활동 추적 및 알림
 
-### 🔐 **포괄적인 보안 테스트 환경**
+### 🔐 **포괄적인 보안 테스트 환경 (10개 완료)**
 - **SQL Injection**: UNION, Boolean-based, Time-based, Error-based 공격
 - **XSS (Cross-Site Scripting)**: Reflected, Stored, DOM-based, Polyglot 페이로드
 - **Command Injection**: OS 명령어 실행 및 우회 기법
@@ -35,6 +35,8 @@
 - **CSRF**: Cross-Site Request Forgery 공격 및 토큰 우회
 - **IDOR**: Insecure Direct Object References 테스트
 - **Authentication Bypass**: 다양한 인증 우회 기법
+- **JWT (JSON Web Token)**: 토큰 조작, 알고리즘 혼동, 키 누출 공격
+- **현대적 Bootstrap 5 UI**: 반응형 디자인과 직관적 인터페이스
 
 ### 🛡️ **고급 보안 기능**
 - **실시간 공격 탐지**: 위험한 패턴 실시간 감지 및 경고
@@ -47,7 +49,12 @@
 ### Backend
 - **PHP 8.2**: 최신 PHP 기능 활용
 - **MariaDB 10.6**: 안정적인 데이터베이스
-- **Nginx**: 고성능 웹 서버
+- **Nginx 1.28**: 고성능 웹 서버
+
+### Frontend
+- **Bootstrap 5.3**: 현대적이고 반응형 UI 프레임워크
+- **Bootstrap Icons**: 아이콘 시스템
+- **반응형 디자인**: 모바일/태블릿/데스크톱 최적화
 
 ### DevOps & Testing
 - **Docker & Docker Compose**: 컨테이너화된 개발 환경
@@ -73,13 +80,13 @@ cd S_WEB_Project/my_lemp_project
 docker-compose up -d
 
 # 애플리케이션 접속
-# 메인 애플리케이션: http://localhost:8080
-# 보안 테스트 환경: http://localhost:8080/webhacking
+# 메인 애플리케이션: http://localhost
+# 보안 테스트 환경: http://localhost/webhacking
 ```
 
 ### 2. 초기 설정
 
-1. **데이터베이스 초기화**: `http://localhost:8080/install.php` 접속
+1. **데이터베이스 초기화**: `http://localhost/install.php` 접속
 2. **테스트 사용자 생성**: 회원가입 또는 기본 계정 사용
 3. **보안 테스트 접근**: 로그인 후 "보안 테스트" 메뉴 클릭
 
@@ -105,7 +112,7 @@ S_WEB_Project/
 │   │   └── docker-entrypoint.sh
 │   ├── src/                        # PHP 애플리케이션
 │   │   ├── webhacking/             # 🔥 보안 테스트 환경
-│   │   │   ├── index.php           # 테스트 메인 페이지
+│   │   │   ├── index.php           # 테스트 메인 페이지 (Bootstrap 5)
 │   │   │   ├── sql_injection.php   # SQL Injection 테스트
 │   │   │   ├── xss_test.php        # XSS 테스트
 │   │   │   ├── command_injection.php
@@ -113,7 +120,8 @@ S_WEB_Project/
 │   │   │   ├── directory_traversal.php
 │   │   │   ├── csrf_test.php
 │   │   │   ├── idor_test.php
-│   │   │   └── auth_bypass.php
+│   │   │   ├── auth_bypass.php
+│   │   │   └── jwt_test.php        # 🆕 JWT 취약점 테스트
 │   │   ├── test/                   # PHPUnit 테스트
 │   │   ├── config.php              # 애플리케이션 설정
 │   │   ├── utils.php               # 보안 유틸리티
@@ -160,6 +168,18 @@ S_WEB_Project/
 ; ping -c 4 127.0.0.1
 ```
 
+#### 🔐 JWT (JSON Web Token)
+```javascript
+// None Algorithm Attack
+{"typ":"JWT","alg":"none"}
+
+// Algorithm Confusion (RS256 → HS256)
+// 공개키를 HMAC 시크릿으로 사용
+
+// Weak Secret Attack
+secret, 123456, password, key, jwt
+```
+
 ### 안전 수칙
 ⚠️ **중요**: 모든 테스트는 교육 목적으로만 사용하세요
 - 실제 운영 환경에서 절대 사용 금지
@@ -184,6 +204,8 @@ S_WEB_Project/
 | **CSRF** | Token Bypass, Method Override | ✅ |
 | **File Security** | LFI, RFI, Directory Traversal | ✅ |
 | **Session** | Fixation, Hijacking | ✅ |
+| **JWT Security** | None Algorithm, Algorithm Confusion, Weak Secret | ✅ |
+| **UI/UX** | Bootstrap 5, 반응형 디자인, 아이콘 시스템 | ✅ |
 
 ## 🔧 개발자 가이드
 
@@ -227,6 +249,26 @@ docker-compose exec php bash
 - 명확한 주석과 설명 포함
 - PHPUnit 테스트 커버리지 유지
 
+## 🆕 최신 업데이트 (2025년 8월)
+
+### 새롭게 추가된 기능
+- **JWT 취약점 테스트**: PayloadsAllTheThings 기반 JWT 보안 테스트
+  - None Algorithm Attack (서명 검증 우회)
+  - Algorithm Confusion (RS256 ↔ HS256)
+  - Weak Secret Brute Force
+  - Token Manipulation (페이로드 조작)
+  - JWT Information Disclosure
+- **Bootstrap 5 UI 전면 개편**: 현대적이고 반응형 인터페이스
+- **카드 기반 레이아웃**: 직관적인 테스트 선택 인터페이스
+- **실시간 공격 시뮬레이션**: 교육적 피드백과 CVSS 스코어링
+- **향상된 보안 로깅**: 상세한 공격 패턴 분석
+
+### 기술적 개선사항
+- **Docker 컨테이너 최적화**: 더 빠른 시작과 안정성
+- **Nginx 설정 개선**: 웹해킹 경로 접근성 향상
+- **PHP 8.2 호환성**: 최신 보안 기능 활용
+- **SSL/TLS 지원**: HTTPS 기본 지원
+
 ## 📚 학습 자료
 
 ### 참고 문서
@@ -239,8 +281,16 @@ docker-compose exec php bash
 1. **기본 웹 애플리케이션 이해**
 2. **SQL Injection 테스트부터 시작**
 3. **XSS 공격 패턴 학습**
-4. **고급 공격 기법 순차 학습**
-5. **방어 메커니즘 구현 실습**
+4. **JWT 보안 테스트** (새로 추가됨)
+5. **고급 공격 기법 순차 학습**
+6. **방어 메커니즘 구현 실습**
+
+### 프로젝트 통계
+- **총 보안 테스트**: 10개 완료 (PayloadsAllTheThings 커버리지 18%)
+- **코드 라인 수**: 15,000+ 라인
+- **테스트 케이스**: 50+ 시나리오
+- **지원 언어**: PHP 8.2, JavaScript ES6+
+- **Docker 이미지**: 3개 (Nginx, PHP-FPM, MariaDB)
 
 ## 📄 라이선스
 
