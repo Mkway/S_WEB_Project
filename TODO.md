@@ -1,6 +1,6 @@
 # 웹해킹 테스트 페이지 확장 계획 (PayloadsAllTheThings 기반)
 
-## 🎯 현재 구현 완료 (9개)
+## 🎯 현재 구현 완료 (10개)
 - ✅ **SQL Injection** (UNION, Boolean-based, Time-based, Error-based)
 - ✅ **XSS Injection** (Reflected, Stored, DOM-based, Polyglot, Filter Bypass)
 - ✅ **Command Injection** (Basic, Advanced, Blind, Windows, Bypass)
@@ -9,12 +9,12 @@
 - ✅ **CSRF** (HTML Form, Auto Submit, GET-based, AJAX, Bypass)
 - ✅ **IDOR** (Numeric ID, GUID, Encoded, Hash Manipulation)
 - ✅ **Authentication Bypass** (SQL, NoSQL, LDAP, XPath Injection)
+- ✅ **JWT (JSON Web Token)** - 토큰 조작, 알고리즘 혼동, 키 누출
 - ✅ **메인 네비게이션 페이지**
 
-## 🚀 우선순위 높음 - 다음 구현 대상 (12개)
+## 🚀 우선순위 높음 - 다음 구현 대상 (11개)
 
 ### 🔐 **인증 및 세션 보안**
-- [ ] **JWT (JSON Web Token)** - 토큰 조작, 알고리즘 혼동, 키 누출
 - [ ] **OAuth Misconfiguration** - OAuth 2.0/OpenID Connect 취약점
 - [ ] **SAML Injection** - SAML 인증 우회 및 조작
 - [ ] **Session Management** - 세션 고정, 하이재킹, 예측
@@ -96,8 +96,8 @@
 
 ## 📋 구현 우선순위 전략
 
-### Phase 1: 인증 및 네트워크 보안 (4개)
-1. **JWT 취약점 테스트** - 토큰 조작, None 알고리즘, 키 혼동
+### Phase 1: 인증 및 네트워크 보안 (3개)
+1. ✅ **JWT 취약점 테스트** - 토큰 조작, None 알고리즘, 키 혼동 (완료)
 2. **SSRF 공격 시뮬레이션** - 내부 IP 스캔, 메타데이터 서비스 접근
 3. **XXE Injection 테스트** - 외부 엔티티를 통한 파일 읽기
 4. **CORS 설정 오류 테스트** - 악의적 도메인에서의 리소스 접근
@@ -149,11 +149,11 @@
 ## 📊 확장 로드맵
 
 **📈 현재 상황**
-- ✅ 구현 완료: 9개 테스트 페이지
-- 🎯 PayloadsAllTheThings 커버리지: ~16% (9/57개 카테고리)
+- ✅ 구현 완료: 10개 테스트 페이지
+- 🎯 PayloadsAllTheThings 커버리지: ~18% (10/57개 카테고리)
 
 **🎯 단계별 목표**
-- **1단계 목표**: 21개 (현재 + 우선순위 높음 12개) - 37% 커버리지
+- **1단계 목표**: 21개 (현재 + 우선순위 높음 11개) - 37% 커버리지
 - **2단계 목표**: 36개 (1단계 + 우선순위 중간 15개) - 63% 커버리지  
 - **3단계 목표**: 56개 (2단계 + 우선순위 낮음 20개) - 98% 커버리지
 - **최종 목표**: 59개 (전체 PayloadsAllTheThings 커버리지) - 100%

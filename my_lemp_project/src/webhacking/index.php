@@ -182,6 +182,13 @@ if (!is_logged_in()) {
                 <a href="auth_bypass.php" class="btn">테스트 시작</a>
             </div>
 
+            <!-- JWT Testing -->
+            <div class="test-card">
+                <h3>🔐 JWT (JSON Web Token)</h3>
+                <p>JWT 토큰 조작, 알고리즘 혼동, 키 누출 취약점을 테스트합니다.</p>
+                <a href="jwt_test.php" class="btn">테스트 시작</a>
+            </div>
+
             <!-- XXE -->
             <div class="test-card">
                 <h3>📄 XML External Entity (XXE)</h3>
