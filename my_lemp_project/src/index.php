@@ -270,44 +270,92 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo SITE_NAME; ?></title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- 네비게이션 바 -->
-        <nav class="nav">
-            <h1><?php echo SITE_NAME; ?></h1>
-            <?php if (defined('VULNERABILITY_MODE') && VULNERABILITY_MODE === true): ?>
-                <div class="vulnerability-mode-warning">
-                    ⚠️ 취약점 테스트 모드 활성화 (교육 목적)
-                </div>
-            <?php endif; ?>
-            <div class="nav-links">
-                <?php if (is_logged_in()): ?>
-                    <span>환영합니다, <?php echo safe_output($_SESSION['username']); ?>님!</span>
-                    <a href="notifications.php" class="btn">
-                        알림 
-                        <?php if ($unread_notifications_count > 0): ?>
-                            <span class="notification-count"><?php echo $unread_notifications_count; ?></span>
+    <!-- Bootstrap 네비게이션 바 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="index.php">
+                <i class="bi bi-journal-text"></i> <?php echo SITE_NAME; ?>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <?php if (is_logged_in()): ?>
+                        <span class="navbar-text me-3">
+                            <i class="bi bi-person-circle"></i> 환영합니다, <strong><?php echo safe_output($_SESSION['username']); ?></strong>님!
+                        </span>
+                        
+                        <a href="notifications.php" class="nav-link position-relative me-2">
+                            <i class="bi bi-bell"></i> 알림
+                            <?php if ($unread_notifications_count > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    <?php echo $unread_notifications_count; ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                        
+                        <a href="create_post.php" class="nav-link me-2">
+                            <i class="bi bi-plus-circle"></i> 새 게시물
+                        </a>
+                        
+                        <?php if (is_admin()): ?>
+                            <a href="admin.php" class="nav-link me-2">
+                                <i class="bi bi-gear"></i> 관리
+                            </a>
+                        <?php elseif (DEBUG_MODE): ?>
+                            <a href="make_admin.php" class="nav-link me-2 text-warning">
+                                <i class="bi bi-tools"></i> 관리자 되기
+                            </a>
                         <?php endif; ?>
-                    </a>
-                    <a href="logout.php" class="btn">로그아웃</a>
-                    <a href="create_post.php" class="btn">새 게시물</a>
-                    <?php if (is_admin()): ?>
-                        <a href="admin.php" class="btn">관리</a>
-                    <?php elseif (DEBUG_MODE): ?>
-                        <a href="make_admin.php" class="btn" style="background-color: #ffc107; color: #000;">🔧 관리자 되기</a>
+                        
+                        <a href="webhacking/index.php" class="nav-link me-2">
+                            <i class="bi bi-shield-exclamation"></i> 보안 테스트
+                        </a>
+                        
+                        <a href="logout.php" class="nav-link">
+                            <i class="bi bi-box-arrow-right"></i> 로그아웃
+                        </a>
+                    <?php else: ?>
+                        <a href="login.php" class="nav-link me-2">
+                            <i class="bi bi-box-arrow-in-right"></i> 로그인
+                        </a>
+                        <a href="register.php" class="nav-link me-2">
+                            <i class="bi bi-person-plus"></i> 회원가입
+                        </a>
+                        <?php if (DEBUG_MODE): ?>
+                            <a href="make_admin.php" class="nav-link text-warning">
+                                <i class="bi bi-tools"></i> 관리자 설정
+                            </a>
+                        <?php endif; ?>
                     <?php endif; ?>
-                    <a href="../webhacking/index.php" class="btn">보안 테스트</a>
-                <?php else: ?>
-                    <a href="login.php" class="btn">로그인</a>
-                    <a href="register.php" class="btn">회원가입</a>
-                    <?php if (DEBUG_MODE): ?>
-                        <a href="make_admin.php" class="btn" style="background-color: #ffc107; color: #000;">🔧 관리자 설정</a>
-                    <?php endif; ?>
-                <?php endif; ?>
+                </div>
             </div>
-        </nav>
+        </div>
+    </nav>
+
+    <!-- 취약점 모드 경고 -->
+    <?php if (defined('VULNERABILITY_MODE') && VULNERABILITY_MODE === true): ?>
+        <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0" role="alert">
+            <div class="container">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <strong>취약점 테스트 모드 활성화</strong> - 교육 목적으로만 사용하세요
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <div class="container mt-4">
 
         <!-- 에러 메시지 표시 -->
         <?php if (isset($error_message)): ?>
@@ -315,130 +363,213 @@ try {
         <?php endif; ?>
 
         <!-- 검색 폼 -->
-        <form method="get" action="index.php" class="search-form">
-            <div class="search-controls">
-                <select name="search_by" aria-label="검색 범위">
-                    <option value="all" <?php echo ($search_by === 'all') ? 'selected' : ''; ?>>전체</option>
-                    <option value="title" <?php echo ($search_by === 'title') ? 'selected' : ''; ?>>제목</option>
-                    <option value="content" <?php echo ($search_by === 'content') ? 'selected' : ''; ?>>내용</option>
-                    <option value="author" <?php echo ($search_by === 'author') ? 'selected' : ''; ?>>작성자</option>
-                </select>
-                <input type="text" 
-                       name="search" 
-                       placeholder="검색어를 입력하세요" 
-                       value="<?php echo safe_output($search_query); ?>"
-                       aria-label="검색어">
-                <button type="submit" class="btn">검색</button>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <form method="get" action="index.php" class="row g-3">
+                    <div class="col-md-3">
+                        <select name="search_by" class="form-select" aria-label="검색 범위">
+                            <option value="all" <?php echo ($search_by === 'all') ? 'selected' : ''; ?>>전체</option>
+                            <option value="title" <?php echo ($search_by === 'title') ? 'selected' : ''; ?>>제목</option>
+                            <option value="content" <?php echo ($search_by === 'content') ? 'selected' : ''; ?>>내용</option>
+                            <option value="author" <?php echo ($search_by === 'author') ? 'selected' : ''; ?>>작성자</option>
+                        </select>
+                    </div>
+                    <div class="col-md-7">
+                        <input type="text" 
+                               name="search" 
+                               class="form-control"
+                               placeholder="검색어를 입력하세요" 
+                               value="<?php echo safe_output($search_query); ?>"
+                               aria-label="검색어">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> 검색
+                        </button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
 
         <!-- 게시물 목록 -->
-        <section class="posts-section">
-            <h2>게시물 목록 (총 <?php echo number_format($total_posts); ?>개)</h2>
-            
-            <?php if (empty($posts)): ?>
-                <div class="no-posts">
-                    <p>게시물이 없습니다.</p>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 mb-0">
+                <i class="bi bi-journal-text"></i> 게시물 목록 
+                <span class="badge bg-secondary"><?php echo number_format($total_posts); ?>개</span>
+            </h2>
+            <?php if (is_logged_in()): ?>
+                <a href="create_post.php" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> 새 게시물 작성
+                </a>
+            <?php endif; ?>
+        </div>
+        
+        <?php if (empty($posts)): ?>
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <i class="bi bi-journal-x display-1 text-muted"></i>
+                    <h3 class="mt-3 text-muted">게시물이 없습니다</h3>
+                    <p class="text-muted">첫 번째 게시물을 작성해보세요!</p>
                     <?php if (is_logged_in()): ?>
-                        <a href="create_post.php" class="btn">첫 번째 게시물 작성하기</a>
+                        <a href="create_post.php" class="btn btn-primary mt-3">
+                            <i class="bi bi-plus-circle"></i> 첫 번째 게시물 작성하기
+                        </a>
                     <?php endif; ?>
                 </div>
-            <?php else: ?>
-                <div class="table-container">
-                    <table class="posts-table">
-                        <thead>
-                            <tr>
-                                <th class="thumbnail-col">미리보기</th>
-                                <th class="title-col">제목</th>
-                                <th class="author-col">작성자</th>
-                                <th class="date-col">작성일</th>
-                                <th class="category-col">카테고리</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($posts as $post): ?>
-                                <?php 
-                                $thumbnail_path = get_first_image_attachment($pdo, $post['id']);
-                                $categories = get_post_categories($pdo, $post['id']);
-                                ?>
-                                <tr>
-                                    <td class="thumbnail-cell">
-                                        <?php if ($thumbnail_path): ?>
-                                            <div class="thumbnail-container">
-                                                <img src="<?php echo safe_output($thumbnail_path); ?>" 
-                                                     alt="게시물 미리보기" 
-                                                     class="post-thumbnail">
-                                                <div class="thumbnail-popup">
-                                                    <img src="<?php echo safe_output($thumbnail_path); ?>" 
-                                                         alt="게시물 이미지">
-                                                </div>
-                                            </div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="post-title">
-                                        <a href="view_post.php?id=<?php echo $post['id']; ?>">
-                                            <?php echo safe_output($post['title']); ?>
-                                        </a>
-                                    </td>
-                                    <td class="author-cell">
-                                        <a href="profile.php?id=<?php echo $post['user_id']; ?>">
-                                            <?php echo safe_output($post['username']); ?>
-                                        </a>
-                                    </td>
-                                    <td class="date-cell">
-                                        <?php echo format_date($post['created_at']); ?>
-                                    </td>
-                                    <td class="category-cell">
-                                        <?php if (!empty($categories)): ?>
-                                            <?php foreach ($categories as $index => $category): ?>
-                                                <a href="index.php?category=<?php echo $category['id']; ?>" class="category-tag">
-                                                    <?php echo safe_output($category['name']); ?>
-                                                </a>
-                                                <?php if ($index < count($categories) - 1): ?>
-                                                    <span class="category-separator">,</span>
-                                                <?php endif; ?>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <span class="no-category">-</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- 페이지네이션 -->
-                <?php if ($pagination['total_pages'] > 1): ?>
-                    <div class="pagination-wrapper">
-                        <?php echo generate_pagination_links($current_page, $pagination['total_pages'], $search_query, $search_by); ?>
+            </div>
+        <?php else: ?>
+            <div class="row g-4">
+                <?php foreach ($posts as $post): ?>
+                    <?php 
+                    $thumbnail_path = get_first_image_attachment($pdo, $post['id']);
+                    $categories = get_post_categories($pdo, $post['id']);
+                    ?>
+                    <div class="col-lg-6 col-xl-4">
+                        <div class="card h-100 shadow-sm post-card">
+                            <?php if ($thumbnail_path): ?>
+                                <img src="<?php echo safe_output($thumbnail_path); ?>" 
+                                     class="card-img-top" 
+                                     alt="게시물 미리보기"
+                                     style="height: 200px; object-fit: cover;">
+                            <?php else: ?>
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title mb-2">
+                                    <a href="view_post.php?id=<?php echo $post['id']; ?>" class="text-decoration-none text-dark">
+                                        <?php echo safe_output($post['title']); ?>
+                                    </a>
+                                </h5>
+                                
+                                <div class="mb-2">
+                                    <?php if (!empty($categories)): ?>
+                                        <?php foreach ($categories as $category): ?>
+                                            <span class="badge bg-primary me-1">
+                                                <?php echo safe_output($category['name']); ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary">미분류</span>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <div class="mt-auto">
+                                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                                        <div>
+                                            <i class="bi bi-person"></i>
+                                            <a href="profile.php?id=<?php echo $post['user_id']; ?>" class="text-decoration-none text-muted">
+                                                <?php echo safe_output($post['username']); ?>
+                                            </a>
+                                        </div>
+                                        <div>
+                                            <i class="bi bi-calendar3"></i>
+                                            <?php echo format_date($post['created_at']); ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+            
+            <!-- 페이지네이션 -->
+            <?php if ($pagination['total_pages'] > 1): ?>
+                <nav aria-label="게시물 페이지네이션" class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        <?php if ($pagination['has_previous']): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?page=<?php echo $current_page - 1; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) . '&search_by=' . urlencode($search_by) : ''; ?>">
+                                    <i class="bi bi-chevron-left"></i> 이전
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        
+                        <?php 
+                        $start_page = max(1, $current_page - 2);
+                        $end_page = min($pagination['total_pages'], $current_page + 2);
+                        ?>
+                        
+                        <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                            <li class="page-item <?php echo ($i == $current_page) ? 'active' : ''; ?>">
+                                <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) . '&search_by=' . urlencode($search_by) : ''; ?>">
+                                    <?php echo $i; ?>
+                                </a>
+                            </li>
+                        <?php endfor; ?>
+                        
+                        <?php if ($pagination['has_next']): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?page=<?php echo $current_page + 1; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) . '&search_by=' . urlencode($search_by) : ''; ?>">
+                                    다음 <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
             <?php endif; ?>
-        </section>
+        <?php endif; ?>
     </div>
 
-    <!-- JavaScript -->
+    <!-- Footer -->
+    <footer class="bg-light mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="bi bi-journal-text"></i> <?php echo SITE_NAME; ?></h5>
+                    <p class="text-muted">현대적인 게시판 시스템과 보안 테스트 환경</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="mb-2">
+                        <a href="webhacking/index.php" class="text-decoration-none me-3">
+                            <i class="bi bi-shield-exclamation"></i> 보안 테스트
+                        </a>
+                        <?php if (is_admin()): ?>
+                            <a href="admin.php" class="text-decoration-none">
+                                <i class="bi bi-gear"></i> 관리자
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                    <small class="text-muted">
+                        &copy; <?php echo date('Y'); ?> <?php echo SITE_NAME; ?>. 교육 목적으로 제작됨.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
     <script>
-        // 썸네일 팝업 기능
-        document.querySelectorAll('.thumbnail-container').forEach(container => {
-            const popup = container.querySelector('.thumbnail-popup');
-            
-            container.addEventListener('mouseenter', () => {
-                popup.style.display = 'block';
+        // 카드 호버 효과
+        document.querySelectorAll('.post-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.classList.add('shadow');
             });
             
-            container.addEventListener('mouseleave', () => {
-                popup.style.display = 'none';
+            card.addEventListener('mouseleave', function() {
+                this.classList.remove('shadow');
+                this.classList.add('shadow-sm');
             });
         });
         
-        // 검색 폼 자동 제출 (엔터키)
-        document.querySelector('input[name="search"]').addEventListener('keypress', (e) => {
+        // 검색 폼 엔터키 지원
+        document.querySelector('input[name="search"]')?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.target.closest('form').submit();
             }
         });
+
+        // 알림 개수 애니메이션
+        const notificationBadge = document.querySelector('.badge.bg-danger');
+        if (notificationBadge) {
+            notificationBadge.style.animation = 'pulse 2s infinite';
+        }
     </script>
 </body>
 </html>

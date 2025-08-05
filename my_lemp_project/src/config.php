@@ -45,7 +45,23 @@ define('DEBUG_MODE', true);
 define('SHOW_ERRORS', DEBUG_MODE);
 
 // 취약점 테스트 모드 (교육 목적)
-define('VULNERABILITY_MODE', true); // true: 취약점 허용, false: 보안 강화
+// JSON 파일에서 동적으로 읽어옴
+$vulnerability_config_file = __DIR__ . '/vulnerability_config.json';
+$vulnerability_mode = true; // 기본값
+
+if (file_exists($vulnerability_config_file)) {
+    try {
+        $config_data = json_decode(file_get_contents($vulnerability_config_file), true);
+        if (isset($config_data['vulnerability_mode'])) {
+            $vulnerability_mode = (bool)$config_data['vulnerability_mode'];
+        }
+    } catch (Exception $e) {
+        // JSON 파일 읽기 실패 시 기본값 사용
+        error_log("Failed to read vulnerability config: " . $e->getMessage());
+    }
+}
+
+define('VULNERABILITY_MODE', $vulnerability_mode); // true: 취약점 허용, false: 보안 강화
 
 // 타임존 설정
 date_default_timezone_set(DEFAULT_TIMEZONE);
