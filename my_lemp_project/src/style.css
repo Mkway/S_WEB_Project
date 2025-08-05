@@ -27,10 +27,15 @@ body {
 }
 
 /* Bootstrap 네비게이션 커스터마이징 */
+.navbar {
+    background-color: #343a40 !important; /* 다크 그레이 배경 강제 */
+}
+
 .navbar-brand {
     font-size: 1.5rem;
     font-weight: 700;
     color: #ffffff !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* 텍스트 그림자 추가 */
 }
 
 .navbar-nav .nav-link {
@@ -38,6 +43,7 @@ body {
     padding: 0.5rem 1rem;
     transition: all 0.2s ease;
     color: #ffffff !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3); /* 텍스트 그림자 추가 */
 }
 
 .navbar-nav .nav-link:hover {
@@ -48,10 +54,12 @@ body {
 
 .navbar-text {
     color: #ffffff !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3); /* 텍스트 그림자 추가 */
 }
 
 .navbar-text strong {
     color: #ffffff !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3); /* 텍스트 그림자 추가 */
 }
 
 /* 네비게이션 아이콘 색상 */
@@ -76,7 +84,7 @@ body {
 
 /* 모바일 네비게이션 메뉴 */
 .navbar-collapse {
-    background-color: rgba(13, 110, 253, 0.95);
+    background-color: rgba(52, 58, 64, 0.95); /* 다크 그레이 배경 */
     border-radius: 0.375rem;
     margin-top: 0.5rem;
     padding: 1rem;

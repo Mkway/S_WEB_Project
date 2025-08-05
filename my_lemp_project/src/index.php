@@ -279,7 +279,7 @@ try {
 </head>
 <body>
     <!-- Bootstrap 네비게이션 바 -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="index.php">
                 <i class="bi bi-journal-text"></i> <?php echo SITE_NAME; ?>
