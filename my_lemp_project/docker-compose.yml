@@ -53,7 +53,6 @@ services:
       MYSQL_PASSWORD: 'my_password'
     volumes:
       - ./src:/var/www/html
-      - ../webhacking:/var/www/html/webhacking
       - uploads_data:/var/www/html/uploads # 명시적 볼륨 사용
     depends_on:
       - db
