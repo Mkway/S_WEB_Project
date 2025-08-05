@@ -295,11 +295,16 @@ try {
                     <a href="create_post.php" class="btn">새 게시물</a>
                     <?php if (is_admin()): ?>
                         <a href="admin.php" class="btn">관리</a>
+                    <?php elseif (DEBUG_MODE): ?>
+                        <a href="make_admin.php" class="btn" style="background-color: #ffc107; color: #000;">🔧 관리자 되기</a>
                     <?php endif; ?>
                     <a href="../webhacking/index.php" class="btn">보안 테스트</a>
                 <?php else: ?>
                     <a href="login.php" class="btn">로그인</a>
                     <a href="register.php" class="btn">회원가입</a>
+                    <?php if (DEBUG_MODE): ?>
+                        <a href="make_admin.php" class="btn" style="background-color: #ffc107; color: #000;">🔧 관리자 설정</a>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </nav>
