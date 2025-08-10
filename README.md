@@ -26,7 +26,7 @@
 - **관리자 패널**: 사용자 및 콘텐츠 관리
 - **알림 시스템**: 사용자 활동 추적 및 알림
 
-### 🔐 **포괄적인 보안 테스트 환경 (10개 완료)**
+### 🔐 **포괄적인 보안 테스트 환경 (21개 완료)**
 - **SQL Injection**: UNION, Boolean-based, Time-based, Error-based 공격
 - **XSS (Cross-Site Scripting)**: Reflected, Stored, DOM-based, Polyglot 페이로드
 - **Command Injection**: OS 명령어 실행 및 우회 기법
@@ -36,6 +36,18 @@
 - **IDOR**: Insecure Direct Object References 테스트
 - **Authentication Bypass**: 다양한 인증 우회 기법
 - **JWT (JSON Web Token)**: 토큰 조작, 알고리즘 혼동, 키 누출 공격
+- **XXE (XML External Entity)**: XML 외부 엔티티 주입 공격
+- **SSRF (Server-Side Request Forgery)**: 서버측 요청 위조 공격
+- **SSTI (Server-Side Template Injection)**: 서버측 템플릿 주입 공격
+- **HPP (HTTP Parameter Pollution)**: HTTP 매개변수 오염 공격
+- **NoSQL Injection**: MongoDB, CouchDB 등 NoSQL 데이터베이스 주입
+- **LDAP Injection**: LDAP 디렉토리 서비스 주입 공격
+- **XPath Injection**: XPath 표현식 주입을 통한 XML 데이터 조작
+- **Insecure Deserialization**: 불안전한 역직렬화를 통한 코드 실행
+- **CORS Misconfiguration**: 교차 출처 리소스 공유 설정 오류
+- **GraphQL Injection**: GraphQL API 쿼리 조작 및 정보 노출
+- **Business Logic Errors**: 비즈니스 로직 결함 악용
+- **Open Redirect**: 신뢰할 수 있는 도메인을 통한 피싱 공격
 - **현대적 Bootstrap 5 UI**: 반응형 디자인과 직관적 인터페이스
 
 ### 🛡️ **고급 보안 기능**
@@ -286,9 +298,9 @@ docker-compose exec php bash
 6. **방어 메커니즘 구현 실습**
 
 ### 프로젝트 통계
-- **총 보안 테스트**: 10개 완료 (PayloadsAllTheThings 커버리지 18%)
-- **코드 라인 수**: 15,000+ 라인
-- **테스트 케이스**: 50+ 시나리오
+- **총 보안 테스트**: 21개 완료 (PayloadsAllTheThings 커버리지 37%)
+- **코드 라인 수**: 16,000+ 라인
+- **테스트 케이스**: 80+ 시나리오
 - **지원 언어**: PHP 8.2, JavaScript ES6+
 - **Docker 이미지**: 3개 (Nginx, PHP-FPM, MariaDB)
 

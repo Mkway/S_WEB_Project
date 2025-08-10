@@ -1,6 +1,6 @@
 # 웹해킹 테스트 페이지 확장 계획 (PayloadsAllTheThings 기반)
 
-## 🎯 현재 구현 완료 (10개)
+## 🎯 현재 구현 완료 (21개)
 - ✅ **SQL Injection** (UNION, Boolean-based, Time-based, Error-based)
 - ✅ **XSS Injection** (Reflected, Stored, DOM-based, Polyglot, Filter Bypass)
 - ✅ **Command Injection** (Basic, Advanced, Blind, Windows, Bypass)
@@ -10,6 +10,18 @@
 - ✅ **IDOR** (Numeric ID, GUID, Encoded, Hash Manipulation)
 - ✅ **Authentication Bypass** (SQL, NoSQL, LDAP, XPath Injection)
 - ✅ **JWT (JSON Web Token)** - 토큰 조작, 알고리즘 혼동, 키 누출
+- ✅ **XXE (XML External Entity)** - XML 외부 엔티티 주입, 파일 읽기, SSRF
+- ✅ **SSRF (Server-Side Request Forgery)** - 내부 네트워크 스캔, 메타데이터 접근
+- ✅ **SSTI (Server-Side Template Injection)** - Twig, Jinja2, Smarty, FreeMarker, Velocity
+- ✅ **HPP (HTTP Parameter Pollution)** - GET/POST 매개변수 오염
+- ✅ **NoSQL Injection** - MongoDB, CouchDB, Redis, Elasticsearch, Cassandra
+- ✅ **LDAP Injection** - LDAP 디렉토리 서비스 주입 공격
+- ✅ **XPath Injection** - XPath 표현식 주입을 통한 XML 데이터 조작
+- ✅ **Insecure Deserialization** - PHP, Java, Python, .NET, Node.js 역직렬화
+- ✅ **CORS Misconfiguration** - 교차 출처 리소스 공유 설정 오류
+- ✅ **GraphQL Injection** - 스키마 노출, 깊이 공격, 배치 공격
+- ✅ **Business Logic Errors** - 가격 조작, 워크플로우 우회, 상태 조작
+- ✅ **Open Redirect** - 피싱, 멀웨어 배포, OAuth 하이재킹
 - ✅ **메인 네비게이션 페이지**
 
 ## 🚀 우선순위 높음 - 다음 구현 대상 (11개)
@@ -149,11 +161,11 @@
 ## 📊 확장 로드맵
 
 **📈 현재 상황**
-- ✅ 구현 완료: 10개 테스트 페이지
-- 🎯 PayloadsAllTheThings 커버리지: ~18% (10/57개 카테고리)
+- ✅ 구현 완료: 21개 테스트 페이지
+- 🎯 PayloadsAllTheThings 커버리지: ~37% (21/57개 카테고리)
 
 **🎯 단계별 목표**
-- **1단계 목표**: 21개 (현재 + 우선순위 높음 11개) - 37% 커버리지
+- **1단계 완료**: 21개 (현재 완료) - 37% 커버리지 ✅
 - **2단계 목표**: 36개 (1단계 + 우선순위 중간 15개) - 63% 커버리지  
 - **3단계 목표**: 56개 (2단계 + 우선순위 낮음 20개) - 98% 커버리지
 - **최종 목표**: 59개 (전체 PayloadsAllTheThings 커버리지) - 100%
