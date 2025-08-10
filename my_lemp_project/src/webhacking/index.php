@@ -212,9 +212,73 @@ if (!is_logged_in()) {
 
             <!-- HTTP Parameter Pollution -->
             <div class="test-card">
-                <h3>🔄 HTTP Parameter Pollution</h3>
+                <h3>🔄 HTTP Parameter Pollution (HPP)</h3>
                 <p>HTTP 매개변수 오염 취약점을 테스트합니다.</p>
                 <a href="hpp_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- NoSQL Injection -->
+            <div class="test-card">
+                <h3>🗄️ NoSQL Injection</h3>
+                <p>MongoDB, CouchDB 등 NoSQL 데이터베이스 주입 취약점을 테스트합니다.</p>
+                <a href="nosql_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- LDAP Injection -->
+            <div class="test-card">
+                <h3>🏢 LDAP Injection</h3>
+                <p>LDAP 디렉토리 서비스 주입 취약점을 테스트합니다.</p>
+                <a href="ldap_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- XPath Injection -->
+            <div class="test-card">
+                <h3>📍 XPath Injection</h3>
+                <p>XPath 표현식 주입을 통한 XML 데이터 조작 취약점을 테스트합니다.</p>
+                <a href="xpath_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- Insecure Deserialization -->
+            <div class="test-card">
+                <h3>🔓 Insecure Deserialization</h3>
+                <p>불안전한 역직렬화를 통한 원격 코드 실행 취약점을 테스트합니다.</p>
+                <a href="deserialization_test.php" class="btn">테스트 시작</a>
+            </div>
+        </section>
+
+        <!-- 진행률 표시 -->
+        <section style="margin-top: 40px;">
+            <h2>📊 테스트 현황</h2>
+            <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; border-left: 5px solid #28a745;">
+                <h3 style="color: #28a745; margin-bottom: 15px;">✅ 구현 완료된 취약점 테스트 (17개)</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <span>• SQL Injection</span>
+                    <span>• XSS (Cross-Site Scripting)</span>
+                    <span>• Command Injection</span>
+                    <span>• File Inclusion (LFI/RFI)</span>
+                    <span>• Directory Traversal</span>
+                    <span>• CSRF</span>
+                    <span>• IDOR</span>
+                    <span>• Authentication Bypass</span>
+                    <span>• JWT (JSON Web Token)</span>
+                    <span>• XXE (XML External Entity)</span>
+                    <span>• SSRF (Server-Side Request Forgery)</span>
+                    <span>• SSTI (Server-Side Template Injection)</span>
+                    <span>• HPP (HTTP Parameter Pollution)</span>
+                    <span>• NoSQL Injection</span>
+                    <span>• LDAP Injection</span>
+                    <span>• XPath Injection</span>
+                    <span>• Insecure Deserialization</span>
+                </div>
+                <div style="background: #ffffff; padding: 15px; border-radius: 5px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><strong>PayloadsAllTheThings 커버리지:</strong></span>
+                        <span style="font-size: 18px; color: #28a745;"><strong>~30% (17/57개 카테고리)</strong></span>
+                    </div>
+                    <div style="width: 100%; background: #e9ecef; height: 10px; border-radius: 5px; margin-top: 10px;">
+                        <div style="width: 30%; background: #28a745; height: 100%; border-radius: 5px;"></div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -230,6 +294,9 @@ if (!is_logged_in()) {
                 방어 방법도 함께 제공됩니다.</p>
                 
                 <p><strong>실습 환경:</strong> 모든 테스트는 격리된 환경에서 안전하게 수행됩니다.</p>
+                
+                <p><strong>최신 업데이트:</strong> 2025년 8월 기준으로 17개의 주요 웹 보안 취약점 테스트가 
+                포함되어 있으며, 지속적으로 확장하고 있습니다.</p>
             </div>
         </section>
     </div>
