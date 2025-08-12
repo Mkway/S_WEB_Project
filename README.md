@@ -131,15 +131,27 @@ S_WEB_Project/
 │   ├── src/                        # PHP 애플리케이션
 │   │   ├── webhacking/             # 🔥 보안 테스트 환경
 │   │   │   ├── index.php           # 테스트 메인 페이지 (Bootstrap 5)
+│   │   │   ├── auth_bypass.php     # Authentication Bypass 테스트
+│   │   │   ├── business_logic_test.php # Business Logic Errors 테스트
+│   │   │   ├── command_injection.php # Command Injection 테스트
+│   │   │   ├── cors_test.php       # CORS Misconfiguration 테스트
+│   │   │   ├── csrf_test.php       # CSRF 테스트
+│   │   │   ├── deserialization_test.php # Insecure Deserialization 테스트
+│   │   │   ├── directory_traversal.php # Directory Traversal 테스트
+│   │   │   ├── file_inclusion.php  # File Inclusion 테스트
+│   │   │   ├── graphql_test.php    # GraphQL Injection 테스트
+│   │   │   ├── hpp_test.php        # HPP 테스트
+│   │   │   ├── idor_test.php       # IDOR 테스트
+│   │   │   ├── jwt_test.php        # JWT 취약점 테스트
+│   │   │   ├── ldap_test.php       # LDAP Injection 테스트
+│   │   │   ├── nosql_test.php      # NoSQL Injection 테스트
+│   │   │   ├── open_redirect_test.php # Open Redirect 테스트
 │   │   │   ├── sql_injection.php   # SQL Injection 테스트
+│   │   │   ├── ssrf_test.php       # SSRF 테스트
+│   │   │   ├── ssti_test.php       # SSTI 테스트
+│   │   │   ├── xpath_test.php      # XPath Injection 테스트
 │   │   │   ├── xss_test.php        # XSS 테스트
-│   │   │   ├── command_injection.php
-│   │   │   ├── file_inclusion.php
-│   │   │   ├── directory_traversal.php
-│   │   │   ├── csrf_test.php
-│   │   │   ├── idor_test.php
-│   │   │   ├── auth_bypass.php
-│   │   │   └── jwt_test.php        # 🆕 JWT 취약점 테스트
+│   │   │   └── xxe_test.php        # XXE 테스트
 │   │   ├── test/                   # PHPUnit 테스트
 │   │   ├── config.php              # 애플리케이션 설정
 │   │   ├── utils.php               # 보안 유틸리티
