@@ -121,6 +121,7 @@ docker-compose exec php ./vendor/bin/phpunit test/SecurityTest.php
 
 ```
 S_WEB_Project/
+├── security_analysis/              # 웹 취약점 분석 문서
 ├── my_lemp_project/
 │   ├── docker-compose.yml          # Docker 서비스 정의
 │   ├── nginx/                      # Nginx 설정 및 SSL
