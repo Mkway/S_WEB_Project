@@ -74,6 +74,16 @@ services:
       timeout: 20s
       retries: 10
 
+  my_node_app:
+    build:
+      context: ./node_app
+      dockerfile: Dockerfile
+    container_name: my_node_app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./node_app:/app
+
 volumes:
   db_data: # 데이터베이스 데이터를 영구적으로 저장하기 위한 볼륨
   uploads_data: # 업로드 파일을 위한 볼륨 추가
