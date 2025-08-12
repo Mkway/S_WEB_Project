@@ -24,7 +24,75 @@
 - ✅ **Open Redirect** - 피싱, 멀웨어 배포, OAuth 하이재킹
 - ✅ **메인 네비게이션 페이지**
 
-## 🚀 우선순위 높음 - 다음 구현 대상 (11개)
+## 🚀 우선순위 높음 - 다음 구현 대상 (5개)
+
+### 🔐 **인증 및 세션 보안**
+- [ ] **OAuth Misconfiguration** - OAuth 2.0/OpenID Connect 취약점 (PHP 구현 가능)
+- [ ] **SAML Injection** - SAML 인증 우회 및 조작 (PHP 구현 가능)
+- [ ] **Session Management** - 세션 고정, 하이재킹, 예측 (PHP 구현 가능)
+
+### 🌐 **네트워크 및 프로토콜 공격**
+- [ ] **Request Smuggling** - HTTP 요청 밀수, 프록시 우회 (PHP 구현 어려움: 네트워크/웹 서버 수준)
+
+### 🎭 **고급 공격 기법**
+- [ ] **Prototype Pollution** - JavaScript 프로토타입 오염 (Node.js/JS 구현)
+
+## 🎨 우선순위 중간 - 특수 공격 기법 (13개)
+
+### 📤 **업로드 및 파일 처리**
+- [ ] **Upload Insecure Files** - 악성 파일 업로드 우회 (PHP 구현 가능)
+- [ ] **Zip Slip** - 압축 파일 경로 조작 (PHP 구현 가능)
+- [ ] **CSV Injection** - 스프레드시트 수식 주입 (PHP 구현 가능)
+
+### 🕷️ **클라이언트 사이드 공격**
+- [ ] **DOM Clobbering** - HTML 요소를 통한 JavaScript 변수 오염 (JS 구현)
+- [ ] **Clickjacking** - 투명한 iframe을 통한 클릭 도용 (JS/HTML 구현)
+- [ ] **Tabnabbing** - 새 탭에서 원본 페이지 조작 (JS 구현)
+
+### 💡 **비즈니스 로직 및 데이터 조작**
+- [ ] **Mass Assignment** - 대량 할당 취약점 (PHP 구현 가능)
+- [ ] **Race Condition** - 경합 상태 악용 (PHP 구현 가능)
+- [ ] **Type Juggling** - PHP 타입 저글링 (PHP 구현 가능)
+
+### 🔍 **정보 수집 및 누출**
+- [ ] **API Key Leaks** - API 키 노출 및 악용 (PHP 구현 가능)
+- [ ] **Hidden Parameters** - 숨겨진 매개변수 발견 (PHP 구현 가능)
+- [ ] **ORM Leak** - ORM 정보 누출 (PHP 구현 가능)
+- [ ] **Insecure Source Code Management** - 소스 코드 관리 취약점 (웹 서버/환경 설정)
+
+## 🔬 우선순위 낮음 - 전문 기술 및 특수 환경 (16개)
+
+### 🧪 **주입 공격 확장**
+- [ ] **XSLT Injection** - XSLT 스타일시트 조작 (PHP 구현 가능)
+- [ ] **LaTeX Injection** - LaTeX 문서 처리 취약점 (PHP 구현 가능)
+- [ ] **Server Side Include Injection** - SSI 명령어 주입 (웹 서버 설정)
+
+### 🌊 **네트워크 및 인프라**
+- [ ] **DNS Rebinding** - DNS 리바인딩 공격 (네트워크/DNS 서버)
+- [ ] **Web Cache Deception** - 웹 캐시 기만 (웹 서버/캐싱 인프라)
+- [ ] **Reverse Proxy Misconfigurations** - 리버스 프록시 설정 오류 (웹 서버/프록시)
+- [ ] **Web Sockets** - WebSocket 프로토콜 취약점 (PHP 부분적 구현 가능)
+
+### 🎯 **특수 환경 및 플랫폼**
+- [ ] **Java RMI** - Java Remote Method Invocation 취약점 (Java 구현)
+- [ ] **Headless Browser** - 헤드리스 브라우저 환경 공격 (Python/Node.js 구현)
+- [ ] **CVE Exploits** - 알려진 CVE 취약점 모음 (다양한 언어/환경)
+
+### 🔧 **기타 공격 벡터**
+- [ ] **CRLF Injection** - 캐리지 리턴/라인 리드 주입 (PHP 구현 가능)
+- [ ] **External Variable Modification** - 외부 변수 조작 (PHP 구현 가능)
+- [ ] **Insecure Management Interface** - 관리 인터페이스 취약점 (PHP 구현 가능)
+- [ ] **Insecure Randomness** - 불안전한 난수 생성 (PHP 구현 가능)
+- [ ] **Regular Expression** - 정규식 DoS (ReDoS) (PHP 구현 가능)
+- [ ] **Dependency Confusion** - 의존성 혼동 공격 (패키지 관리자/빌드 시스템)
+
+## 💀 고위험 - DoS 및 시스템 영향 (2개)
+- [ ] **Denial of Service** - 서비스 거부 공격 (PHP 부분적 구현 가능)
+- [ ] **Client Side Path Traversal** - 클라이언트 측 경로 순회 (JS 구현)
+
+## 🤖 신기술 및 트렌드 (2개)
+- [ ] **Prompt Injection** - AI/LLM 프롬프트 주입 공격 (Python/Node.js 구현)
+- [ ] **Account Takeover** - 계정 탈취 시나리오 종합 (PHP 구현 가능)
 
 ### 🔐 **인증 및 세션 보안**
 - [x] **OAuth Misconfiguration** - OAuth 2.0/OpenID Connect 취약점
