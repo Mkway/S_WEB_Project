@@ -14,7 +14,7 @@ $categories_stmt = $pdo->query("SELECT * FROM categories ORDER BY name");
 $categories = $categories_stmt->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = $_POST['title'];
+    $title = safe_output($_POST['title']);
     $content = $_POST['content'];
     $user_id = $_SESSION['user_id'];
 

@@ -242,7 +242,7 @@ if ($_POST && isset($_POST['payload'])) {
             <p>사용자 입력이 즉시 응답에 반영되는 XSS 공격입니다.</p>
             <div class="payload-buttons">
                 <?php foreach ($payloads['reflected'] as $p): ?>
-                    <button class="payload-btn" onclick="setPayload('<?php echo addslashes($p); ?>', 'reflected')" title="<?php echo htmlspecialchars($p); ?>">
+                    <button class="payload-btn" onclick="setPayload('<?php echo addslashes(htmlspecialchars($p)); ?>', 'reflected')" title="<?php echo htmlspecialchars($p); ?>">
                         <?php echo htmlspecialchars(substr($p, 0, 25)) . '...'; ?>
                     </button>
                 <?php endforeach; ?>
@@ -255,7 +255,7 @@ if ($_POST && isset($_POST['payload'])) {
             <p>악성 스크립트가 서버에 저장되어 다른 사용자에게 영향을 주는 XSS 공격입니다.</p>
             <div class="payload-buttons">
                 <?php foreach ($payloads['stored'] as $p): ?>
-                    <button class="payload-btn" onclick="setPayload('<?php echo addslashes($p); ?>', 'stored')" title="<?php echo htmlspecialchars($p); ?>">
+                    <button class="payload-btn" onclick="setPayload('<?php echo addslashes(htmlspecialchars($p)); ?>', 'stored')" title="<?php echo htmlspecialchars($p); ?>">
                         <?php echo htmlspecialchars(substr($p, 0, 25)) . '...'; ?>
                     </button>
                 <?php endforeach; ?>
@@ -268,7 +268,7 @@ if ($_POST && isset($_POST['payload'])) {
             <p>클라이언트 측 JavaScript에서 DOM 조작을 통해 발생하는 XSS 공격입니다.</p>
             <div class="payload-buttons">
                 <?php foreach ($payloads['dom'] as $p): ?>
-                    <button class="payload-btn" onclick="setPayload('<?php echo addslashes($p); ?>', 'dom')" title="<?php echo htmlspecialchars($p); ?>">
+                    <button class="payload-btn" onclick="setPayload('<?php echo addslashes(htmlspecialchars($p)); ?>', 'dom')" title="<?php echo htmlspecialchars($p); ?>">
                         <?php echo htmlspecialchars(substr($p, 0, 25)) . '...'; ?>
                     </button>
                 <?php endforeach; ?>
@@ -281,7 +281,7 @@ if ($_POST && isset($_POST['payload'])) {
             <p>다양한 컨텍스트에서 작동하는 범용 XSS 페이로드입니다.</p>
             <div class="payload-buttons">
                 <?php foreach ($payloads['polyglot'] as $p): ?>
-                    <button class="payload-btn" onclick="setPayload('<?php echo addslashes($p); ?>', 'reflected')" title="<?php echo htmlspecialchars($p); ?>">
+                    <button class="payload-btn" onclick="setPayload('<?php echo addslashes(htmlspecialchars($p)); ?>', 'reflected')" title="<?php echo htmlspecialchars($p); ?>">
                         Polyglot <?php echo array_search($p, $payloads['polyglot']) + 1; ?>
                     </button>
                 <?php endforeach; ?>
@@ -294,7 +294,7 @@ if ($_POST && isset($_POST['payload'])) {
             <p>XSS 필터를 우회하기 위한 다양한 인코딩 및 난독화 기법입니다.</p>
             <div class="payload-buttons">
                 <?php foreach ($payloads['bypass'] as $p): ?>
-                    <button class="payload-btn" onclick="setPayload('<?php echo addslashes($p); ?>', 'reflected')" title="<?php echo htmlspecialchars($p); ?>">
+                    <button class="payload-btn" onclick="setPayload('<?php echo addslashes(htmlspecialchars($p)); ?>', 'reflected')" title="<?php echo htmlspecialchars($p); ?>">
                         <?php echo htmlspecialchars(substr($p, 0, 25)) . '...'; ?>
                     </button>
                 <?php endforeach; ?>
