@@ -244,6 +244,188 @@ if (!is_logged_in()) {
                 <p>불안전한 역직렬화를 통한 원격 코드 실행 취약점을 테스트합니다.</p>
                 <a href="deserialization_test.php" class="btn">테스트 시작</a>
             </div>
+
+            <!-- CORS Misconfiguration -->
+            <div class="test-card">
+                <h3>🌐 CORS Misconfiguration</h3>
+                <p>교차 출처 리소스 공유 설정 오류 취약점을 테스트합니다.</p>
+                <a href="cors_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- GraphQL Injection -->
+            <div class="test-card">
+                <h3>🔗 GraphQL Injection</h3>
+                <p>GraphQL API 쿼리 조작 및 정보 노출 취약점을 테스트합니다.</p>
+                <a href="graphql_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- Business Logic Errors -->
+            <div class="test-card">
+                <h3>💼 Business Logic Errors</h3>
+                <p>비즈니스 로직 결함 악용 취약점을 테스트합니다.</p>
+                <a href="business_logic_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- Open Redirect -->
+            <div class="test-card">
+                <h3>🔀 Open Redirect</h3>
+                <p>신뢰할 수 있는 도메인을 통한 피싱 공격 취약점을 테스트합니다.</p>
+                <a href="open_redirect_test.php" class="btn">테스트 시작</a>
+            </div>
+        </section>
+
+        <!-- 진행률 표시 -->
+        <section style="margin-top: 40px;">
+            <h2>📊 테스트 현황</h2>
+            <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; border-left: 5px solid #28a745;">
+                <h3 style="color: #28a745; margin-bottom: 15px;">✅ 구현 완료된 취약점 테스트 (21개)</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <span>• SQL Injection</span>
+                    <span>• XSS (Cross-Site Scripting)</span>
+                    <span>• Command Injection</span>
+                    <span>• File Inclusion (LFI/RFI)</span>
+                    <span>• Directory Traversal</span>
+                    <span>• CSRF</span>
+                    <span>• IDOR</span>
+                    <span>• Authentication Bypass</span>
+                    <span>• JWT (JSON Web Token)</span>
+                    <span>• XXE (XML External Entity)</span>
+                    <span>• SSRF (Server-Side Request Forgery)</span>
+                    <span>• SSTI (Server-Side Template Injection)</span>
+                    <span>• HPP (HTTP Parameter Pollution)</span>
+                    <span>• NoSQL Injection</span>
+                    <span>• LDAP Injection</span>
+                    <span>• XPath Injection</span>
+                    <span>• Insecure Deserialization</span>
+                    <span>• CORS Misconfiguration</span>
+                    <span>• GraphQL Injection</span>
+                    <span>• Business Logic Errors</span>
+                    <span>• Open Redirect</span>
+                </div>
+                <div style="background: #ffffff; padding: 15px; border-radius: 5px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><strong>PayloadsAllTheThings 커버리지:</strong></span>
+                        <span style="font-size: 18px; color: #28a745;"><strong>~37% (21/57개 카테고리)</strong></span>
+                    </div>
+                    <div style="width: 100%; background: #e9ecef; height: 10px; border-radius: 5px; margin-top: 10px;">
+                        <div style="width: 37%; background: #28a745; height: 100%; border-radius: 5px;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 앞으로 구현해야 할 테스트 -->
+        <section style="margin-top: 40px;">
+            <h2>🚀 앞으로 구현해야 할 테스트</h2>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 5px solid #007bff;">
+                <h3 style="color: #007bff; margin-bottom: 15px;">우선순위 높음</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <span>• OAuth Misconfiguration</span>
+                    <span>• SAML Injection</span>
+                    <span>• Session Management</span>
+                    <span>• Request Smuggling</span>
+                    <span>• Prototype Pollution</span>
+                </div>
+
+                <h3 style="color: #007bff; margin-bottom: 15px;">우선순위 중간</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <span>• Upload Insecure Files</span>
+                    <span>• Zip Slip</span>
+                    <span>• CSV Injection</span>
+                    <span>• DOM Clobbering</span>
+                    <span>• Clickjacking</span>
+                    <span>• Tabnabbing</span>
+                    <span>• Mass Assignment</span>
+                    <span>• Race Condition</span>
+                    <span>• Type Juggling</span>
+                    <span>• API Key Leaks</span>
+                    <span>• Hidden Parameters</span>
+                    <span>• ORM Leak</span>
+                    <span>• Insecure Source Code Management</span>
+                </div>
+
+                <h3 style="color: #007bff; margin-bottom: 15px;">우선순위 낮음</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <span>• XSLT Injection</span>
+                    <span>• LaTeX Injection</span>
+                    <span>• Server Side Include Injection</span>
+                    <span>• DNS Rebinding</span>
+                    <span>• Web Cache Deception</span>
+                    <span>• Reverse Proxy Misconfigurations</span>
+                    <span>• Web Sockets</span>
+                    <span>• CRLF Injection</span>
+                    <span>• External Variable Modification</span>
+                    <span>• Insecure Management Interface</span>
+                    <span>• Insecure Randomness</span>
+                    <span>• Regular Expression (ReDoS)</span>
+                </div>
+
+                <h3 style="color: #007bff; margin-bottom: 15px;">고위험</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <span>• Denial of Service</span>
+                    <span>• Client Side Path Traversal</span>
+                </div>
+
+                <h3 style="color: #007bff; margin-bottom: 15px;">신기술 및 트렌드</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <span>• Prompt Injection</span>
+                    <span>• Account Takeover</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 추가 정보 -->
+        <section style="margin-top: 40px;">
+            <h2>📚 추가 리소스</h2>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                <p><strong>PayloadsAllTheThings:</strong> 이 테스트 페이지는 
+                <a href="https://github.com/swisskyrepo/PayloadsAllTheThings" target="_blank" rel="noopener">
+                PayloadsAllTheThings</a> 저장소의 페이로드를 참고하여 구성되었습니다.</p>
+                
+                <p><strong>보안 학습:</strong> 각 테스트 페이지에서는 해당 취약점에 대한 설명과 
+                방어 방법도 함께 제공됩니다.</p>
+                
+                <p><strong>실습 환경:</strong> 모든 테스트는 격리된 환경에서 안전하게 수행됩니다.</p>
+                
+                <p><strong>최신 업데이트:</strong> 2025년 8월 기준으로 21개의 주요 웹 보안 취약점 테스트가 
+                포함되어 있으며, 지속적으로 확장하고 있습니다.</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // 테스트 카드 클릭 효과
+        document.querySelectorAll('.test-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'A') {
+                    const link = this.querySelector('.btn');
+                    if (link) {
+                        window.location.href = link.href;
+                    }
+                }
+            });
+        });
+
+        // 경고 메시지 확인
+        document.querySelectorAll('.test-card .btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const confirmed = confirm(
+                    '이 테스트는 교육 목적으로만 사용되어야 합니다.
+' +
+                    '실제 운영 환경에서는 절대 사용하지 마세요.
+
+' +
+                    '계속하시겠습니까?'
+                );
+                
+                if (!confirmed) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
         </section>
 
         <!-- 진행률 표시 -->

