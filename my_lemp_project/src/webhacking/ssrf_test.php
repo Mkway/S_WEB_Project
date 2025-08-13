@@ -1,9 +1,7 @@
 <?php
 /**
- * SSRF (Server-Side Request Forgery) 취약점 테스트 페이지
- * 교육 목적으로만 사용하시기 바랍니다.
+ * SSRF (Server-Side Request Forgery) 테스트 페이지
  */
-
 session_start();
 require_once '../db.php';
 require_once '../utils.php';
@@ -14,71 +12,42 @@ if (!is_logged_in()) {
     exit();
 }
 
-// This page demonstrates a basic Server-Side Request Forgery vulnerability.
-// An SSRF vulnerability allows an attacker to induce the server-side application
-// to make HTTP requests to an arbitrary domain specified by the attacker.
-// This can be used to target internal systems behind firewalls, access local files,
-// or interact with other services that the server has access to.
-
-// --- How it works ---
-// The application takes a URL as input from the user and then fetches the content
-// from that URL using a server-side function (e.g., file_get_contents(), curl).
-// If the input is not properly validated, an attacker can supply internal IP addresses,
-// localhost, or file paths, causing the server to make requests to these locations.
-
-// --- Exploitation Examples ---
-// 1. Accessing internal network resources: http://localhost/admin
-// 2. Accessing cloud metadata services (AWS EC2): http://169.254.169.254/latest/meta-data/
-// 3. Reading local files (if file:// protocol is allowed): file:///etc/passwd
-
-// --- Mitigation ---
-// - Validate and sanitize user-supplied URLs: Use a whitelist of allowed domains/protocols.
-// - Disable unused URL schemas (e.g., file://, gopher://, ftp://).
-// - Implement network segmentation and firewall rules to restrict outbound connections.
-// - Use a URL parsing library to ensure the URL points to an expected host.
-
 $result = '';
-$url = '';
+$error = '';
+$url = $_POST['url'] ?? '';
 
-if (isset($_GET['url'])) {
-    $url = $_GET['url'];
-    
-    // 취약점 시뮬레이션을 위한 안전한 구현
-    // 실제 환경에서는 절대 이렇게 구현하지 마세요!
-    if (empty($url)) {
-        $result = "URL을 입력해주세요.";
+// 페이로드 모음
+$payloads = [
+    'http://example.com', // 외부 정상 요청
+    'http://localhost/admin.php', // 내부 서버의 관리자 페이지 접근 시도
+    'file:///etc/passwd', // 로컬 파일 읽기 시도
+    'http://169.254.169.254/latest/meta-data/', // 클라우드 메타데이터 접근 시도 (AWS)
+];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($url)) {
+    // SSRF 방어 로직 (주석 처리하여 취약점 활성화)
+    /*
+    $parsed_url = parse_url($url);
+    if ($parsed_url === false || !isset($parsed_url['host'])) {
+        $error = '유효하지 않은 URL입니다.';
     } else {
-        // 교육 목적으로만 제한된 SSRF 시뮬레이션
-        if (strpos($url, 'file://') === 0) {
-            $result = "[시뮬레이션] file:// 프로토콜 감지됨\n";
-            $result .= "실제 환경에서는 로컬 파일 접근이 가능할 수 있습니다.\n";
-            $result .= "예: /etc/passwd, C:\\Windows\\system32\\drivers\\etc\\hosts 등";
-        } elseif (strpos($url, '127.0.0.1') !== false || strpos($url, 'localhost') !== false) {
-            $result = "[시뮬레이션] 내부 네트워크 접근 시도 감지\n";
-            $result .= "실제 환경에서는 내부 서비스에 접근할 수 있습니다.\n";
-            $result .= "예: 관리자 패널, 내부 API, 데이터베이스 등";
-        } elseif (strpos($url, '169.254.169.254') !== false) {
-            $result = "[시뮬레이션] AWS EC2 메타데이터 서비스 접근 시도\n";
-            $result .= "실제 환경에서는 AWS 인스턴스 정보 및 크리덴셜 노출 가능\n";
-            $result .= "예: IAM 역할, 보안 그룹, 인스턴스 정보 등";
+        $ip = gethostbyname($parsed_url['host']);
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            // 안전한 경우에만 요청
+            $result = @file_get_contents($url);
         } else {
-            // 외부 URL만 실제로 요청 (안전한 테스트)
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 5,
-                    'user_agent' => 'SSRF-Test-Agent'
-                ]
-            ]);
-            $result = @file_get_contents($url, false, $context);
-            
-            if ($result === false) {
-                $result = "외부 URL 접근 실패: 네트워크 오류 또는 접근 제한";
-            } else {
-                $result = "외부 URL 접근 성공:\n" . htmlspecialchars(substr($result, 0, 500)) . "...";
-            }
+            $error = '허용되지 않은 IP 주소입니다. (내부 IP 접근 불가)';
         }
     }
+    */
+
+    // 취약한 코드: 사용자 입력을 검증 없이 그대로 사용
+    $result = @file_get_contents($url);
+    if ($result === false) {
+        $error = '요청한 URL의 내용을 가져올 수 없습니다.';
+    }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -86,189 +55,85 @@ if (isset($_GET['url'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSRF 취약점 테스트 - <?php echo SITE_NAME; ?></title>
+    <title>SSRF 테스트 - 보안 테스트</title>
     <link rel="stylesheet" href="../style.css">
     <style>
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        h1, h2 {
-            color: #333;
-        }
-        .vulnerability-description, .mitigation-guide {
-            background-color: #f9f9f9;
-            border-left: 5px solid #f39c12;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-        }
-        .mitigation-guide {
-            border-color: #28a745;
-        }
-        form {
-            margin-bottom: 20px;
-        }
-        input[type="text"] {
-            width: 70%;
-            padding: 10px;
-            margin-right: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        input[type="submit"] {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        input[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-        pre {
-            background-color: #eee;
-            padding: 15px;
-            border-radius: 4px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .error {
-            color: red;
-            font-weight: bold;
-        }
+        /* 기존 xss_test.php와 유사한 스타일 */
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 네비게이션 바 -->
         <nav class="nav">
-            <h1>SSRF 취약점 테스트</h1>
+            <h1>SSRF (Server-Side Request Forgery) 테스트</h1>
             <div class="nav-links">
-                <span>환영합니다, <?php echo safe_output($_SESSION['username']); ?>님!</span>
-                <a href="../index.php" class="btn">메인으로</a>
-                <a href="index.php" class="btn">웹해킹 메뉴</a>
-                <a href="../logout.php" class="btn">로그아웃</a>
+                <a href="index.php" class="btn">보안 테스트 메인</a>
+                <a href="../index.php" class="btn">홈</a>
             </div>
         </nav>
 
-        <div class="vulnerability-description">
-            <h2>🌐 SSRF (Server-Side Request Forgery) 취약점</h2>
-            <p><strong>설명:</strong> 서버가 공격자가 제어하는 URL로 요청을 보내도록 유도하는 공격입니다. 
-            내부 네트워크 스캔, 메타데이터 서비스 접근, 로컬 파일 읽기 등이 가능합니다.</p>
-            
-            <h3>📋 테스트 페이로드:</h3>
-            <div style="margin: 10px 0;">
-                <button onclick="testPayload('http://127.0.0.1')" class="payload-btn">내부 네트워크</button>
-                <button onclick="testPayload('http://localhost/admin')" class="payload-btn">관리자 페이지</button>
-                <button onclick="testPayload('file:///etc/passwd')" class="payload-btn">시스템 파일</button>
-                <button onclick="testPayload('http://169.254.169.254/latest/meta-data/')" class="payload-btn">AWS 메타데이터</button>
-                <button onclick="testPayload('https://httpbin.org/ip')" class="payload-btn">외부 API</button>
+        <div class="info-box">
+            <h3>🚨 Server-Side Request Forgery (SSRF) 테스트</h3>
+            <p><strong>SSRF</strong>는 공격자가 서버로 하여금 임의의 다른 서버로 요청을 보내도록 조작하는 공격입니다.</p>
+            <p>이를 통해 내부 네트워크 정보 유출, 로컬 파일 접근, 다른 서비스와의 상호작용 등이 가능해질 수 있습니다.</p>
+        </div>
+
+        <div class="payload-section">
+            <h3>🎯 SSRF 페이로드 예시</h3>
+            <div class="payload-buttons">
+                <?php foreach ($payloads as $p): ?>
+                    <button class="payload-btn" onclick="setPayload('<?php echo htmlspecialchars($p, ENT_QUOTES); ?>')">
+                        <?php echo htmlspecialchars($p); ?>
+                    </button>
+                <?php endforeach; ?>
             </div>
         </div>
 
-        <form action="" method="GET">
-            <label for="url">🎯 테스트할 URL 입력:</label><br>
-            <input type="text" id="url" name="url" value="<?php echo htmlspecialchars($url); ?>" placeholder="예: http://127.0.0.1 또는 file:///etc/passwd" style="width: 80%;">
-            <input type="submit" value="요청 전송" class="btn">
+        <form method="post" class="test-form">
+            <h3>🧪 URL 내용 가져오기</h3>
+            <label for="url">테스트할 URL:</label>
+            <textarea name="url" id="url" placeholder="여기에 테스트할 URL을 입력하거나 위의 버튼을 클릭하세요"><?php echo htmlspecialchars($url); ?></textarea>
+            <br><br>
+            <button type="submit" class="btn" style="background: #dc3545;">요청 보내기</button>
         </form>
 
-        <?php if (!empty($result)): ?>
-            <div style="margin-top: 20px;">
-                <h2>📊 테스트 결과:</h2>
-                <pre style="background: #f1f3f4; padding: 15px; border-radius: 5px; border-left: 4px solid #dc3545;"><?php echo htmlspecialchars($result); ?></pre>
+        <?php if ($error): ?>
+            <div class="vulnerable-demo">
+                <h3>⚠️ 오류</h3>
+                <p><?php echo htmlspecialchars($error); ?></p>
             </div>
         <?php endif; ?>
 
-        <div class="mitigation-guide">
-            <h2>🛡️ 방어 방법</h2>
+        <?php if ($result): ?>
+            <div class="result-box">
+                <h3>📊 요청 결과</h3>
+                <pre><code><?php echo htmlspecialchars($result); ?></code></pre>
+            </div>
+        <?php endif; ?>
+
+        <div class="info-box">
+            <h3>🛡️ SSRF 방어 방법</h3>
             <ul>
-                <li><strong>URL 검증:</strong> 허용된 도메인/프로토콜 화이트리스트 사용</li>
-                <li><strong>프로토콜 제한:</strong> HTTP/HTTPS만 허용, file://, gopher:// 등 차단</li>
-                <li><strong>네트워크 분리:</strong> 내부 네트워크와 외부 연결 분리</li>
-                <li><strong>IP 필터링:</strong> 내부 IP 대역 (127.0.0.1, 10.x.x.x, 192.168.x.x) 차단</li>
-                <li><strong>타임아웃 설정:</strong> 요청 시간 제한으로 DoS 방지</li>
+                <li><strong>Whitelist 기반 검증:</strong> 허용된 도메인, IP, 포트 목록을 만들어 해당 목록에 있는 경우에만 요청을 허용합니다.</li>
+                <li><strong>IP 주소 검증:</strong> 요청하려는 최종 IP 주소가 내부망(Private) IP 대역인지 확인하고 차단합니다.</li>
+                <li>**리다이렉션 비활성화:** cURL 사용 시 `CURLOPT_FOLLOWLOCATION` 옵션을 비활성화하여 리다이렉트를 통한 우회를 막습니다.</li>
+                <li><strong>프로토콜 제한:</strong> `http`, `https` 등 허용된 프로토콜만 사용하도록 제한합니다. (`file://`, `gopher://` 등 위험한 프로토콜 차단)</li>
             </ul>
         </div>
 
-        <div style="margin-top: 20px; text-align: center;">
-            <a href="index.php" class="btn">← 웹해킹 테스트 메뉴로 돌아가기</a>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+            <h3>📚 참고 자료</h3>
+            <ul>
+                <li><a href="https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Request%20Forgery" target="_blank">PayloadsAllTheThings - SSRF</a></li>
+                <li><a href="https://owasp.org/www-community/attacks/Server_Side_Request_Forgery" target="_blank">OWASP - Server Side Request Forgery</a></li>
+                <li><a href="https://portswigger.net/web-security/ssrf" target="_blank">PortSwigger - Server-side request forgery (SSRF)</a></li>
+            </ul>
         </div>
     </div>
 
     <script>
-        function testPayload(payload) {
-            if (confirm('⚠️ 교육 목적의 SSRF 테스트를 실행하시겠습니까?\n\n페이로드: ' + payload)) {
-                document.getElementById('url').value = payload;
-                document.querySelector('form').submit();
-            }
+        function setPayload(payload) {
+            document.getElementById('url').value = payload;
         }
-
-        // 위험 패턴 경고
-        document.getElementById('url').addEventListener('input', function() {
-            const value = this.value.toLowerCase();
-            const warningPatterns = ['127.0.0.1', 'localhost', 'file://', '169.254.169.254'];
-            
-            let isRisky = warningPatterns.some(pattern => value.includes(pattern));
-            
-            if (isRisky) {
-                this.style.borderColor = '#dc3545';
-                this.style.backgroundColor = '#fff5f5';
-            } else {
-                this.style.borderColor = '#ddd';
-                this.style.backgroundColor = 'white';
-            }
-        });
-
-        // 페이로드 버튼 스타일 추가
-        const style = document.createElement('style');
-        style.textContent = `
-            .payload-btn {
-                background: #17a2b8;
-                color: white;
-                border: none;
-                padding: 8px 12px;
-                margin: 5px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 14px;
-                transition: background 0.3s;
-            }
-            .payload-btn:hover {
-                background: #138496;
-            }
-            .nav {
-                background: #343a40;
-                color: white;
-                padding: 15px;
-                border-radius: 8px;
-                margin-bottom: 20px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .nav h1 {
-                margin: 0;
-                color: white;
-            }
-            .nav-links .btn {
-                margin-left: 10px;
-                background: #007bff;
-                color: white;
-                text-decoration: none;
-                padding: 8px 15px;
-                border-radius: 4px;
-            }
-            .nav-links .btn:hover {
-                background: #0056b3;
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>

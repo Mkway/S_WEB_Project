@@ -272,6 +272,27 @@ if (!is_logged_in()) {
                 <p>신뢰할 수 있는 도메인을 통한 피싱 공격 취약점을 테스트합니다.</p>
                 <a href="open_redirect_test.php" class="btn">테스트 시작</a>
             </div>
+
+            <!-- OAuth 2.0 Misconfiguration -->
+            <div class="test-card">
+                <h3>🔑 OAuth 2.0 Misconfiguration</h3>
+                <p>부적절한 redirect_uri 검증 등 OAuth 2.0 설정 오류 취약점을 테스트합니다.</p>
+                <a href="oauth_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- Session Management -->
+            <div class="test-card">
+                <h3>🍪 Session Management</h3>
+                <p>세션 고정, 세션 하이재킹 등 세션 관리 취약점을 테스트합니다.</p>
+                <a href="session_management_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- Insecure File Upload -->
+            <div class="test-card">
+                <h3>📤 Insecure File Upload</h3>
+                <p>확장자 검증 우회를 통한 웹쉘 업로드 등 파일 업로드 취약점을 테스트합니다.</p>
+                <a href="file_upload_test.php" class="btn">테스트 시작</a>
+            </div>
         </section>
 
         <!-- 진행률 표시 -->
