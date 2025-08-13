@@ -1,2 +1,7 @@
 /my_lemp_project/nginx/ssl/
 /my_lemp_project/src/vendor/
+/my_lemp_project/src/.phpunit.result.cache
+/my_lemp_project/src/logs/
+/mysql_data/
+/.claude/
+/node_app/node_modules/
