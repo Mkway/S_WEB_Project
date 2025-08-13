@@ -3,5 +3,6 @@
 /my_lemp_project/src/.phpunit.result.cache
 /my_lemp_project/src/logs/
 /mysql_data/
+/my_lemp_project/mysql_data/
 /.claude/
 /node_app/node_modules/
