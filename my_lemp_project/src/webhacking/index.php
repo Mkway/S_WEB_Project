@@ -245,6 +245,13 @@ if (!is_logged_in()) {
                 <a href="deserialization_test.php" class="btn">테스트 시작</a>
             </div>
 
+            <!-- Tabnabbing -->
+            <div class="test-card">
+                <h3>👁️‍🗨️ Tabnabbing</h3>
+                <p>백그라운드 탭의 내용을 피싱 사이트로 변경하여 사용자를 속이는 공격을 테스트합니다.</p>
+                <a href="tabnabbing_test.php" class="btn">테스트 시작</a>
+            </div>
+
             <!-- CORS Misconfiguration -->
             <div class="test-card">
                 <h3>🌐 CORS Misconfiguration</h3>

@@ -19,16 +19,23 @@ try {
 // 테스트 데이터베이스 초기화 및 샘플 데이터 삽입
 // 실제 운영 환경에 영향을 주지 않도록 주의
 function setupTestDatabase($pdo) {
+    // 외래 키 제약 조건 일시 비활성화
+    $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
+
     // 기존 테이블 삭제 (테스트용)
     $pdo->exec("DROP TABLE IF EXISTS comments");
     $pdo->exec("DROP TABLE IF EXISTS posts");
     $pdo->exec("DROP TABLE IF EXISTS users");
     $pdo->exec("DROP TABLE IF EXISTS notifications"); // notifications 테이블 추가
 
+    // 외래 키 제약 조건 다시 활성화
+    $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
+
     // users 테이블 생성
     $pdo->exec("CREATE TABLE users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(50) NOT NULL UNIQUE,
+        email VARCHAR(255) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
         is_admin BOOLEAN DEFAULT FALSE,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -70,9 +77,9 @@ function setupTestDatabase($pdo) {
 
     // 샘플 사용자 데이터 삽입
     $password = password_hash('password123', PASSWORD_DEFAULT);
-    $stmt = $pdo->prepare("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)");
-    $stmt->execute(['testuser', $password, 0]);
-    $stmt->execute(['adminuser', $password, 1]);
+    $stmt = $pdo->prepare("INSERT INTO users (username, email, password, is_admin) VALUES (?, ?, ?, ?)");
+    $stmt->execute(['testuser', 'test@example.com', $password, 0]);
+    $stmt->execute(['adminuser', 'admin@example.com', $password, 1]);
 }
 
 setupTestDatabase($pdo);

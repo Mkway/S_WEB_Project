@@ -76,7 +76,7 @@ services:
 
   my_node_app:
     build:
-      context: ./node_app
+      context: ../node_app
       dockerfile: Dockerfile
     container_name: my_node_app
     ports:
