@@ -1,28 +1,37 @@
-# S_WEB_Project TODO List
+# S_WEB_Project: 보안 테스트 확장 로드맵
 
-프로젝트의 다음 단계를 위한 작업 목록입니다.
+PayloadsAllTheThings 기반의 보안 테스트 커버리지를 100%로 확장하기 위한 구체적인 구현 계획입니다.
 
-### 1. 보안 강화 (Security Enhancement)
-- [ ] `index.php`의 `VULNERABILITY_MODE` 로직 제거 및 안전한 코드로 통일
-- [ ] 파일 업로드 기능 상세 분석 및 확장자/MIME 타입 검증 강화
-- [ ] 모든 사용자 입력값에 대한 추가적인 검증 로직 검토 (예: `admin_actions.php`)
-- [ ] 세션 관리 강화 (타임아웃, 고정 공격 방어 등) 검토
+**📈 현재 상황**: 21개 테스트 완료 (커버리지 ~37%)
 
-### 2. 코드 리팩토링 및 품질 개선 (Code Refactoring & Quality Improvement)
-- [ ] `utils.php`의 기능 분리 및 클래스화 검토
-- [ ] PHPUnit 테스트 커버리지 확대 (특히, 보안 관련 기능)
-- [ ] 중복 코드(HTML, PHP) 제거 및 공통 템플릿 또는 함수로 분리
-- [ ] `webhacking` 디렉터리 내 테스트 코드 가독성 및 UI 개선
+---
 
-### 3. 문서 및 환경 개선 (Documentation & Environment Improvement)
-- [ ] `doc/` 폴더 내 모든 문서 내용 검토 및 최신화
-- [ ] `install.php`에 초기 데이터(샘플 게시물, 사용자 등) 추가 기능 구현
-- [ ] Composer 및 NPM 의존성 검토 및 보안 업데이트
-- [ ] Dockerfile 최적화 (이미지 사이즈 축소, 빌드 시간 단축)
+### Phase 1: 인증 및 네트워크 보안 (Next Steps)
+- [ ] **SSRF 공격 시뮬레이션**: 내부 IP 스캔, 메타데이터 서비스 접근
+- [ ] **XXE Injection 테스트**: 외부 엔티티를 통한 파일 읽기
+- [ ] **CORS 설정 오류 테스트**: 악의적 도메인에서의 리소스 접근
 
-### 4. PayloadsAllTheThings 기반 테스트 확장
-- [ ] **OAuth Misconfiguration**: OAuth 2.0/OpenID Connect 취약점 테스트 구현
-- [ ] **SAML Injection**: SAML 인증 우회 및 조작 테스트 구현
-- [ ] **Session Management**: 세션 고정, 하이재킹 등 세션 관련 취약점 테스트 구현
-- [ ] **Request Smuggling**: HTTP 요청 밀수 테스트 환경 구현 (리서치 필요)
-- [ ] **Prototype Pollution**: JavaScript 프로토타입 오염 테스트 구현
+### Phase 2: 고급 주입 공격
+- [ ] **SSTI 템플릿 인젝션**: Twig, Jinja2 등 템플릿 엔진 공격
+- [ ] **GraphQL 취약점**: 쿼리 깊이, 정보 노출, 권한 우회
+
+### Phase 3: 파일 및 업로드 보안
+- [ ] **Insecure Deserialization**: 직렬화 객체 조작
+
+### Phase 4: 클라이언트 사이드 공격
+- [ ] **Tabnabbing**: 새 탭에서 원본 페이지 조작
+
+---
+
+## 🗂️ Backlog: 일반 개선 과제
+
+### 플랫폼 안정화 및 품질 개선
+- [ ] **코어 애플리케이션 테스트 커버리지 확대**: PHPUnit 테스트 보강
+- [ ] **보안 테스트 모듈 리팩토링**: 새로운 취약점 추가가 용이하도록 구조 개선
+- [ ] **의존성 보안 감사**: Composer 및 NPM 의존성 정기 검토
+
+### 개발 환경 및 문서 관리
+- [ ] **`install.php` 기능 개선**: 샘플 데이터 자동 생성 기능 추가
+- [ ] **Dockerfile 최적화**: 이미지 사이즈 축소 및 빌드 시간 단축
+- [ ] **문서 최신화**: `doc/` 폴더 내 모든 문서 내용 검토
+- [ ] **기여 가이드 작성**: `CONTRIBUTING.md` 작성
