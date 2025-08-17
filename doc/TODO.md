@@ -2,7 +2,7 @@
 
 PayloadsAllTheThings 기반의 보안 테스트 커버리지를 100%로 확장하기 위한 구체적인 구현 계획입니다.
 
-**📈 현재 상황**: 43개 테스트 완료 (커버리지 ~75%)
+**📈 현재 상황**: 47개 테스트 완료 (커버리지 ~82%)
 
 ---
 
@@ -32,6 +32,12 @@ PayloadsAllTheThings 기반의 보안 테스트 커버리지를 100%로 확장�
 - [x] **Regular Expression Vulnerabilities (ReDoS)**: 정규식 백트래킹 악용 DoS 공격
 - [x] **Insecure Randomness**: 예측 가능한 난수 생성기 취약점
 - [x] **LaTeX Injection**: LaTeX 문서 처리 시스템 명령어 주입
+
+### Phase 6: 고급 시스템 레벨 취약점 (NEW - 2025년 8월 추가)
+- [x] **Race Condition**: 동시성 접근으로 인한 경합 조건 취약점
+- [x] **ORM Leak**: Object-Relational Mapping 시스템 정보 누출
+- [x] **Virtual Hosts**: 가상 호스트 설정 오류로 인한 내부 시스템 접근
+- [x] **Encoding Transformations**: 문자 인코딩 변환 과정에서 필터 우회
 
 ---
 

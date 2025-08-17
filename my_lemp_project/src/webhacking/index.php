@@ -503,13 +503,41 @@ if (!is_logged_in()) {
                 <p>LaTeX 문서 처리 시스템에서 악의적인 명령어 주입 취약점을 테스트합니다.</p>
                 <a href="latex_injection_test.php" class="btn">테스트 시작</a>
             </div>
+
+            <!-- Race Condition -->
+            <div class="test-card">
+                <h3>🏃‍♂️ Race Condition</h3>
+                <p>여러 프로세스의 동시 접근으로 인한 경합 조건 취약점을 테스트합니다.</p>
+                <a href="race_condition_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- ORM Leak -->
+            <div class="test-card">
+                <h3>🗄️ ORM Leak</h3>
+                <p>ORM 시스템에서 의도하지 않은 데이터베이스 정보 노출 취약점을 테스트합니다.</p>
+                <a href="orm_leak_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- Virtual Hosts -->
+            <div class="test-card">
+                <h3>🌐 Virtual Hosts</h3>
+                <p>가상 호스트 설정 오류로 인한 내부 시스템 접근 취약점을 테스트합니다.</p>
+                <a href="virtual_hosts_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- Encoding Transformations -->
+            <div class="test-card">
+                <h3>🔄 Encoding Transformations</h3>
+                <p>문자 인코딩 변환 과정에서 입력 검증 필터 우회 취약점을 테스트합니다.</p>
+                <a href="encoding_transformations_test.php" class="btn">테스트 시작</a>
+            </div>
         </section>
 
         <!-- 진행률 표시 -->
                 <section style="margin-top: 40px;">
             <h2>📊 테스트 현황</h2>
             <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; border-left: 5px solid #28a745;">
-                <h3 style="color: #28a745; margin-bottom: 15px;">✅ 구현 완료된 취약점 테스트 (43개)</h3>
+                <h3 style="color: #28a745; margin-bottom: 15px;">✅ 구현 완료된 취약점 테스트 (47개)</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
                     <span>• SQL Injection</span>
                     <span>• XSS (Cross-Site Scripting)</span>
@@ -554,14 +582,18 @@ if (!is_logged_in()) {
                     <span>• Regular Expression Vulnerabilities (ReDoS)</span>
                     <span>• Insecure Randomness</span>
                     <span>• LaTeX Injection</span>
+                    <span>• Race Condition</span>
+                    <span>• ORM Leak</span>
+                    <span>• Virtual Hosts</span>
+                    <span>• Encoding Transformations</span>
                 </div>
                 <div style="background: #ffffff; padding: 15px; border-radius: 5px; margin-top: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span><strong>PayloadsAllTheThings 커버리지:</strong></span>
-                        <span style="font-size: 18px; color: #28a745;"><strong>~75% (43/57개 카테고리)</strong></span>
+                        <span style="font-size: 18px; color: #28a745;"><strong>~82% (47/57개 카테고리)</strong></span>
                     </div>
                     <div style="width: 100%; background: #e9ecef; height: 10px; border-radius: 5px; margin-top: 10px;">
-                        <div style="width: 75%; background: #28a745; height: 100%; border-radius: 5px;"></div>
+                        <div style="width: 82%; background: #28a745; height: 100%; border-radius: 5px;"></div>
                     </div>
                 </div>
             </div>
