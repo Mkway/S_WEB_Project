@@ -475,13 +475,41 @@ if (!is_logged_in()) {
                 <p>스프레드시트 수식 주입을 통한 악성 코드 실행 취약점을 테스트합니다.</p>
                 <a href="csv_injection_test.php" class="btn">테스트 시작</a>
             </div>
+
+            <!-- Prompt Injection -->
+            <div class="test-card">
+                <h3>🤖 Prompt Injection</h3>
+                <p>AI 시스템의 프롬프트를 조작하여 의도하지 않은 동작을 유발하는 공격을 테스트합니다.</p>
+                <a href="prompt_injection_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- Regular Expression Vulnerabilities (ReDoS) -->
+            <div class="test-card">
+                <h3>⚡ Regular Expression Vulnerabilities (ReDoS)</h3>
+                <p>정규식의 백트래킹 특성을 악용하여 과도한 CPU 사용을 유발하는 공격을 테스트합니다.</p>
+                <a href="redos_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- Insecure Randomness -->
+            <div class="test-card">
+                <h3>🎲 Insecure Randomness</h3>
+                <p>예측 가능한 의사난수 생성기를 사용한 보안 취약점을 테스트합니다.</p>
+                <a href="insecure_randomness_test.php" class="btn">테스트 시작</a>
+            </div>
+
+            <!-- LaTeX Injection -->
+            <div class="test-card">
+                <h3>📄 LaTeX Injection</h3>
+                <p>LaTeX 문서 처리 시스템에서 악의적인 명령어 주입 취약점을 테스트합니다.</p>
+                <a href="latex_injection_test.php" class="btn">테스트 시작</a>
+            </div>
         </section>
 
         <!-- 진행률 표시 -->
                 <section style="margin-top: 40px;">
             <h2>📊 테스트 현황</h2>
             <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; border-left: 5px solid #28a745;">
-                <h3 style="color: #28a745; margin-bottom: 15px;">✅ 구현 완료된 취약점 테스트 (39개)</h3>
+                <h3 style="color: #28a745; margin-bottom: 15px;">✅ 구현 완료된 취약점 테스트 (43개)</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
                     <span>• SQL Injection</span>
                     <span>• XSS (Cross-Site Scripting)</span>
@@ -522,14 +550,18 @@ if (!is_logged_in()) {
                     <span>• GraphQL Injection</span>
                     <span>• Business Logic Errors</span>
                     <span>• Open Redirect</span>
+                    <span>• Prompt Injection</span>
+                    <span>• Regular Expression Vulnerabilities (ReDoS)</span>
+                    <span>• Insecure Randomness</span>
+                    <span>• LaTeX Injection</span>
                 </div>
                 <div style="background: #ffffff; padding: 15px; border-radius: 5px; margin-top: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span><strong>PayloadsAllTheThings 커버리지:</strong></span>
-                        <span style="font-size: 18px; color: #28a745;"><strong>~68% (39/57개 카테고리)</strong></span>
+                        <span style="font-size: 18px; color: #28a745;"><strong>~75% (43/57개 카테고리)</strong></span>
                     </div>
                     <div style="width: 100%; background: #e9ecef; height: 10px; border-radius: 5px; margin-top: 10px;">
-                        <div style="width: 68%; background: #28a745; height: 100%; border-radius: 5px;"></div>
+                        <div style="width: 75%; background: #28a745; height: 100%; border-radius: 5px;"></div>
                     </div>
                 </div>
             </div>
@@ -567,18 +599,18 @@ if (!is_logged_in()) {
 
                 <h3 style="color: #007bff; margin-bottom: 15px;">우선순위 낮음</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
-                    <span>• XSLT Injection</span>
-                    <span>• LaTeX Injection</span>
-                    <span>• Server Side Include Injection</span>
-                    <span>• DNS Rebinding</span>
-                    <span>• Web Cache Deception</span>
-                    <span>• Reverse Proxy Misconfigurations</span>
-                    <span>• Web Sockets</span>
-                    <span>• CRLF Injection</span>
-                    <span>• External Variable Modification</span>
+                    <span style="color: #28a745;">✅ XSLT Injection (완료)</span>
+                    <span style="color: #28a745;">✅ LaTeX Injection (완료)</span>
+                    <span style="color: #28a745;">✅ Server Side Include Injection (완료)</span>
+                    <span style="color: #28a745;">✅ DNS Rebinding (완료)</span>
+                    <span style="color: #28a745;">✅ Web Cache Deception (완료)</span>
+                    <span style="color: #28a745;">✅ Reverse Proxy Misconfigurations (완료)</span>
+                    <span style="color: #28a745;">✅ Web Sockets (완료)</span>
+                    <span style="color: #28a745;">✅ CRLF Injection (완료)</span>
+                    <span style="color: #28a745;">✅ External Variable Modification (완료)</span>
                     <span>• Insecure Management Interface</span>
-                    <span>• Insecure Randomness</span>
-                    <span>• Regular Expression (ReDoS)</span>
+                    <span style="color: #28a745;">✅ Insecure Randomness (완료)</span>
+                    <span style="color: #28a745;">✅ Regular Expression (ReDoS) (완료)</span>
                 </div>
 
                 <h3 style="color: #007bff; margin-bottom: 15px;">고위험</h3>
@@ -587,10 +619,10 @@ if (!is_logged_in()) {
                     <span>• Client Side Path Traversal</span>
                 </div>
 
-                <h3 style="color: #007bff; margin-bottom: 15px;">신기술 및 트렌드</h3>
+                <h3 style="color: #007bff; margin-bottom: 15px;">신기술 및 트렌드 (완료)</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
-                    <span>• Prompt Injection</span>
-                    <span>• Account Takeover</span>
+                    <span style="color: #28a745;">✅ Prompt Injection (완료)</span>
+                    <span style="color: #28a745;">✅ Account Takeover (완료)</span>
                 </div>
             </div>
         </section>

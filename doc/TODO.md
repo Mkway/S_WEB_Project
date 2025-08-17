@@ -2,7 +2,7 @@
 
 PayloadsAllTheThings 기반의 보안 테스트 커버리지를 100%로 확장하기 위한 구체적인 구현 계획입니다.
 
-**📈 현재 상황**: 26개 테스트 완료 (커버리지 ~46%)
+**📈 현재 상황**: 43개 테스트 완료 (커버리지 ~75%)
 
 ---
 
@@ -26,6 +26,12 @@ PayloadsAllTheThings 기반의 보안 테스트 커버리지를 100%로 확장�
 
 ### Phase 4: 클라이언트 사이드 공격
 - [x] **Tabnabbing**: 새 탭에서 원본 페이지 조작
+
+### Phase 5: 신기술 및 최신 보안 이슈 (NEW - 2025년 8월 추가)
+- [x] **Prompt Injection**: AI 시스템 프롬프트 조작 공격
+- [x] **Regular Expression Vulnerabilities (ReDoS)**: 정규식 백트래킹 악용 DoS 공격
+- [x] **Insecure Randomness**: 예측 가능한 난수 생성기 취약점
+- [x] **LaTeX Injection**: LaTeX 문서 처리 시스템 명령어 주입
 
 ---
 
