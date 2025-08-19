@@ -85,7 +85,7 @@ try {
     // Modify expires_at column type to DATETIME if it's not already
     $pdo->exec("ALTER TABLE password_resets MODIFY COLUMN expires_at DATETIME NOT NULL;");
 
-    echo "Tables created/updated successfully!";
+    echo "Tables created/updated successfully!\n";
 
     // Insert default categories if not exist
     $stmt = $pdo->prepare("INSERT IGNORE INTO categories (name) VALUES (?)");
@@ -94,7 +94,32 @@ try {
     $stmt->execute(['Art']);
     $stmt->execute(['Sports']);
 
-    echo "Default categories inserted successfully!";
+    echo "Default categories inserted successfully!\n";
+
+    // Add sample users
+    $password = password_hash('password', PASSWORD_DEFAULT);
+    $stmt = $pdo->prepare("INSERT IGNORE INTO users (username, email, password, is_admin) VALUES (?, ?, ?, ?)");
+    $stmt->execute(['admin', 'admin@example.com', $password, 1]);
+    $stmt->execute(['testuser', 'test@example.com', $password, 0]);
+    $stmt->execute(['guest', 'guest@example.com', $password, 0]);
+
+    echo "Sample users inserted successfully!\n";
+
+    // Add sample posts
+    $stmt = $pdo->prepare("INSERT IGNORE INTO posts (user_id, title, content) VALUES (?, ?, ?)");
+    $stmt->execute([1, '첫 번째 게시물', '이것은 관리자가 작성한 첫 번째 샘플 게시물입니다.']);
+    $stmt->execute([2, '두 번째 게시물', '이것은 일반 사용자가 작성한 두 번째 샘플 게시물입니다.']);
+    $stmt->execute([1, '세 번째 게시물', '관리자가 작성한 또 다른 게시물입니다.']);
+
+    echo "Sample posts inserted successfully!\n";
+
+    // Add sample comments
+    $stmt = $pdo->prepare("INSERT IGNORE INTO comments (post_id, user_id, content) VALUES (?, ?, ?)");
+    $stmt->execute([1, 2, '첫 번째 게시물에 대한 첫 번째 댓글입니다.']);
+    $stmt->execute([1, 1, '첫 번째 게시물에 대한 관리자의 댓글입니다.']);
+    $stmt->execute([2, 3, '두 번째 게시물에 대한 게스트의 댓글입니다.']);
+
+    echo "Sample comments inserted successfully!\n";
 
 } catch (PDOException $e) {
     die("Table creation/update failed: " . $e->getMessage());

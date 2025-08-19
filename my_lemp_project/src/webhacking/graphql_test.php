@@ -1,194 +1,156 @@
 <?php
-/**
- * GraphQL Injection 취약점 테스트 페이지
- * 교육 목적으로만 사용하시기 바랍니다.
- */
+require_once 'TestPage.php';
 
-session_start();
-require_once '../db.php';
-require_once '../utils.php';
+// 1. 페이지 설정
+$page_title = 'GraphQL Injection';
+$description = '<p><strong>GraphQL Injection</strong>은 GraphQL API의 잘못된 구현으로 발생하는 취약점입니다.</p>
+<p>스키마 노출, 깊이 공격, 배치 공격, 권한 우회 등을 통해 민감한 데이터 노출이나 서비스 장애를 일으킬 수 있습니다.</p>';
 
-// 로그인 확인
-if (!is_logged_in()) {
-    header('Location: ../login.php');
-    exit();
-}
+// 2. 페이로드 정의
+$payloads = [
+    'introspection' => [
+        'title' => '📋 스키마 인트로스펙션 공격',
+        'description' => 'GraphQL 스키마 구조 전체를 노출시키는 공격입니다.',
+        'payloads' => [
+            'query IntrospectionQuery { __schema { queryType { name } types { name } } }'
+        ]
+    ],
+    'depth_attack' => [
+        'title' => '📈 깊이 공격 (DoS)',
+        'description' => '깊은 중첩 쿼리로 서버 리소스 고갈을 유도하는 DoS 공격입니다.',
+        'payloads' => [
+            'query DepthAttack { user(id: 1) { name posts { title comments { content } } } }'
+        ]
+    ],
+    'field_suggestion' => [
+        'title' => '🔍 필드 추측 공격',
+        'description' => '존재하지 않는 필드 요청으로 에러 메시지를 통해 실제 필드명을 추측하는 공격입니다.',
+        'payloads' => [
+            'query FieldSuggestion { user(id: 1) { name email secret_key } }'
+        ]
+    ],
+    'injection' => [
+        'title' => '💉 쿼리 조작 (Injection)',
+        'description' => 'SQL Injection과 유사하게 쿼리를 조작하여 데이터를 탈취하거나 권한을 우회하는 공격입니다.',
+        'payloads' => [
+            'query InjectionTest { user(id: "1\' OR \'1\'=\'1") { name email } }'
+        ]
+    ],
+    'batch_attack' => [
+        'title' => '📦 배치 공격',
+        'description' => '단일 요청으로 여러 쿼리를 동시에 실행하여 Rate Limiting을 우회하거나 서버 부하를 증가시키는 공격입니다.',
+        'payloads' => [
+            '[ { "query": "query { user(id: 1) { name } }" }, { "query": "query { user(id: 2) { name } }" } ]'
+        ]
+    ]
+];
 
-$result = '';
-$graphql_query = '';
-$attack_type = 'introspection';
+// 3. 방어 방법 정의
+$defense_methods = [
+    "<strong>인트로스펙션 비활성화:</strong> 프로덕션 환경에서 스키마 인트로스펙션을 비활성화합니다.",
+    "<strong>쿼리 깊이 제한:</strong> 중첩 쿼리의 최대 깊이를 제한합니다. (권장: 5-10 레벨)",
+    "<strong>복잡도 분석:</strong> 쿼리의 복잡도를 계산하고 제한하여 서버 과부하를 방지합니다.",
+    "<strong>Rate Limiting:</strong> 요청 빈도를 제한하여 DoS 공격을 방어합니다.",
+    "<strong>필드 레벨 인증:</strong> 민감한 필드에 대한 접근 제어를 구현합니다."
+];
 
-// GraphQL 공격 시뮬레이션
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['graphql_query'])) {
-    $graphql_query = $_POST['graphql_query'];
-    $attack_type = $_POST['attack_type'] ?? 'introspection';
+// 4. 참고 자료 정의
+$references = [
+    "OWASP - GraphQL Security Cheat Sheet" => "https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Security_Cheat_Sheet.html",
+    "PortSwigger - GraphQL API testing" => "https://portswigger.net/web-security/graphql"
+];
+
+// 5. 테스트 폼 UI 정의
+$graphql_query = htmlspecialchars($_POST['payload'] ?? '');
+$attack_type = htmlspecialchars($_POST['attack_type'] ?? 'introspection');
+
+$test_form_ui = <<<HTML
+<form method="post" class="test-form">
+    <h3>🧪 GraphQL 쿼리 테스트</h3>
+    <label for="attack_type">🎯 공격 유형 선택:</label><br>
+    <select id="attack_type" name="attack_type">
+        <option value="introspection" {$attack_type === 'introspection' ? 'selected' : ''}>스키마 인트로스펙션</option>
+        <option value="depth_attack" {$attack_type === 'depth_attack' ? 'selected' : ''}>깊이 공격 (DoS)</option>
+        <option value="field_suggestion" {$attack_type === 'field_suggestion' ? 'selected' : ''}>필드 추측</option>
+        <option value="injection" {$attack_type === 'injection' ? 'selected' : ''}>쿼리 조작 (Injection)</option>
+        <option value="batch_attack" {$attack_type === 'batch_attack' ? 'selected' : ''}>배치 공격</option>
+    </select><br><br>
     
-    if (empty($graphql_query)) {
-        $result = "GraphQL 쿼리를 입력해주세요.";
-    } else {
-        $result = simulateGraphQLAttack($graphql_query, $attack_type);
+    <label for="payload">🎯 GraphQL 쿼리 입력:</label><br>
+    <textarea id="payload" name="payload" placeholder="GraphQL 쿼리를 입력하세요...">{$graphql_query}</textarea><br><br>
+    <button type="submit" class="btn">GraphQL 쿼리 실행</button>
+</form>
+HTML;
+
+// 6. 테스트 로직 콜백 정의
+$test_logic_callback = function($form_data) {
+    $query = $form_data['payload'] ?? '';
+    $type = $form_data['attack_type'] ?? 'introspection';
+    $result = '';
+    $error = '';
+
+    if (empty($query)) {
+        $error = "GraphQL 쿼리를 입력해주세요.";
+        return ['result' => $result, 'error' => $error];
     }
-}
 
-function simulateGraphQLAttack($query, $type) {
-    $response = "[시뮬레이션] GraphQL 공격 분석\n";
-    $response .= "공격 유형: " . strtoupper($type) . "\n";
-    $response .= "쿼리 길이: " . strlen($query) . " 문자\n\n";
-    
-    // 위험한 패턴 검사
-    $dangerous_patterns = [
-        'introspection' => ['__schema', '__type', '__typename', '__field', '__inputValue'],
-        'depth_attack' => ['user', 'posts', 'comments', 'author', 'friends'],
-        'field_suggestion' => ['did you mean', 'suggestions', 'similar'],
-        'injection' => ['union', 'fragment', 'directive', 'mutation'],
-        'dos' => ['{', '}', 'query', 'mutation', 'subscription'],
-        'information_disclosure' => ['debug', 'error', 'trace', 'stack']
-    ];
-    
-    $detected_patterns = [];
-    $vulnerability_found = false;
-    
-    foreach ($dangerous_patterns as $attack => $patterns) {
-        foreach ($patterns as $pattern) {
-            if (stripos($query, $pattern) !== false) {
-                $detected_patterns[] = $pattern;
-                $vulnerability_found = true;
-                break;
+    $response_sim = "[시뮬레이션] GraphQL 공격 분석\n";
+    $response_sim .= "공격 유형: " . strtoupper($type) . "\n";
+    $response_sim .= "쿼리: " . htmlspecialchars($query) . "\n\n";
+
+    switch ($type) {
+        case 'introspection':
+            if (strpos($query, '__schema') !== false) {
+                $response_sim .= "스키마 노출 시뮬레이션: 모든 타입, 필드, 뮤테이션 노출 가능성.\n";
+                $response_sim .= "예상 응답: { \"data\": { \"__schema\": { \"types\": [ { \"name\": \"User\" }, { \"name\": \"AdminUser\" } ] } } }\n";
+                $response_sim .= "→ 공격자가 모든 데이터 구조와 숨겨진 필드를 파악 가능.";
+            } else {
+                $response_sim .= "안전한 인트로스펙션 쿼리입니다.";
             }
-        }
+            break;
+        case 'depth_attack':
+            $depth_count = substr_count($query, '{');
+            if ($depth_count > 5) {
+                $response_sim .= "깊이 분석: {$depth_count} 레벨 (위험)\n";
+                $response_sim .= "예상 결과: 서버 리소스 고갈, 메모리 부족.\n";
+                $response_sim .= "→ 무한 순환 참조로 인한 서버 다운 가능성.";
+            } else {
+                $response_sim .= "적절한 깊이의 쿼리입니다.";
+            }
+            break;
+        case 'field_suggestion':
+            $response_sim .= "필드 추측 시뮬레이션: 에러 메시지를 통해 실제 필드명 추측 가능.\n";
+            $response_sim .= "예상 응답: { \"errors\": [ { \"message\": \"Cannot query field 'secret_key' on type 'User'.\", \"extensions\": { \"suggestion\": \"Did you mean 'secretToken'?\" } } ] }\n";
+            break;
+        case 'injection':
+            if (strpos($query, 'union') !== false || strpos($query, 'fragment') !== false) {
+                $response_sim .= "쿼리 조작 시뮬레이션: Fragment/Union 남용 감지.\n";
+                $response_sim .= "예상 피해: 관리자 전용 필드 접근, 다른 사용자 데이터 조회, 숨겨진 API 엔드포인트 노출.\n";
+            } else {
+                $response_sim .= "안전한 쿼리입니다.";
+            }
+            break;
+        case 'batch_attack':
+            $batch_count = substr_count($query, 'query');
+            if ($batch_count > 1) {
+                $response_sim .= "배치 쿼리 개수: {$batch_count}개\n";
+                $response_sim .= "Rate Limiting 우회 가능성: 높음.\n";
+                $response_sim .= "예상 피해: 브루트포스 공격 가속화, API 제한 회피, 대량 데이터 추출.\n";
+            } else {
+                $response_sim .= "단일 쿼리입니다.";
+            }
+            break;
     }
-    
-    if ($vulnerability_found) {
-        $response .= "감지된 위험 패턴: " . implode(', ', $detected_patterns) . "\n\n";
-        
-        switch ($type) {
-            case 'introspection':
-                $response .= "GraphQL 스키마 인트로스펙션 공격:\n";
-                $response .= "- 목적: GraphQL 스키마 구조 전체 노출\n";
-                $response .= "- 위험도: 높음 (모든 타입, 필드, 뮤테이션 노출)\n\n";
-                
-                if (strpos($query, '__schema') !== false) {
-                    $response .= "스키마 노출 시뮬레이션:\n";
-                    $response .= "{\n";
-                    $response .= "  \"data\": {\n";
-                    $response .= "    \"__schema\": {\n";
-                    $response .= "      \"types\": [\n";
-                    $response .= "        {\n";
-                    $response .= "          \"name\": \"User\",\n";
-                    $response .= "          \"fields\": [\n";
-                    $response .= "            {\"name\": \"id\", \"type\": \"ID!\"},\n";
-                    $response .= "            {\"name\": \"username\", \"type\": \"String!\"},\n";
-                    $response .= "            {\"name\": \"email\", \"type\": \"String!\"},\n";
-                    $response .= "            {\"name\": \"password\", \"type\": \"String!\"},\n";
-                    $response .= "            {\"name\": \"ssn\", \"type\": \"String\"}\n";
-                    $response .= "          ]\n";
-                    $response .= "        },\n";
-                    $response .= "        {\n";
-                    $response .= "          \"name\": \"AdminUser\",\n";
-                    $response .= "          \"fields\": [\n";
-                    $response .= "            {\"name\": \"secretKey\", \"type\": \"String!\"},\n";
-                    $response .= "            {\"name\": \"adminToken\", \"type\": \"String!\"}\n";
-                    $response .= "          ]\n";
-                    $response .= "        }\n";
-                    $response .= "      ]\n";
-                    $response .= "    }\n";
-                    $response .= "  }\n";
-                    $response .= "}\n\n";
-                    $response .= "→ 공격자가 모든 데이터 구조와 숨겨진 필드를 파악 가능";
-                }
-                break;
-                
-            case 'depth_attack':
-                $response .= "GraphQL Depth Attack (쿼리 깊이 공격):\n";
-                $response .= "- 목적: 서버 리소스 고갈을 통한 DoS\n";
-                $response .= "- 위험도: 높음 (서비스 중단)\n\n";
-                
-                $depth_count = substr_count($query, '{');
-                if ($depth_count > 5) {
-                    $response .= "깊이 분석: {$depth_count} 레벨 (위험)\n";
-                    $response .= "예상 결과: 데이터베이스 과부하, 메모리 부족\n";
-                    $response .= "서버 응답 시간: " . ($depth_count * 100) . "ms+ 예상\n\n";
-                    $response .= "공격 시나리오:\n";
-                    $response .= "user → posts → comments → author → posts → comments...\n";
-                    $response .= "→ 무한 순환 참조로 인한 서버 다운";
-                }
-                break;
-                
-            case 'field_suggestion':
-                $response .= "GraphQL Field Suggestion Attack:\n";
-                $response .= "- 목적: 존재하지 않는 필드 요청으로 필드명 추측\n";
-                $response .= "- 위험도: 중간 (정보 노출)\n\n";
-                
-                $response .= "시뮬레이션 응답:\n";
-                $response .= "{\n";
-                $response .= "  \"errors\": [\n";
-                $response .= "    {\n";
-                $response .= "      \"message\": \"Cannot query field 'secret_key' on type 'User'.\",\n";
-                $response .= "      \"extensions\": {\n";
-                $response .= "        \"code\": \"GRAPHQL_VALIDATION_FAILED\",\n";
-                $response .= "        \"suggestion\": \"Did you mean 'secretToken' or 'secretData'?\"\n";
-                $response .= "      }\n";
-                $response .= "    }\n";
-                $response .= "  ]\n";
-                $response .= "}\n\n";
-                $response .= "→ 에러 메시지를 통해 실제 필드명 추측 가능";
-                break;
-                
-            case 'injection':
-                $response .= "GraphQL Injection Attack:\n";
-                $response .= "- 목적: SQL Injection과 유사한 쿼리 조작\n";
-                $response .= "- 위험도: 높음 (데이터 조작, 권한 우회)\n\n";
-                
-                if (stripos($query, 'union') !== false || stripos($query, 'fragment') !== false) {
-                    $response .= "Fragment/Union 남용 감지:\n";
-                    $response .= "공격 시나리오:\n";
-                    $response .= "1. Fragment를 통한 필드 우회\n";
-                    $response .= "2. Union 타입을 통한 권한 상승\n";
-                    $response .= "3. Directive를 통한 조건 우회\n\n";
-                    $response .= "예상 피해:\n";
-                    $response .= "- 관리자 전용 필드 접근\n";
-                    $response .= "- 다른 사용자 데이터 조회\n";
-                    $response .= "- 숨겨진 API 엔드포인트 노출";
-                }
-                break;
-                
-            case 'batch_attack':
-                $response .= "GraphQL Batch Attack (Query Batching):\n";
-                $response .= "- 목적: 단일 요청으로 여러 작업 수행\n";
-                $response .= "- 위험도: 높음 (Rate Limiting 우회)\n\n";
-                
-                $batch_count = substr_count($query, 'query');
-                if ($batch_count > 1) {
-                    $response .= "배치 쿼리 개수: {$batch_count}개\n";
-                    $response .= "Rate Limiting 우회 가능성: 높음\n";
-                    $response .= "서버 부하: " . ($batch_count * 50) . "% 증가 예상\n\n";
-                    $response .= "공격 효과:\n";
-                    $response .= "- 브루트포스 공격 가속화\n";
-                    $response .= "- API 제한 회피\n";
-                    $response .= "- 대량 데이터 추출";
-                }
-                break;
-        }
-        
-    } else {
-        $response .= "안전한 GraphQL 쿼리:\n";
-        $response .= "위험한 패턴이 감지되지 않았습니다.\n";
-        $response .= "쿼리가 정상적으로 처리될 것으로 예상됩니다.\n\n";
-        
-        $response .= "예상 응답:\n";
-        $response .= "{\n";
-        $response .= "  \"data\": {\n";
-        $response .= "    \"user\": {\n";
-        $response .= "      \"id\": \"123\",\n";
-        $response .= "      \"name\": \"Test User\",\n";
-        $response .= "      \"email\": \"test@example.com\"\n";
-        $response .= "    }\n";
-        $response .= "  }\n";
-        $response .= "}";
-    }
-    
-    return $response;
-}
+
+    return ['result' => "<pre>{$response_sim}</pre>", 'error' => $error];
+};
+
+// 7. TestPage 인스턴스 생성 및 실행
+$test_page = new TestPage($page_title, $description, $payloads, $defense_methods, $references);
+$test_page->set_test_form($test_form_ui);
+$test_page->set_test_logic($test_logic_callback);
+$test_page->run();
+
 ?>
 
 <!DOCTYPE html>
@@ -357,15 +319,11 @@ function simulateGraphQLAttack($query, $type) {
         <div class="mitigation-guide">
             <h2>🛡️ 방어 방법</h2>
             <ul>
-                <li><strong>인트로스펙션 비활성화:</strong> 프로덕션에서 스키마 노출 차단</li>
-                <li><strong>쿼리 깊이 제한:</strong> 중첩 레벨 제한 (권장: 5-10 레벨)</li>
-                <li><strong>복잡도 분석:</strong> 쿼리 복잡도 계산 및 제한</li>
-                <li><strong>Rate Limiting:</strong> 요청 빈도 제한</li>
-                <li><strong>Timeout 설정:</strong> 쿼리 실행 시간 제한</li>
-                <li><strong>화이트리스트:</strong> 허용된 쿼리만 실행</li>
-                <li><strong>배치 제한:</strong> 단일 요청 내 쿼리 개수 제한</li>
-                <li><strong>필드 레벨 인증:</strong> 민감한 필드에 대한 접근 제어</li>
-                <li><strong>에러 메시지 최소화:</strong> 스키마 정보 노출 방지</li>
+                <li><strong>인트로스펙션 비활성화:</strong> 프로덕션 환경에서 스키마 인트로스펙션을 비활성화합니다.</li>
+                <li><strong>쿼리 깊이 제한:</strong> 중첩 쿼리의 최대 깊이를 제한합니다. (권장: 5-10 레벨)</li>
+                <li><strong>복잡도 분석:</strong> 쿼리의 복잡도를 계산하고 제한하여 서버 과부하를 방지합니다.</li>
+                <li><strong>Rate Limiting:</strong> 요청 빈도를 제한하여 DoS 공격을 방어합니다.</li>
+                <li><strong>필드 레벨 인증:</strong> 민감한 필드에 대한 접근 제어를 구현합니다.</li>
             </ul>
             
             <h4>🔧 GraphQL 보안 설정 예제:</h4>
@@ -454,6 +412,18 @@ fragment TypeRef on __Type {
       title
       comments {
         content
+      }
+    }
+  }
+}
+
+query DepthAttack2 {
+  user(id: 1) {
+    name
+    posts {
+      title
+      comments {
+        content
         author {
           name
           posts {
@@ -516,11 +486,11 @@ query UnionInjection {
 }`,
             
             batch_attack: `[
-  { "query": "query { user(id: 1) { name email } }" },
-  { "query": "query { user(id: 2) { name email } }" },
-  { "query": "query { user(id: 3) { name email } }" },
-  { "query": "query { user(id: 4) { name email } }" },
-  { "query": "query { user(id: 5) { name email } }" }
+  { "query": "query { user(id: 1) { name } }" },
+  { "query": "query { user(id: 2) { name } }" },
+  { "query": "query { user(id: 3) { name } }" },
+  { "query": "query { user(id: 4) { name } }" },
+  { "query": "query { user(id: 5) { name } }" }
 ]`,
             
             safe: `query SafeQuery {

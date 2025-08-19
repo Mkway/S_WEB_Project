@@ -5,7 +5,7 @@ COPY nginx/generate-ssl.sh /usr/local/bin/generate-ssl.sh
 RUN chmod +x /usr/local/bin/generate-ssl.sh
 
 # OpenSSL 설치 (Alpine에서 기본으로 포함되어 있음)
-RUN apk add --no-cache openssl
+
 
 # 기본 entrypoint를 재정의
 COPY nginx/docker-entrypoint.sh /docker-entrypoint.sh

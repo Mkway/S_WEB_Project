@@ -10,9 +10,17 @@
 my_lemp_project/
 ├── docker-compose.yml
 ├── nginx/
-│   └── default.conf
+│   ├── default.conf
+│   ├── docker-entrypoint.sh
+│   ├── generate-ssl.sh
+│   └── ssl/
+├── nginx.Dockerfile
+├── php.Dockerfile
 └── src/
     └── index.php
+    └── composer.json
+    └── composer.lock
+    └── ... (other php files)
 ```
 
 *   `my_lemp_project/`: 프로젝트의 최상위 디렉토리입니다.
@@ -22,7 +30,7 @@ my_lemp_project/
 
 ---
 
-#### **2. 파일 내용 작성**
+#### **3. 파일 내용 작성**
 
 각 파일에 아래 내용을 작성합니다.
 
@@ -31,7 +39,7 @@ my_lemp_project/
 이 파일은 `nginx`, `php`, `db` 세 개의 컨테이너를 정의합니다.
 
 ```yaml
-version: '3.8'
+version: '3.3' # Changed from 3.8
 
 services:
   # Nginx 웹 서버 서비스
@@ -39,19 +47,28 @@ services:
     image: nginx:stable-alpine
     container_name: my_nginx
     ports:
-      - "8080:80" # 호스트의 8080 포트를 컨테이너의 80 포트로 연결
+      - "80:80"
+      - "443:443" # Added
     volumes:
-      - ./src:/var/www/html
+      - ../:/app # Changed from ./src:/var/www/html
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/ssl:/etc/nginx/ssl # Added
     depends_on:
       - php
 
   # PHP-FPM 서비스
   php:
-    image: php:8.2-fpm-alpine
+    build: # Added build context
+      context: .
+      dockerfile: php.Dockerfile
     container_name: my_php
+    environment: # Added environment variables
+      MYSQL_DATABASE: 'my_database'
+      MYSQL_USER: 'my_user'
+      MYSQL_PASSWORD: 'my_password'
     volumes:
       - ./src:/var/www/html
+      - uploads_data:/var/www/html/uploads # Added
     depends_on:
       - db
 
@@ -61,15 +78,20 @@ services:
     container_name: my_db
     restart: always
     environment:
-      MYSQL_DATABASE: 'my_database'      # 생성할 데이터베이스 이름
-      MYSQL_USER: 'my_user'              # 데이터베이스 사용자
-      MYSQL_PASSWORD: 'my_password'      # 사용자 비밀번호
-      MYSQL_ROOT_PASSWORD: 'my_root_password' # root 계정 비밀번호
+      MYSQL_DATABASE: 'my_database'
+      MYSQL_USER: 'my_user'
+      MYSQL_PASSWORD: 'my_password'
+      MYSQL_ROOT_PASSWORD: 'my_root_password'
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck: # Added healthcheck
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
 volumes:
-  db_data: # 데이터베이스 데이터를 영구적으로 저장하기 위한 볼륨
+  db_data:
+  uploads_data: # Added
 
 ```
 
@@ -80,21 +102,64 @@ Nginx가 PHP 요청을 `php` 컨테이너로 전달하도록 설정합니다.
 ```nginx
 server {
     listen 80;
-    index index.php index.html;
     server_name localhost;
-    root /var/www/html;
+    root /app/my_lemp_project/src; # Changed from /var/www/html
+
+    index index.php index.html;
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
+    location /webhacking/ { # Added
+        alias /app/my_lemp_project/src/webhacking/; # Changed from /app/webhacking/
+        try_files $uri $uri/ =404;
+        index index.php;
+    }
+
     location ~ \.php$ {
         try_files $uri =404;
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass php:9000; # 'php'는 docker-compose에 정의된 PHP 서비스 이름
+        fastcgi_pass php:9000;
         fastcgi_index index.php;
         include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param SCRIPT_FILENAME /var/www/html$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+    }
+}
+
+# HTTPS 서버 블록 (Port 443) # Added
+server {
+    listen 443 ssl;
+    server_name localhost;
+    root /app/my_lemp_project/src;
+
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256;
+
+    index index.php index.html;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location /webhacking/ {
+        alias /app/my_lemp_project/src/webhacking/;
+        try_files $uri $uri/ =404;
+        index index.php;
+    }
+
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass php:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /var/www/html$fastcgi_script_name;
         fastcgi_param PATH_INFO $fastcgi_path_info;
     }
 }
@@ -140,7 +205,7 @@ PHP와 데이터베이스 연결이 잘 되었는지 확인하기 위한 테스�
 
 ---
 
-#### **3. Docker 컨테이너 실행**
+#### **4. Docker 컨테이너 실행**
 
 모든 파일 작성이 완료되면, `my_lemp_project` 디렉토리에서 아래 명령어를 실행하여 Docker 컨테이너들을 빌드하고 실행합니다.
 
@@ -153,7 +218,7 @@ docker-compose up -d
 
 웹 브라우저를 열고 주소창에 `http://localhost:8080` 을 입력합니다. "Hello from LEMP Stack!" 메시지와 함께 데이터베이스 연결 성공 메시지가 보이면 모든 설정이 성공적으로 완료된 것입니다.
 
-#### **5. 종료**
+#### **6. 종료**
 
 프로젝트를 중단하고 싶을 때는 아래 명령어를 실행하여 컨테이너를 정지하고 삭제합니다.
 
