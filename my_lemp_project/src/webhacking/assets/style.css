@@ -8,6 +8,11 @@ body {
     padding: 20px;
 }
 
+/* 반응형 기본 설정 */
+* {
+    box-sizing: border-box;
+}
+
 .container {
     max-width: 960px;
     margin: 0 auto;
@@ -171,4 +176,196 @@ ul {
 
 li {
     margin-bottom: 5px;
+}
+
+/* 모바일 반응형 스타일 */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .container {
+        max-width: 100%;
+        padding: 15px;
+        margin: 0;
+    }
+    
+    .nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .nav h1 {
+        font-size: 20px;
+    }
+    
+    .nav-links {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        padding: 10px 15px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+    
+    /* 테스트 섹션 모바일 최적화 */
+    .test-section {
+        margin-bottom: 20px;
+    }
+    
+    .payload-section {
+        margin-bottom: 15px;
+    }
+    
+    .payload-list {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    /* 코드 블록 가로 스크롤 */
+    pre, code {
+        font-size: 12px;
+        max-width: 100%;
+        overflow-x: auto;
+        white-space: pre;
+        word-wrap: normal;
+    }
+    
+    /* 테이블 반응형 */
+    table {
+        font-size: 12px;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    /* 폼 요소 모바일 친화적 */
+    input[type="text"],
+    input[type="url"],
+    textarea,
+    select {
+        width: 100%;
+        font-size: 16px; /* iOS zoom 방지 */
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+    
+    /* 결과 박스 모바일 최적화 */
+    .result-box,
+    .info-box,
+    .defense-box {
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+    }
+}
+
+/* 태블릿 스타일 */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        max-width: 90%;
+        padding: 20px;
+    }
+    
+    .nav {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    
+    .nav-links {
+        gap: 15px;
+    }
+    
+    pre, code {
+        font-size: 13px;
+    }
+}
+
+/* 큰 화면 최적화 */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1100px;
+        padding: 30px;
+    }
+    
+    body {
+        padding: 30px;
+    }
+    
+    .nav h1 {
+        font-size: 28px;
+    }
+}
+
+/* 보안 테스트 결과 시각화 개선 */
+.vulnerability-indicator {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.vulnerability-high {
+    background-color: #dc3545;
+    color: white;
+}
+
+.vulnerability-medium {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.vulnerability-low {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.vulnerability-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+/* 다크모드 지원 */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+    
+    .container {
+        background-color: #1e1e1e;
+        box-shadow: 0 2px 10px rgba(255,255,255,0.1);
+    }
+    
+    .btn {
+        background-color: #0d6efd;
+    }
+    
+    .btn:hover {
+        background-color: #0b5ed7;
+    }
+    
+    code {
+        background: #2d2d2d;
+        color: #f8f8f2;
+    }
+    
+    .info-box {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .defense-box {
+        background-color: #22543d;
+        border-color: #38a169;
+        color: #c6f6d5;
+    }
 }

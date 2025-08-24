@@ -31,7 +31,7 @@ $comments = $comments_stmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($post['title']); ?></title>
+    <title><?php echo safe_output($post['title']); ?></title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -41,8 +41,8 @@ $comments = $comments_stmt->fetchAll();
                 ⚠️ 취약점 테스트 모드 활성화 (교육 목적)
             </div>
         <?php endif; ?>
-        <h1><?php echo htmlspecialchars($post['title']); ?></h1>
-        <p>By <a href="profile.php?id=<?php echo $post['user_id']; ?>"><?php echo htmlspecialchars($post['username']); ?></a> on <?php echo $post['created_at']; ?></p>
+        <h1><?php echo safe_output($post['title']); ?></h1>
+        <p>By <a href="profile.php?id=<?php echo $post['user_id']; ?>"><?php echo safe_output($post['username']); ?></a> on <?php echo $post['created_at']; ?></p>
         <div class="categories">
             <strong>Categories:</strong>
             <?php
@@ -51,7 +51,7 @@ $comments = $comments_stmt->fetchAll();
             $categories = $categories_stmt->fetchAll();
             if ($categories) {
                 foreach ($categories as $index => $category) {
-                    echo '<a href="index.php?category=' . $category['id'] . '">' . htmlspecialchars($category['name']) . '</a>';
+                    echo '<a href="index.php?category=' . $category['id'] . '">' . safe_output($category['name']) . '</a>'
                     if ($index < count($categories) - 1) {
                         echo ', ';
                     }
@@ -74,10 +74,10 @@ $comments = $comments_stmt->fetchAll();
                         $file_extension = pathinfo($file['filename'], PATHINFO_EXTENSION);
                         $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
                         if (in_array(strtolower($file_extension), $image_extensions)) {
-                            echo '<img src="' . htmlspecialchars($file['filepath']) . '" alt="' . htmlspecialchars($file['filename']) . '" style="max-width: 100%; height: auto;"><br>';
+                            echo '<img src="' . safe_output($file['filepath']) . '" alt="' . safe_output($file['filename']) . '" style="max-width: 100%; height: auto;"><br>';
                         }
                         ?>
-                        <a href="<?php echo htmlspecialchars($file['filepath']); ?>" download><?php echo htmlspecialchars($file['filename']); ?></a>
+                        <a href="<?php echo safe_output($file['filepath']); ?>" download><?php echo safe_output($file['filename']); ?></a>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -102,7 +102,7 @@ $comments = $comments_stmt->fetchAll();
             <div class="comments-section">
                 <?php foreach ($comments as $comment): ?>
                     <div class="comment" style="border: 1px solid #eee; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
-                        <p><strong><?php echo htmlspecialchars($comment['username']); ?></strong> on <?php echo $comment['created_at']; ?></p>
+                        <p><strong><?php echo safe_output($comment['username']); ?></strong> on <?php echo $comment['created_at']; ?></p>
                         <p>
                         <?php 
                         // 취약점 모드일 때 XSS 허용 (교육 목적)
@@ -129,7 +129,7 @@ $comments = $comments_stmt->fetchAll();
                             echo nl2br($comment['content']);
                         } else {
                             // 안전한 출력 (HTML 엔티티 인코딩)
-                            echo nl2br(htmlspecialchars($comment['content']));
+                            echo nl2br(safe_output($comment['content']));
                         }
                         ?>
                         </p>
@@ -152,6 +152,9 @@ $comments = $comments_stmt->fetchAll();
             <h3>Add a Comment</h3>
             <form action="add_comment.php" method="post">
                 <input type="hidden" name="post_id" value="<?php echo $post['id']; ?>">
+                <?php if (!(defined('VULNERABILITY_MODE') && VULNERABILITY_MODE === true)): ?>
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+                <?php endif; ?>
                 <textarea name="content" placeholder="Your comment" required></textarea><br>
                 <button type="submit" class="btn">Submit Comment</button>
             </form>

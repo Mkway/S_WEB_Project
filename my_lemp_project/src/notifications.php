@@ -37,7 +37,7 @@ $notifications = $notifications_stmt->fetchAll();
             <div class="notifications-list">
                 <?php foreach ($notifications as $notification): ?>
                     <div class="notification-item <?php echo $notification['is_read'] ? 'read' : 'unread'; ?>">
-                        <p><?php echo htmlspecialchars($notification['message']); ?></p>
+                        <p><?php echo safe_output($notification['message']); ?></p>
                         <span class="timestamp"><?php echo $notification['created_at']; ?></span>
                         <?php if ($notification['type'] === 'new_comment' && $notification['source_id']): ?>
                             <a href="view_post.php?id=<?php echo $notification['source_id']; ?>" class="btn btn-sm">View Post</a>

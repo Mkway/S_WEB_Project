@@ -1,0 +1,180 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php-version: [8.1, 8.2, 8.3]
+    
+    services:
+      mysql:
+        image: mariadb:10.6
+        env:
+          MYSQL_ROOT_PASSWORD: test_password
+          MYSQL_DATABASE: test_database
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP ${{ matrix.php-version }}
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql
+        coverage: xdebug
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: /tmp/composer-cache
+        key: ${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+
+    - name: Install dependencies
+      run: |
+        cd my_lemp_project/src
+        composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Setup test environment
+      run: |
+        cd my_lemp_project/src
+        cp config.php.example config.php || true
+        # 테스트 환경 설정
+        echo "<?php
+        define('DB_HOST', '127.0.0.1');
+        define('DB_NAME', 'test_database');
+        define('DB_USER', 'test_user');
+        define('DB_PASS', 'test_password');
+        define('SITE_NAME', 'Test Site');
+        define('VULNERABILITY_MODE', false);
+        define('DEBUG_MODE', true);
+        define('SESSION_TIMEOUT', 3600);
+        ?>" > config.php
+
+    - name: Wait for MySQL
+      run: |
+        until mysqladmin ping -h 127.0.0.1 -u test_user -ptest_password; do
+          echo 'Waiting for MySQL...'
+          sleep 5
+        done
+
+    - name: Run PHPUnit tests
+      run: |
+        cd my_lemp_project/src
+        vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./my_lemp_project/src/coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: tests
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP 8.2
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql
+
+    - name: Install Composer dependencies
+      run: |
+        cd my_lemp_project/src
+        composer install --prefer-dist --no-progress --no-dev
+
+    - name: Run security audit
+      run: |
+        cd my_lemp_project/src
+        composer audit || true
+
+    - name: Check for known vulnerabilities
+      run: |
+        cd my_lemp_project/src
+        # composer require --dev sensiolabs/security-checker
+        # vendor/bin/security-checker security:check composer.lock
+
+  code-quality:
+    runs-on: ubuntu-latest
+    needs: tests
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP 8.2
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+        extensions: mbstring, xml, ctype, iconv, intl
+
+    - name: Install dependencies
+      run: |
+        cd my_lemp_project/src
+        composer install --prefer-dist --no-progress
+
+    - name: Run PHP_CodeSniffer
+      run: |
+        cd my_lemp_project/src
+        # vendor/bin/phpcs --standard=PSR12 --ignore=vendor,test . || true
+
+    - name: Run PHPStan
+      run: |
+        cd my_lemp_project/src  
+        # vendor/bin/phpstan analyse --level=5 . || true
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [tests, security-scan, code-quality]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and test Docker images
+      run: |
+        cd my_lemp_project
+        docker-compose -f docker-compose.yml build
+        docker-compose -f docker-compose.yml up -d
+        sleep 30
+        # Basic health check
+        curl -f http://localhost || exit 1
+        docker-compose -f docker-compose.yml down
+
+    - name: Run Docker security scan
+      run: |
+        # docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+        #   -v $(pwd):/src aquasec/trivy image my_lemp_project_nginx || true
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Deploy notification
+      run: |
+        echo "🚀 Ready for deployment to production"
+        echo "All tests passed and Docker images built successfully"

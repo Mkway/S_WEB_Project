@@ -94,10 +94,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
             
             <label for="username">Username</label>
-            <input type="text" name="username" id="username" placeholder="Username" required value="<?php echo isset($username) ? htmlspecialchars($username) : ''; ?>"><br>
+            <input type="text" name="username" id="username" placeholder="Username" required value="<?php echo isset($username) ? safe_output($username) : ''; ?>"><br>
             
             <label for="email">Email</label>
-            <input type="email" name="email" id="email" placeholder="Email" required value="<?php echo isset($email) ? htmlspecialchars($email) : ''; ?>"><br>
+            <input type="email" name="email" id="email" placeholder="Email" required value="<?php echo isset($email) ? safe_output($email) : ''; ?>"><br>
             
             <label for="password">Password</label>
             <input type="password" name="password" id="password" placeholder="Password" required><br>
