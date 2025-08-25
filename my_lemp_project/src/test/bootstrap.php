@@ -2,18 +2,35 @@
 
 // 테스트 환경 설정
 
-// 데이터베이스 연결 설정 (테스트용)
-$host = 'db';
-$dbname = 'my_database'; // 실제 애플리케이션과 동일한 DB 사용
-$user = 'my_user';
-$pass = 'my_password';
+// CI 환경 감지 및 데이터베이스 연결 설정
+$isCI = getenv('CI') || getenv('GITHUB_ACTIONS');
+
+if ($isCI) {
+    // GitHub Actions CI 환경
+    $host = '127.0.0.1';
+    $dbname = 'test_database';
+    $user = 'test_user';
+    $pass = 'test_password';
+} else {
+    // 로컬 개발 환경
+    $host = 'db';
+    $dbname = 'my_database';
+    $user = 'my_user';
+    $pass = 'my_password';
+}
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    echo "Test Database connection failed: " . $e->getMessage();
-    exit(1);
+    if ($isCI) {
+        echo "Test Database connection failed: " . $e->getMessage();
+        exit(1);
+    } else {
+        // 로컬에서는 데이터베이스 없이 테스트 진행
+        echo "Database not available locally, skipping database-dependent tests\n";
+        $pdo = null;
+    }
 }
 
 // 테스트 데이터베이스 초기화 및 샘플 데이터 삽입
@@ -82,7 +99,10 @@ function setupTestDatabase($pdo) {
     $stmt->execute(['adminuser', 'admin@example.com', $password, 1]);
 }
 
-setupTestDatabase($pdo);
+// 데이터베이스가 사용 가능한 경우에만 초기화
+if ($pdo !== null) {
+    setupTestDatabase($pdo);
+}
 
 // PDO 객체를 전역으로 사용하거나, 테스트 클래스에 주입할 수 있도록 설정
 // 여기서는 간단하게 전역 변수로 설정 (실제 프로젝트에서는 DI를 고려)

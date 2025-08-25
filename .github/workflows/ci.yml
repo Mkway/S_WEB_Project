@@ -45,7 +45,11 @@ jobs:
     - name: Install dependencies
       run: |
         cd my_lemp_project/src
-        composer install --prefer-dist --no-progress --no-suggest
+        if [ -f composer.lock ]; then
+          composer install --prefer-dist --no-progress
+        else
+          composer update --no-progress --prefer-dist
+        fi
 
     - name: Setup test environment
       run: |
@@ -65,15 +69,31 @@ jobs:
 
     - name: Wait for MySQL
       run: |
-        until mysqladmin ping -h 127.0.0.1 -u test_user -ptest_password; do
-          echo 'Waiting for MySQL...'
-          sleep 5
+        for i in {1..12}; do
+          if mysqladmin ping -h 127.0.0.1 -u test_user -ptest_password --silent; then
+            echo "MySQL is ready!"
+            break
+          fi
+          echo "Waiting for MySQL... (attempt $i/12)"
+          sleep 10
         done
+        # 최종 연결 확인
+        mysqladmin ping -h 127.0.0.1 -u test_user -ptest_password
 
     - name: Run PHPUnit tests
       run: |
         cd my_lemp_project/src
-        vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
+        # 환경 변수 설정
+        export CI=true
+        export GITHUB_ACTIONS=true
+        # PHPUnit 실행
+        if [ -f vendor/bin/phpunit ]; then
+          vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
+        else
+          echo "PHPUnit not found, installing dependencies first..."
+          composer install --prefer-dist --no-progress
+          vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
+        fi
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
