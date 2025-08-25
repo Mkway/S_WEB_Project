@@ -1,233 +1,232 @@
 <?php
-/**
- * Business Logic Errors 취약점 테스트 페이지
- * 교육 목적으로만 사용하시기 바랍니다.
- */
-
-session_start();
-require_once '../db.php';
-require_once '../utils.php';
-
-// 로그인 확인
-if (!is_logged_in()) {
-    header('Location: ../login.php');
-    exit();
-}
-
-$result = '';
-$test_scenario = '';
-$test_data = '';
+require_once 'TestPage.php';
 
 // 시뮬레이션용 사용자 데이터
 $current_user = [
     'id' => 123,
-    'username' => $_SESSION['username'],
+    'username' => $_SESSION['username'] ?? 'guest',
     'balance' => 1000,
     'role' => 'user',
     'subscription_expires' => '2025-12-31',
     'failed_login_attempts' => 0
 ];
 
-// Business Logic 공격 시뮬레이션
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_logic'])) {
-    $test_scenario = $_POST['scenario'] ?? '';
-    $test_data = $_POST['test_data'] ?? '';
-    
-    if (empty($test_scenario)) {
-        $result = "테스트 시나리오를 선택해주세요.";
-    } else {
-        $result = simulateBusinessLogicAttack($test_scenario, $test_data, $current_user);
-    }
-}
+// 1. 페이지 설정
+$page_title = 'Business Logic Errors';
+$description = '<p><strong>Business Logic Errors</strong>는 애플리케이션의 비즈니스 로직 구현 오류로 인해 발생하는 취약점입니다.</p>
+<p>기술적 보안은 완벽해도 업무 흐름의 논리적 결함을 악용하여 시스템을 우회하거나 부정한 이익을 얻을 수 있습니다.</p>';
 
-function simulateBusinessLogicAttack($scenario, $data, $user) {
+// 2. 페이로드 정의
+$payloads = [
+    'price_manipulation' => [
+        'title' => '가격 조작 (Price Manipulation)',
+        'description' => '상품 가격을 음수나 0으로 조작하여 무료 구매 또는 잔액 증가를 시도합니다.',
+        'payloads' => [
+            '-1000', '0', '0.01'
+        ]
+    ],
+    'quantity_manipulation' => [
+        'title' => '수량 조작 (Quantity Manipulation)',
+        'description' => '주문 수량을 음수나 매우 큰 값으로 조작하여 재고 조작 또는 오버플로우를 유발합니다.',
+        'payloads' => [
+            '-50', '0', '999999999'
+        ]
+    ],
+    'workflow_bypass' => [
+        'title' => '워크플로우 우회 (Workflow Bypass)',
+        'description' => '정상적인 비즈니스 프로세스의 단계를 건너뛰거나 순서를 변경하여 로직을 우회합니다.',
+        'payloads' => [
+            'activate,register', // 이메일 인증 없이 활성화
+            'complete_profile,register' // 회원가입 없이 프로필 생성
+        ]
+    ],
+    'time_manipulation' => [
+        'title' => '시간 조작 (Time Manipulation)',
+        'description' => '시간 관련 로직(예: 쿠폰 유효 기간, 경매 마감)을 조작하여 부당한 이득을 얻습니다.',
+        'payloads' => [
+            '2030-12-31 23:59:59', // 미래 시간
+            '1999-01-01 00:00:00' // 과거 시간
+        ]
+    ],
+    'state_manipulation' => [
+        'title' => '상태 조작 (State Manipulation)',
+        'description' => '주문, 계정 등의 상태를 비정상적으로 변경하여 로직을 우회합니다.',
+        'payloads' => [
+            'pending -> completed', // 결제 없이 주문 완료
+            'cancelled -> shipped' // 취소된 주문 배송
+        ]
+    ],
+    'rate_limit_bypass' => [
+        'title' => 'Rate Limit 우회',
+        'description' => '요청 빈도 제한을 우회하여 무차별 대입 공격이나 DoS 공격을 시도합니다.',
+        'payloads' => [
+            '1.1.1.1,1.1.1.1,1.1.1.1,2.2.2.2,2.2.2.2', // 분산 IP
+            'user1,user1,user1,user2,user2' // 사용자명 반복
+        ]
+    ]
+];
+
+// 3. 방어 방법 정의
+$defense_methods = [
+    "<strong>입력 검증 강화:</strong> 모든 입력값의 범위, 타입, 형식 검증",
+    "<strong>서버 사이드 검증:</strong> 클라이언트 검증에 의존하지 않고 서버에서 재검증",
+    "<strong>상태 머신 구현:</strong> 명확한 상태 전환 규칙 정의 및 강제",
+    "<strong>트랜잭션 관리:</strong> ACID 속성을 보장하는 데이터베이스 트랜잭션",
+    "<strong>시간 검증:</strong> 서버 시간 기준으로 모든 시간 관련 로직 처리",
+    "<strong>Rate Limiting:</strong> IP, 사용자, 세션별 요청 빈도 제한",
+    "<strong>워크플로우 검증:</strong> 각 단계별 전제 조건 확인",
+    "<strong>로깅 및 모니터링:</strong> 비정상적인 패턴 감지 및 알림",
+    "<strong>코드 리뷰:</strong> 비즈니스 로직에 대한 철저한 검토"
+];
+
+// 4. 참고 자료 정의
+$references = [
+    "OWASP - Business Logic Flaws" => "https://owasp.org/www-community/attacks/Business_Logic_Flaws",
+    "PortSwigger - Logic flaws" => "https://portswigger.net/web-security/logic-flaws"
+];
+
+// 5. 테스트 폼 UI 정의
+$test_scenario_selected = htmlspecialchars($_POST['scenario'] ?? '');
+$test_data_input = htmlspecialchars($_POST['payload'] ?? '');
+
+$test_form_ui = <<<HTML
+<div class="info-box" style="background: #e3f2fd; border-color: #2196f3;">
+    <h4>👤 현재 사용자 정보 (시뮬레이션)</h4>
+    <p><strong>사용자:</strong> {$current_user['username']} (ID: {$current_user['id']})</p>
+    <p><strong>잔액:</strong> {$current_user['balance']}원</p>
+    <p><strong>권한:</strong> {$current_user['role']}</p>
+    <p><strong>구독 만료:</strong> {$current_user['subscription_expires']}</p>
+    <p><strong>로그인 실패:</strong> {$current_user['failed_login_attempts']}회</p>
+</div>
+
+<form method="post" class="test-form">
+    <h3>🧪 Business Logic 테스트</h3>
+    <label for="scenario">테스트 시나리오 선택:</label>
+    <select id="scenario" name="scenario">
+        <option value="">-- 시나리오 선택 --</option>
+        <option value="price_manipulation" {$test_scenario_selected === 'price_manipulation' ? 'selected' : ''}>가격 조작 (Price Manipulation)</option>
+        <option value="quantity_manipulation" {$test_scenario_selected === 'quantity_manipulation' ? 'selected' : ''}>수량 조작 (Quantity Manipulation)</option>
+        <option value="workflow_bypass" {$test_scenario_selected === 'workflow_bypass' ? 'selected' : ''}>워크플로우 우회 (Workflow Bypass)</option>
+        <option value="time_manipulation" {$test_scenario_selected === 'time_manipulation' ? 'selected' : ''}>시간 조작 (Time Manipulation)</option>
+        <option value="state_manipulation" {$test_scenario_selected === 'state_manipulation' ? 'selected' : ''}>상태 조작 (State Manipulation)</option>
+        <option value="rate_limit_bypass" {$test_scenario_selected === 'rate_limit_bypass' ? 'selected' : ''}>Rate Limit 우회</option>
+    </select><br><br>
+    
+    <label for="payload">테스트 데이터 입력:</label>
+    <input type="text" id="payload" name="payload" value="{$test_data_input}" placeholder="시나리오별 테스트 데이터를 입력하세요">
+    <br><br>
+    <button type="submit" class="btn">Business Logic 테스트</button>
+</form>
+HTML; 
+
+// 6. 테스트 로직 콜백 정의
+$test_logic_callback = function($form_data) use ($current_user) {
+    $result_html = '';
+    $error = '';
+    $scenario = $form_data['scenario'] ?? '';
+    $data = $form_data['payload'] ?? '';
+
+    if (empty($scenario)) {
+        $error = "테스트 시나리오를 선택해주세요.";
+        return ['result' => '', 'error' => $error];
+    }
+
     $response = "[시뮬레이션] Business Logic 테스트 결과\n";
-    $response .= "사용자: {$user['username']} (ID: {$user['id']})\n";
-    $response .= "현재 잔액: {$user['balance']}원\n";
+    $response .= "사용자: {$current_user['username']} (ID: {$current_user['id']})\n";
+    $response .= "현재 잔액: {$current_user['balance']}원\n";
     $response .= "테스트 시나리오: {$scenario}\n\n";
     
     switch ($scenario) {
         case 'price_manipulation':
-            $response .= "가격 조작 공격 테스트:\n";
-            $response .= "입력 데이터: {$data}\n\n";
-            
             $price = floatval($data);
             if ($price < 0) {
                 $response .= "🚨 취약점 발견: 음수 가격 허용\n";
-                $response .= "공격 결과: \n";
-                $response .= "- 상품 가격: {$price}원 (음수!)\n";
-                $response .= "- 결제 시 잔액 증가: " . ($user['balance'] + abs($price)) . "원\n";
-                $response .= "- 공격자 이익: " . abs($price) . "원 획득\n\n";
-                $response .= "실제 피해 시나리오:\n";
-                $response .= "1. 공격자가 -1000원 상품 '구매'\n";
-                $response .= "2. 시스템이 잔액에서 -1000원을 차감 (실제로는 +1000원)\n";
-                $response .= "3. 공격자 계정 잔액 무한 증가 가능";
+                $response .= "공격 결과: 결제 시 잔액 증가: " . ($current_user['balance'] + abs($price)) . "원\n";
             } elseif ($price == 0) {
                 $response .= "🚨 취약점 발견: 0원 가격 허용\n";
-                $response .= "공격 결과: 모든 상품을 무료로 구매 가능";
-            } elseif ($price > 0 && $price < 1) {
-                $response .= "⚠️ 위험: 소수점 가격 조작\n";
-                $response .= "0.01원으로 고가 상품 구매 시도 가능";
             } else {
                 $response .= "✅ 정상 가격: {$price}원\n";
-                $response .= "취약점이 발견되지 않았습니다.";
             }
             break;
             
         case 'quantity_manipulation':
-            $response .= "수량 조작 공격 테스트:\n";
-            $response .= "주문 수량: {$data}\n\n";
-            
             $quantity = intval($data);
             if ($quantity < 0) {
                 $response .= "🚨 취약점 발견: 음수 수량 허용\n";
-                $response .= "공격 결과:\n";
-                $response .= "- 주문 수량: {$quantity}개 (음수!)\n";
-                $response .= "- 재고 증가: " . abs($quantity) . "개\n";
-                $response .= "- 잔액 환불: " . (abs($quantity) * 100) . "원\n\n";
-                $response .= "실제 피해:\n";
-                $response .= "1. -100개 주문으로 재고 100개 증가\n";
-                $response .= "2. 10,000원 환불 받음\n";
-                $response .= "3. 재고 조작 + 금전적 이익";
+                $response .= "공격 결과: 재고 증가 및 잔액 환불\n";
             } elseif ($quantity == 0) {
                 $response .= "⚠️ 의심: 0개 주문\n";
-                $response .= "무료 배송비나 쿠폰 남용 가능성";
-            } elseif ($quantity > 999999) {
-                $response .= "🚨 취약점 발견: 정수 오버플로우 위험\n";
-                $response .= "매우 큰 수량으로 시스템 오류 유발 가능";
             } else {
-                $response .= "✅ 정상 수량: {$quantity}개";
+                $response .= "✅ 정상 수량: {$quantity}개\n";
             }
             break;
             
         case 'workflow_bypass':
-            $response .= "워크플로우 우회 공격 테스트:\n";
-            $response .= "단계 순서: {$data}\n\n";
-            
             $steps = explode(',', $data);
             $expected_flow = ['register', 'verify_email', 'complete_profile', 'activate'];
-            
             if ($steps !== $expected_flow) {
                 $response .= "🚨 취약점 발견: 워크플로우 우회\n";
                 $response .= "예상 순서: " . implode(' → ', $expected_flow) . "\n";
-                $response .= "실제 순서: " . implode(' → ', $steps) . "\n\n";
-                
-                if (in_array('activate', $steps) && !in_array('verify_email', $steps)) {
-                    $response .= "이메일 인증 없이 계정 활성화 성공!\n";
-                    $response .= "→ 무효한 이메일로 계정 생성 가능";
-                }
-                if (in_array('complete_profile', $steps) && !in_array('register', $steps)) {
-                    $response .= "회원가입 없이 프로필 생성 시도!\n";
-                    $response .= "→ 시스템 로직 오류 유발 가능";
-                }
+                $response .= "실제 순서: " . implode(' → ', $steps) . "\n";
             } else {
-                $response .= "✅ 정상적인 워크플로우 진행";
+                $response .= "✅ 정상적인 워크플로우 진행\n";
             }
             break;
             
         case 'time_manipulation':
-            $response .= "시간 조작 공격 테스트:\n";
-            $response .= "제출 시간: {$data}\n\n";
-            
             $submitted_time = strtotime($data);
             $current_time = time();
             $time_diff = $submitted_time - $current_time;
-            
             if ($submitted_time === false) {
-                $response .= "⚠️ 잘못된 시간 형식";
-            } elseif ($time_diff > 86400) { // 24시간 이후
+                $response .= "⚠️ 잘못된 시간 형식\n";
+            } elseif ($time_diff > 86400) {
                 $response .= "🚨 취약점 발견: 미래 시간 조작\n";
-                $response .= "시간 차이: " . round($time_diff / 3600, 2) . "시간 후\n";
-                $response .= "공격 시나리오:\n";
-                $response .= "- 할인 쿠폰 유효기간 연장\n";
-                $response .= "- 경매 마감시간 조작\n";
-                $response .= "- 구독 만료일 연장";
-            } elseif ($time_diff < -86400 * 365) { // 1년 이전
+            } elseif ($time_diff < -86400 * 365) {
                 $response .= "🚨 취약점 발견: 과거 시간 조작\n";
-                $response .= "시간 차이: " . abs(round($time_diff / 86400)) . "일 전\n";
-                $response .= "공격 시나리오:\n";
-                $response .= "- 포인트 적립 중복 처리\n";
-                $response .= "- 로그 조작으로 감사 회피\n";
-                $response .= "- 과거 가격으로 상품 구매";
             } else {
-                $response .= "✅ 정상적인 시간 범위";
+                $response .= "✅ 정상적인 시간 범위\n";
             }
             break;
             
         case 'state_manipulation':
-            $response .= "상태 조작 공격 테스트:\n";
-            $response .= "상태 변경 요청: {$data}\n\n";
-            
             $states = explode(' -> ', $data);
             if (count($states) !== 2) {
-                $response .= "⚠️ 잘못된 상태 변경 형식";
+                $response .= "⚠️ 잘못된 상태 변경 형식\n";
                 break;
             }
-            
             $from_state = $states[0];
             $to_state = $states[1];
-            
-            // 허용되지 않는 상태 변경 체크
             $forbidden_transitions = [
                 'pending' => ['completed', 'refunded'],
-                'cancelled' => ['completed', 'shipped'],
-                'refunded' => ['pending', 'shipped', 'completed']
+                'cancelled' => ['completed', 'shipped']
             ];
-            
-            if (isset($forbidden_transitions[$from_state]) && 
-                in_array($to_state, $forbidden_transitions[$from_state])) {
-                
+            if (isset($forbidden_transitions[$from_state]) && in_array($to_state, $forbidden_transitions[$from_state])) {
                 $response .= "🚨 취약점 발견: 비정상적 상태 변경\n";
-                $response .= "'{$from_state}' → '{$to_state}' 변경은 정책상 불가능\n\n";
-                $response .= "공격 효과:\n";
-                
-                if ($from_state === 'pending' && $to_state === 'completed') {
-                    $response .= "- 결제 없이 주문 완료 처리\n";
-                    $response .= "- 상품 무료 획득";
-                } elseif ($from_state === 'cancelled' && $to_state === 'shipped') {
-                    $response .= "- 취소된 주문의 배송 강제 실행\n";
-                    $response .= "- 환불 후 상품 수령";
-                } elseif ($from_state === 'refunded' && $to_state === 'completed') {
-                    $response .= "- 환불 완료 후 재완료 처리\n";
-                    $response .= "- 이중 결제 또는 중복 상품 획득";
-                }
             } else {
-                $response .= "✅ 정상적인 상태 변경: {$from_state} → {$to_state}";
+                $response .= "✅ 정상적인 상태 변경: {$from_state} → {$to_state}\n";
             }
             break;
             
         case 'rate_limit_bypass':
-            $response .= "Rate Limiting 우회 공격 테스트:\n";
-            $response .= "요청 패턴: {$data}\n\n";
-            
             $requests = explode(',', $data);
             $request_count = count($requests);
-            $unique_ips = count(array_unique($requests));
-            
             if ($request_count > 100) {
                 $response .= "🚨 취약점 발견: 과도한 요청 빈도\n";
-                $response .= "총 요청 수: {$request_count}회\n";
-                $response .= "고유 IP 수: {$unique_ips}개\n\n";
-                
-                if ($unique_ips > 10) {
-                    $response .= "분산 IP를 통한 Rate Limit 우회 시도:\n";
-                    $response .= "- Botnet을 통한 분산 공격\n";
-                    $response .= "- Proxy/VPN을 통한 IP 변조\n";
-                    $response .= "- 각 IP당 제한 회피";
-                } else {
-                    $response .= "단일/소수 IP를 통한 무차별 요청:\n";
-                    $response .= "- 브루트포스 공격\n";
-                    $response .= "- DoS 공격\n";
-                    $response .= "- 시스템 리소스 고갈";
-                }
             } else {
-                $response .= "✅ 정상적인 요청 빈도: {$request_count}회";
+                $response .= "✅ 정상적인 요청 빈도: {$request_count}회\n";
             }
             break;
     }
     
-    return $response;
-}
+    return ['result' => "<pre>{$response}</pre>", 'error' => $error];
+};
+
+// 7. TestPage 인스턴스 생성 및 실행
+$test_page = new TestPage($page_title, $description, $payloads, $defense_methods, $references);
+$test_page->set_test_form($test_form_ui);
+$test_page->set_test_logic($test_logic_callback);
+$test_page->run();
+
 ?>
 
 <!DOCTYPE html>
@@ -412,7 +411,6 @@ function simulateBusinessLogicAttack($scenario, $data, $user) {
                 <li><strong>Rate Limiting:</strong> IP, 사용자, 세션별 요청 빈도 제한</li>
                 <li><strong>워크플로우 검증:</strong> 각 단계별 전제 조건 확인</li>
                 <li><strong>로깅 및 모니터링:</strong> 비정상적인 패턴 감지 및 알림</li>
-                <li><strong>Business Rules Engine:</strong> 복잡한 비즈니스 로직의 중앙화</li>
                 <li><strong>코드 리뷰:</strong> 비즈니스 로직에 대한 철저한 검토</li>
             </ul>
             
@@ -464,10 +462,10 @@ function canTransitionState($from, $to) {
             const examples = {
                 'price_manipulation': '-1000',
                 'quantity_manipulation': '-50',
-                'workflow_bypass': 'activate,complete_profile,register',
-                'time_manipulation': '2030-12-31 23:59:59',
-                'state_manipulation': 'cancelled -> completed',
-                'rate_limit_bypass': '1.1.1.1,1.1.1.1,1.1.1.1,2.2.2.2,2.2.2.2'
+                'workflow_bypass': 'activate,register', // 이메일 인증 없이 활성화
+                'time_manipulation': '2030-12-31 23:59:59', // 미래 시간
+                'state_manipulation': 'cancelled -> completed', // 결제 없이 주문 완료
+                'rate_limit_bypass': '1.1.1.1,1.1.1.1,1.1.1.1,2.2.2.2,2.2.2.2' // 분산 IP
             };
             
             const placeholders = {
