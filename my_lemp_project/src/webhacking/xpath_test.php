@@ -36,7 +36,7 @@ $payloads = [
         'description' => '인증 과정을 우회하여 접근 권한을 획득합니다.',
         'payloads' => [
             "' or '1'='1",
-            "' or 1=1 or '",
+            "' or 1=1 or ",
             "'] | //user[position()=1] | //user['"
         ]
     ],
@@ -45,7 +45,7 @@ $payloads = [
         'description' => '응답을 직접 볼 수 없을 때, 참/거짓 조건으로 정보를 추출합니다.',
         'payloads' => [
             'string-length(//user[1]/password)>5',
-            'substring(//user[1]/password,1,1)='a'',
+            'substring(//user[1]/password,1,1)=\'a\'',
             'count(//user)=3'
         ]
     ],
@@ -62,7 +62,7 @@ $payloads = [
 
 // 3. 방어 방법 정의
 $defense_methods = [
-    "<strong>입력 검증:</strong> XPath 메타문자 (`'`,`"`,`[`, `]`, `(`, `)`, `/`) 필터링",
+    "<strong>입력 검증:</strong> XPath 메타문자 (`'`,`\"`,`[`, `]`, `(`, `)`, `/`) 필터링",
     "<strong>매개변수화:</strong> XPath 변수를 사용한 쿼리 구성 (예: `DOMXPath::evaluate()`의 두 번째 인자)",
     "<strong>화이트리스트:</strong> 허용된 문자와 패턴만 허용",
     "<strong>이스케이프 처리:</strong> 특수 문자를 적절히 이스케이프",

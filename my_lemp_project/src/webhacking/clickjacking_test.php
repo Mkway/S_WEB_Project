@@ -1,4 +1,3 @@
-
 <?php
 require_once 'TestPage.php';
 
@@ -11,7 +10,7 @@ $description = '<p><strong>Clickjacking</strong>은 사용자가 웹 페이지�
 $payloads = [
     'scenario' => [
         'title' => '🧪 테스트 시나리오',
-        'description' => '아래 '클릭하세요!' 버튼을 클릭하면, 실제로는 투명한 `iframe` 위에 겹쳐진 외부 페이지의 버튼을 클릭하게 됩니다.',
+        'description' => '아래 \'클릭하세요!\' 버튼을 클릭하면, 실제로는 투명한 `iframe` 위에 겹쳐진 외부 페이지의 버튼을 클릭하게 됩니다.',
         'payloads' => [] // 페이로드 버튼은 없음
     ]
 ];

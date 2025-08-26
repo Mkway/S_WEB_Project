@@ -64,7 +64,7 @@ $test_logic_callback = function($form_data) {
     $result = '';
     $error = '';
 
-    $sanitized_command = preg_replace('/[;&|`$(){}[\\]/', '', $command);
+    $sanitized_command = preg_replace('/[;&|`$(){}[\]/', '', $command);
     $safe_commands = ['ping', 'date', 'whoami', 'pwd'];
     
     $is_safe = false;
