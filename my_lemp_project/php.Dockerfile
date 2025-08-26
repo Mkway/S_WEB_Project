@@ -29,4 +29,10 @@ COPY --from=builder /var/www/html/vendor /var/www/html/vendor
 # Copy application source code
 COPY src /var/www/html
 
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["php-fpm"]
+
 WORKDIR /var/www/html

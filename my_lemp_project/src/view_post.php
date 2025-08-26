@@ -51,7 +51,7 @@ $comments = $comments_stmt->fetchAll();
             $categories = $categories_stmt->fetchAll();
             if ($categories) {
                 foreach ($categories as $index => $category) {
-                    echo '<a href="index.php?category=' . $category['id'] . '">' . safe_output($category['name']) . '</a>'
+                    echo '<a href="index.php?category=' . $category['id'] . '">' . safe_output($category['name']) . '</a>';
                     if ($index < count($categories) - 1) {
                         echo ', ';
                     }
