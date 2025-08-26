@@ -78,3 +78,146 @@ echo "검색 결과: " . $safe_payload;
 3.  **입력값 검증:** 사용자의 입력은 항상 서버 측에서 예상된 형식, 길이, 문자셋인지 검증합니다. (화이트리스트 방식 권장)
 4.  **HttpOnly 쿠키 속성 사용:** JavaScript가 쿠키에 접근할 수 없도록 설정하여, 쿠키 탈취 공격의 피해를 최소화합니다.
 5.  **최신 프레임워크 사용:** React, Vue, Angular 등 최신 웹 프레임워크는 대부분 기본적으로 XSS 방어 기능을 내장하고 있습니다.
+
+---
+
+## 6. 다양한 언어별 XSS 방어 방법
+
+### JavaScript/Node.js
+```javascript
+// DOMPurify 라이브러리 사용
+const DOMPurify = require('dompurify');
+const clean = DOMPurify.sanitize(dirty);
+
+// 템플릿 엔진에서 자동 이스케이핑 (Handlebars)
+const template = Handlebars.compile('<div>{{name}}</div>');
+const result = template({ name: userInput }); // 자동으로 이스케이프됨
+
+// React에서 안전한 렌더링
+function MyComponent({ userContent }) {
+    return <div>{userContent}</div>; // 기본적으로 이스케이프됨
+    // 위험: dangerouslySetInnerHTML 사용 금지
+}
+
+// Express.js에서 XSS 방어
+const xss = require('xss');
+app.use((req, res, next) => {
+    req.body = xss(req.body);
+    next();
+});
+```
+
+### Python/Django/Flask
+```python
+# Django에서 자동 이스케이핑
+# 템플릿에서 {{ user_input }}는 자동으로 이스케이프됨
+
+# Flask에서 수동 이스케이핑
+from markupsafe import escape
+@app.route('/user/<username>')
+def show_user_profile(username):
+    return f'User: {escape(username)}'
+
+# Python에서 HTML 이스케이핑
+import html
+safe_content = html.escape(user_input)
+
+# bleach 라이브러리 사용
+import bleach
+clean = bleach.clean(user_input, tags=['b', 'i'], strip=True)
+```
+
+### Java/Spring
+```java
+// Spring에서 OWASP Java HTML Sanitizer 사용
+import org.owasp.html.PolicyFactory;
+import org.owasp.html.Sanitizers;
+
+PolicyFactory policy = Sanitizers.FORMATTING.and(Sanitizers.LINKS);
+String safeHTML = policy.sanitize(untrustedHTML);
+
+// JSP에서 JSTL 사용
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<c:out value="${fn:escapeXml(userInput)}" />
+
+// Spring Security에서 헤더 설정
+@EnableWebSecurity
+public class SecurityConfig {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.headers(headers -> headers
+            .contentTypeOptions(ContentTypeOptionsConfig.withDefaults())
+            .and().headers(headers2 -> headers2
+                .addHeaderWriter(new XFrameOptionsHeaderWriter(XFrameOptionsMode.DENY))
+            )
+        );
+        return http.build();
+    }
+}
+```
+
+### C#/.NET
+```csharp
+// ASP.NET에서 자동 인코딩
+@Model.UserInput  // Razor에서 자동으로 HTML 인코딩
+
+// 수동 인코딩
+using System.Web;
+string safeOutput = HttpUtility.HtmlEncode(userInput);
+
+// AntiXSS 라이브러리 사용
+using Microsoft.Security.Application;
+string sanitized = Sanitizer.GetSafeHtmlFragment(userInput);
+
+// Content Security Policy 헤더 설정
+public void Configure(IApplicationBuilder app)
+{
+    app.Use(async (context, next) =>
+    {
+        context.Response.Headers.Add("Content-Security-Policy", 
+            "default-src 'self'; script-src 'self'");
+        await next();
+    });
+}
+```
+
+### Go
+```go
+// html/template 패키지 사용 (자동 이스케이핑)
+import "html/template"
+tmpl := template.Must(template.New("example").Parse("<div>{{.}}</div>"))
+tmpl.Execute(w, userInput) // 자동으로 이스케이프됨
+
+// 수동 HTML 이스케이핑
+import "html"
+safeOutput := html.EscapeString(userInput)
+
+// bluemonday 라이브러리 사용
+import "github.com/microcosm-cc/bluemonday"
+p := bluemonday.UGCPolicy()
+safeHTML := p.Sanitize(userInput)
+```
+
+### Ruby/Rails
+```ruby
+# Rails에서 자동 이스케이핑
+<%= user_input %>  # ERB에서 자동으로 HTML 이스케이프
+
+# 수동 이스케이핑
+require 'cgi'
+safe_output = CGI.escapeHTML(user_input)
+
+# Sanitize gem 사용
+require 'sanitize'
+clean_html = Sanitize.fragment(user_input, Sanitize::Config::RELAXED)
+
+# Content Security Policy 설정
+class ApplicationController < ActionController::Base
+  before_action :set_csp_header
+  
+  private
+  def set_csp_header
+    response.headers['Content-Security-Policy'] = "default-src 'self'"
+  end
+end
+```
