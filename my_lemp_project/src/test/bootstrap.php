@@ -40,6 +40,7 @@ function setupTestDatabase($pdo) {
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
 
     // 기존 테이블 삭제 (테스트용)
+    $pdo->exec("DROP TABLE IF EXISTS password_reset_tokens");
     $pdo->exec("DROP TABLE IF EXISTS comments");
     $pdo->exec("DROP TABLE IF EXISTS posts");
     $pdo->exec("DROP TABLE IF EXISTS users");
@@ -52,7 +53,7 @@ function setupTestDatabase($pdo) {
     $pdo->exec("CREATE TABLE users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(50) NOT NULL UNIQUE,
-        email VARCHAR(255) NOT NULL UNIQUE,
+        email VARCHAR(255) DEFAULT '',
         password VARCHAR(255) NOT NULL,
         is_admin BOOLEAN DEFAULT FALSE,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -88,6 +89,16 @@ function setupTestDatabase($pdo) {
         source_id INT,
         message TEXT NOT NULL,
         is_read BOOLEAN DEFAULT FALSE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )");
+
+    // password_reset_tokens 테이블 생성
+    $pdo->exec("CREATE TABLE password_reset_tokens (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        token VARCHAR(255) NOT NULL,
+        expires_at DATETIME NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )");

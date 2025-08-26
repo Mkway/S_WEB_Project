@@ -4,8 +4,8 @@ FROM php:8.2-fpm-alpine AS builder
 WORKDIR /var/www/html
 
 # Copy composer files first to leverage caching
-COPY my_lemp_project/src/composer.json composer.json
-COPY my_lemp_project/src/composer.lock composer.lock
+COPY src/composer.json composer.json
+COPY src/composer.lock composer.lock
 
 RUN docker-php-ext-install pdo_mysql \
     && apk add --no-cache git \
@@ -27,6 +27,6 @@ RUN mkdir -p /var/www/html/uploads \
 COPY --from=builder /var/www/html/vendor /var/www/html/vendor
 
 # Copy application source code
-COPY my_lemp_project/src /var/www/html
+COPY src /var/www/html
 
 WORKDIR /var/www/html

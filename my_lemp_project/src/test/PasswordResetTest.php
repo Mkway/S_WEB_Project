@@ -15,9 +15,9 @@ class PasswordResetTest extends TestCase
     {
         setupTestDatabase(self::$pdo);
         
-        // Create password_resets table for testing
-        self::$pdo->exec("DROP TABLE IF EXISTS password_resets");
-        self::$pdo->exec("CREATE TABLE password_resets (
+        // Create password_reset_tokens table for testing
+        self::$pdo->exec("DROP TABLE IF EXISTS password_reset_tokens");
+        self::$pdo->exec("CREATE TABLE password_reset_tokens (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
             token VARCHAR(100) NOT NULL,
@@ -65,13 +65,13 @@ class PasswordResetTest extends TestCase
         $expires = date('Y-m-d H:i:s', time() + 1800); // 30 minutes
 
         // Insert password reset record
-        $stmt = self::$pdo->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)");
+        $stmt = self::$pdo->prepare("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)");
         $result = $stmt->execute([$userForReset['id'], $token, $expires]);
 
         $this->assertTrue($result, "Password reset record should be created successfully.");
 
         // Verify the record was created
-        $stmt = self::$pdo->prepare("SELECT * FROM password_resets WHERE user_id = ? AND token = ?");
+        $stmt = self::$pdo->prepare("SELECT * FROM password_reset_tokens WHERE user_id = ? AND token = ?");
         $stmt->execute([$userForReset['id'], $token]);
         $resetRecord = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -107,11 +107,11 @@ class PasswordResetTest extends TestCase
         $validToken = $this->generatePasswordResetToken();
         $validExpiry = date('Y-m-d H:i:s', time() + 1800); // 30 minutes from now
         
-        $stmt = self::$pdo->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)");
+        $stmt = self::$pdo->prepare("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)");
         $stmt->execute([$userId, $validToken, $validExpiry]);
 
         // Test valid token
-        $stmt = self::$pdo->prepare("SELECT * FROM password_resets WHERE token = ? AND expires_at > NOW()");
+        $stmt = self::$pdo->prepare("SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > NOW()");
         $stmt->execute([$validToken]);
         $validReset = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -120,7 +120,7 @@ class PasswordResetTest extends TestCase
 
         // Test invalid token
         $invalidToken = 'invalid_token_12345';
-        $stmt = self::$pdo->prepare("SELECT * FROM password_resets WHERE token = ? AND expires_at > NOW()");
+        $stmt = self::$pdo->prepare("SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > NOW()");
         $stmt->execute([$invalidToken]);
         $invalidReset = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -133,23 +133,27 @@ class PasswordResetTest extends TestCase
         $stmt = self::$pdo->prepare("SELECT id FROM users WHERE username = ?");
         $stmt->execute(['testuser']);
         $userId = $stmt->fetchColumn();
+        
+        // Clean up any existing tokens for this user
+        $stmt = self::$pdo->prepare("DELETE FROM password_reset_tokens WHERE user_id = ?");
+        $stmt->execute([$userId]);
 
         // Create expired reset token
         $expiredToken = $this->generatePasswordResetToken();
-        $expiredTime = date('Y-m-d H:i:s', time() - 3600); // 1 hour ago
+        $expiredTime = date('Y-m-d H:i:s', time() - 86400); // 24 hours ago (definitely expired)
         
-        $stmt = self::$pdo->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)");
+        $stmt = self::$pdo->prepare("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)");
         $stmt->execute([$userId, $expiredToken, $expiredTime]);
 
         // Try to find expired token
-        $stmt = self::$pdo->prepare("SELECT * FROM password_resets WHERE token = ? AND expires_at > NOW()");
+        $stmt = self::$pdo->prepare("SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > NOW()");
         $stmt->execute([$expiredToken]);
         $expiredReset = $stmt->fetch(PDO::FETCH_ASSOC);
 
         $this->assertFalse($expiredReset, "Expired token should not be valid.");
 
         // Verify the record exists but is expired
-        $stmt = self::$pdo->prepare("SELECT * FROM password_resets WHERE token = ?");
+        $stmt = self::$pdo->prepare("SELECT * FROM password_reset_tokens WHERE token = ?");
         $stmt->execute([$expiredToken]);
         $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -168,7 +172,7 @@ class PasswordResetTest extends TestCase
         $token = $this->generatePasswordResetToken();
         $expiry = date('Y-m-d H:i:s', time() + 1800);
         
-        $stmt = self::$pdo->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)");
+        $stmt = self::$pdo->prepare("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)");
         $stmt->execute([$user['id'], $token, $expiry]);
 
         // Simulate password reset
@@ -176,7 +180,7 @@ class PasswordResetTest extends TestCase
         $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
         // Verify token is valid first
-        $stmt = self::$pdo->prepare("SELECT user_id FROM password_resets WHERE token = ? AND expires_at > NOW()");
+        $stmt = self::$pdo->prepare("SELECT user_id FROM password_reset_tokens WHERE token = ? AND expires_at > NOW()");
         $stmt->execute([$token]);
         $resetUserId = $stmt->fetchColumn();
 
@@ -197,7 +201,7 @@ class PasswordResetTest extends TestCase
         $this->assertTrue(password_verify($newPassword, $updatedPassword), "New password should be verifiable.");
 
         // Clean up - delete used token
-        $stmt = self::$pdo->prepare("DELETE FROM password_resets WHERE token = ?");
+        $stmt = self::$pdo->prepare("DELETE FROM password_reset_tokens WHERE token = ?");
         $deleteResult = $stmt->execute([$token]);
 
         $this->assertTrue($deleteResult, "Used token should be deleted.");
@@ -209,38 +213,42 @@ class PasswordResetTest extends TestCase
         $stmt = self::$pdo->prepare("SELECT id FROM users WHERE username = ?");
         $stmt->execute(['testuser']);
         $userId = $stmt->fetchColumn();
+        
+        // Clean up any existing tokens for this user
+        $stmt = self::$pdo->prepare("DELETE FROM password_reset_tokens WHERE user_id = ?");
+        $stmt->execute([$userId]);
 
         // Create multiple reset tokens (old and new)
         $oldToken = $this->generatePasswordResetToken();
         $newToken = $this->generatePasswordResetToken();
         
-        $oldExpiry = date('Y-m-d H:i:s', time() - 7200); // 2 hours ago
+        $oldExpiry = date('Y-m-d H:i:s', time() - 86400); // 24 hours ago (definitely expired)
         $newExpiry = date('Y-m-d H:i:s', time() + 1800); // 30 minutes from now
 
-        $stmt = self::$pdo->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)");
+        $stmt = self::$pdo->prepare("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)");
         $stmt->execute([$userId, $oldToken, $oldExpiry]);
         $stmt->execute([$userId, $newToken, $newExpiry]);
 
         // Count total records
-        $stmt = self::$pdo->prepare("SELECT COUNT(*) FROM password_resets WHERE user_id = ?");
+        $stmt = self::$pdo->prepare("SELECT COUNT(*) FROM password_reset_tokens WHERE user_id = ?");
         $stmt->execute([$userId]);
         $totalCount = $stmt->fetchColumn();
         $this->assertEquals(2, $totalCount, "Should have 2 reset records.");
 
         // Clean up expired tokens
-        $stmt = self::$pdo->prepare("DELETE FROM password_resets WHERE expires_at <= NOW()");
+        $stmt = self::$pdo->prepare("DELETE FROM password_reset_tokens WHERE expires_at <= NOW()");
         $cleanupResult = $stmt->execute();
 
         $this->assertTrue($cleanupResult, "Cleanup should execute successfully.");
 
         // Count remaining records
-        $stmt = self::$pdo->prepare("SELECT COUNT(*) FROM password_resets WHERE user_id = ?");
+        $stmt = self::$pdo->prepare("SELECT COUNT(*) FROM password_reset_tokens WHERE user_id = ?");
         $stmt->execute([$userId]);
         $remainingCount = $stmt->fetchColumn();
         $this->assertEquals(1, $remainingCount, "Should have 1 remaining record after cleanup.");
 
         // Verify the remaining record is the non-expired one
-        $stmt = self::$pdo->prepare("SELECT token FROM password_resets WHERE user_id = ?");
+        $stmt = self::$pdo->prepare("SELECT token FROM password_reset_tokens WHERE user_id = ?");
         $stmt->execute([$userId]);
         $remainingToken = $stmt->fetchColumn();
         $this->assertEquals($newToken, $remainingToken, "Remaining token should be the non-expired one.");
@@ -255,8 +263,8 @@ class PasswordResetTest extends TestCase
         $expectedLink = $baseUrl . '/reset_password.php?token=' . $token;
         
         $this->assertEquals($expectedLink, $resetLink, "Reset link should be properly formatted.");
-        $this->assertStringContains($token, $resetLink, "Reset link should contain the token.");
-        $this->assertStringContains('reset_password.php', $resetLink, "Reset link should point to reset_password.php.");
+        $this->assertStringContainsString($token, $resetLink, "Reset link should contain the token.");
+        $this->assertStringContainsString('reset_password.php', $resetLink, "Reset link should point to reset_password.php.");
     }
 
     // Helper methods

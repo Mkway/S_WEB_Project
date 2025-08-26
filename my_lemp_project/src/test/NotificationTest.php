@@ -67,9 +67,11 @@ class NotificationTest extends TestCase
             ['type' => 'admin_message', 'message' => 'Third notification']
         ];
 
-        foreach ($notifications as $notif) {
-            $stmt = self::$pdo->prepare("INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)");
-            $stmt->execute([$userId, $notif['type'], $notif['message']]);
+        foreach ($notifications as $index => $notif) {
+            $stmt = self::$pdo->prepare("INSERT INTO notifications (user_id, type, message, created_at) VALUES (?, ?, ?, ?)");
+            // Create distinct timestamps to ensure proper ordering
+            $timestamp = date('Y-m-d H:i:s', time() + $index);
+            $stmt->execute([$userId, $notif['type'], $notif['message'], $timestamp]);
         }
 
         // Fetch notifications for user
@@ -170,7 +172,7 @@ class NotificationTest extends TestCase
 
         $this->assertNotEmpty($notification, "Comment notification should be created.");
         $this->assertEquals($commentId, $notification['source_id'], "Source ID should be the comment ID.");
-        $this->assertStringContains('commenter commented on your post', $notification['message'], "Notification message should contain commenter info.");
+        $this->assertStringContainsString('commenter commented on your post', $notification['message'], "Notification message should contain commenter info.");
     }
 
     public function testNoSelfNotification()

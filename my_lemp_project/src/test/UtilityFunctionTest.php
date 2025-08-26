@@ -166,12 +166,12 @@ class UtilityFunctionTest extends TestCase
         // Test date formatting
         $formattedDate = $this->formatDate($timestamp);
         $this->assertNotEmpty($formattedDate, "Formatted date should not be empty.");
-        $this->assertStringContains('2023', $formattedDate, "Formatted date should contain year.");
+        $this->assertStringContainsString('2023', $formattedDate, "Formatted date should contain year.");
         
         // Test relative time formatting
         $now = date('Y-m-d H:i:s');
         $relativeTime = $this->getRelativeTime($now);
-        $this->assertStringContains('now', strtolower($relativeTime), "Current time should show as 'now' or similar.");
+        $this->assertStringContainsString('now', strtolower($relativeTime), "Current time should show as 'now' or similar.");
     }
 
     public function testStringTruncation()
@@ -206,8 +206,8 @@ class UtilityFunctionTest extends TestCase
     {
         $logPath = $this->generateLogFilePath('error');
         
-        $this->assertStringContains('error', $logPath, "Log path should contain log type.");
-        $this->assertStringContains(date('Y-m-d'), $logPath, "Log path should contain current date.");
+        $this->assertStringContainsString('error', $logPath, "Log path should contain log type.");
+        $this->assertStringContainsString(date('Y-m-d'), $logPath, "Log path should contain current date.");
         $this->assertStringEndsWith('.log', $logPath, "Log path should end with .log extension.");
     }
 
@@ -220,6 +220,9 @@ class UtilityFunctionTest extends TestCase
     private function isValidImageExtension($filename)
     {
         if (empty($filename)) return false;
+        
+        // Check if filename starts with dot (hidden file or no base name)
+        if (strpos($filename, '.') === 0) return false;
         
         $validExtensions = ['jpg', 'jpeg', 'png', 'gif'];
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
