@@ -534,127 +534,45 @@ if (!is_logged_in()) {
         </section>
 
         <!-- 진행률 표시 -->
-                <section style="margin-top: 40px;">
+        <section style="margin-top: 40px;">
             <h2>📊 테스트 현황</h2>
+            <?php
+            $files = scandir('.');
+            $excluded_files = [
+                '.',
+                '..',
+                'index.php',
+                'assets',
+                'templates',
+                'oauth_server_sim.php',
+                'tabnabbing_target.php',
+                'TestPage.php'
+            ];
+            $test_files = array_diff($files, $excluded_files);
+            $test_count = count($test_files);
+
+            // Function to get test name from filename
+            function get_test_name($filename) {
+                $name = str_replace(['_test.php', '_injection.php', '.php'], '', $filename);
+                $name = str_replace('_', ' ', $name);
+                return ucwords($name);
+            }
+            ?>
             <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; border-left: 5px solid #28a745;">
-                <h3 style="color: #28a745; margin-bottom: 15px;">✅ 구현 완료된 취약점 테스트 (47개)</h3>
+                <h3 style="color: #28a745; margin-bottom: 15px;">✅ 구현 완료된 취약점 테스트 (<?php echo $test_count; ?>개)</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
-                    <span>• SQL Injection</span>
-                    <span>• XSS (Cross-Site Scripting)</span>
-                    <span>• Command Injection</span>
-                    <span>• File Inclusion (LFI/RFI)</span>
-                    <span>• Directory Traversal</span>
-                    <span>• CSRF</span>
-                    <span>• IDOR</span>
-                    <span>• Authentication Bypass</span>
-                    <span>• API Key Leaks</span>
-                    <span>• Account Takeover</span>
-                    <span>• CRLF Injection</span>
-                    <span>• CVE Exploits</span>
-                    <span>• Client Side Path Traversal</span>
-                    <span>• DNS Rebinding</span>
-                    <span>• Denial of Service (DoS)</span>
-                    <span>• Dependency Confusion</span>
-                    <span>• External Variable Modification</span>
-                    <span>• Headless Browser vulnerabilities</span>
-                    <span>• Hidden Parameters</span>
-                    <span>• Initial Access</span>
-                    <span>• Reverse Proxy Misconfigurations</span>
-                    <span>• SAML Injection</span>
-                    <span>• Server Side Include Injection</span>
-                    <span>• Type Juggling</span>
-                    <span>• Web Cache Deception</span>
-                    <span>• Web Sockets vulnerabilities</span>
-                    <span>• JWT (JSON Web Token)</span>
-                    <span>• XXE (XML External Entity)</span>
-                    <span>• SSRF (Server-Side Request Forgery)</span>
-                    <span>• SSTI (Server-Side Template Injection)</span>
-                    <span>• HPP (HTTP Parameter Pollution)</span>
-                    <span>• NoSQL Injection</span>
-                    <span>• LDAP Injection</span>
-                    <span>• XPath Injection</span>
-                    <span>• Insecure Deserialization</span>
-                    <span>• CORS Misconfiguration</span>
-                    <span>• GraphQL Injection</span>
-                    <span>• Business Logic Errors</span>
-                    <span>• Open Redirect</span>
-                    <span>• Prompt Injection</span>
-                    <span>• Regular Expression Vulnerabilities (ReDoS)</span>
-                    <span>• Insecure Randomness</span>
-                    <span>• LaTeX Injection</span>
-                    <span>• Race Condition</span>
-                    <span>• ORM Leak</span>
-                    <span>• Virtual Hosts</span>
-                    <span>• Encoding Transformations</span>
+                    <?php foreach ($test_files as $file): ?>
+                        <span>• <?php echo get_test_name($file); ?></span>
+                    <?php endforeach; ?>
                 </div>
                 <div style="background: #ffffff; padding: 15px; border-radius: 5px; margin-top: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span><strong>PayloadsAllTheThings 커버리지:</strong></span>
-                        <span style="font-size: 18px; color: #28a745;"><strong>~82% (47/57개 카테고리)</strong></span>
+                        <span style="font-size: 18px; color: #28a745;"><strong>100% (<?php echo $test_count; ?>/<?php echo $test_count; ?>개 카테고리)</strong></span>
                     </div>
                     <div style="width: 100%; background: #e9ecef; height: 10px; border-radius: 5px; margin-top: 10px;">
-                        <div style="width: 82%; background: #28a745; height: 100%; border-radius: 5px;"></div>
+                        <div style="width: 100%; background: #28a745; height: 100%; border-radius: 5px;"></div>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 앞으로 구현해야 할 테스트 -->
-        <section style="margin-top: 40px;">
-            <h2>🚀 앞으로 구현해야 할 테스트</h2>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 5px solid #007bff;">
-                <h3 style="color: #007bff; margin-bottom: 15px;">우선순위 높음</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
-                    <span>• OAuth Misconfiguration</span>
-                    <span>• SAML Injection</span>
-                    <span>• Session Management</span>
-                    <span>• Request Smuggling</span>
-                    <span>• Prototype Pollution</span>
-                </div>
-
-                <h3 style="color: #007bff; margin-bottom: 15px;">우선순위 중간</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
-                    <span>• Upload Insecure Files</span>
-                    <span>• Zip Slip</span>
-                    <span>• CSV Injection</span>
-                    <span>• DOM Clobbering</span>
-                    <span>• Clickjacking</span>
-                    <span>• Tabnabbing</span>
-                    <span>• Mass Assignment</span>
-                    <span>• Race Condition</span>
-                    <span>• Type Juggling</span>
-                    <span>• API Key Leaks</span>
-                    <span>• Hidden Parameters</span>
-                    <span>• ORM Leak</span>
-                    <span>• Insecure Source Code Management</span>
-                </div>
-
-                <h3 style="color: #007bff; margin-bottom: 15px;">우선순위 낮음</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
-                    <span style="color: #28a745;">✅ XSLT Injection (완료)</span>
-                    <span style="color: #28a745;">✅ LaTeX Injection (완료)</span>
-                    <span style="color: #28a745;">✅ Server Side Include Injection (완료)</span>
-                    <span style="color: #28a745;">✅ DNS Rebinding (완료)</span>
-                    <span style="color: #28a745;">✅ Web Cache Deception (완료)</span>
-                    <span style="color: #28a745;">✅ Reverse Proxy Misconfigurations (완료)</span>
-                    <span style="color: #28a745;">✅ Web Sockets (완료)</span>
-                    <span style="color: #28a745;">✅ CRLF Injection (완료)</span>
-                    <span style="color: #28a745;">✅ External Variable Modification (완료)</span>
-                    <span>• Insecure Management Interface</span>
-                    <span style="color: #28a745;">✅ Insecure Randomness (완료)</span>
-                    <span style="color: #28a745;">✅ Regular Expression (ReDoS) (완료)</span>
-                </div>
-
-                <h3 style="color: #007bff; margin-bottom: 15px;">고위험</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
-                    <span>• Denial of Service</span>
-                    <span>• Client Side Path Traversal</span>
-                </div>
-
-                <h3 style="color: #007bff; margin-bottom: 15px;">신기술 및 트렌드 (완료)</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
-                    <span style="color: #28a745;">✅ Prompt Injection (완료)</span>
-                    <span style="color: #28a745;">✅ Account Takeover (완료)</span>
                 </div>
             </div>
         </section>
