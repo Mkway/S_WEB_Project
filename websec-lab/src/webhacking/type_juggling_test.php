@@ -89,7 +89,7 @@ $test_logic_callback = function($form_data) {
 };
 
 // 7. TestPage 인스턴스 생성 및 실행
-$test_page = new TestPage($page_title, $description, $payloads, $defense_methods, $references);
+$test_page = new TestPage($page_title, $description, $payloads, $defense_methods, $references, "Type_Juggling_Analysis.md");
 $test_page->set_test_form($test_form_ui);
 $test_page->set_test_logic($test_logic_callback);
 $test_page->run();
