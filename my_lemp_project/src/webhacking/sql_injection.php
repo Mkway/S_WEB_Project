@@ -1,4 +1,21 @@
 <?php
+// 출력 버퍼링 시작 (헤더 전송 문제 방지)
+ob_start();
+
+// 세션 시작 (TestPage 전에)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../utils.php';
+
+// 로그인 확인
+if (!is_logged_in()) {
+    header('Location: ../login.php');
+    exit();
+}
+
 require_once 'TestPage.php';
 
 // 1. 페이지 설정
@@ -97,6 +114,15 @@ HTML;
 // 6. 테스트 로직 콜백 정의
 $test_logic_callback = function($form_data) {
     global $pdo;
+    
+    // PDO 연결 확인
+    if (!isset($pdo) || $pdo === null) {
+        return [
+            'result' => '',
+            'error' => '데이터베이스 연결이 설정되지 않았습니다. 데이터베이스 설정을 확인하세요.'
+        ];
+    }
+    
     $payload = $form_data['payload'] ?? '';
     $result = '';
     $error = '';

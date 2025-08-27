@@ -18,7 +18,7 @@ $base_path = $base_path ?? '../';
         <nav class="nav">
             <h1><?php echo htmlspecialchars($page_title); ?></h1>
             <div class="nav-links">
-                <a href="<?php echo $base_path; ?>webhacking/index.php" class="btn">보안 테스트 메인</a>
-                <a href="<?php echo $base_path; ?>index.php" class="btn">홈</a>
+                <a href="<?php echo $base_path; ?>index.php" class="btn">🛡️ 테스트 목록</a>
+                <a href="<?php echo $base_path; ?>../index.php" class="btn">🏠 프로젝트 홈</a>
             </div>
         </nav>
