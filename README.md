@@ -91,7 +91,7 @@ This project includes detailed analysis documents for the major web vulnerabilit
 ```bash
 # Clone the project
 git clone https://github.com/Mkway/S_WEB_Project.git
-cd S_WEB_Project/my_lemp_project
+cd S_WEB_Project/websec-lab
 
 # Run Docker containers
 docker-compose up -d
@@ -122,7 +122,7 @@ docker-compose exec php ./vendor/bin/phpunit test/SecurityTest.php
 ```
 S_WEB_Project/
 ├── security_analysis/              # Web vulnerability analysis documents
-├── my_lemp_project/
+├── websec-lab/
 │   ├── docker-compose.yml          # Docker service definitions
 │   ├── nginx/                      # Nginx configuration and SSL
 │   │   ├── default.conf
