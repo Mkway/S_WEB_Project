@@ -1,8 +1,12 @@
 
+html {
+    color: #212529;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     line-height: 1.6;
-    color: #343a40;
+    color: #212529 !important;
     background-color: #f8f9fa;
     margin: 0;
     padding: 20px;
@@ -13,10 +17,45 @@ body {
     box-sizing: border-box;
 }
 
+/* 전역 텍스트 색상 보장 */
+h1, h2, h3, h4, h5, h6, p, div, span, li, td, th, label {
+    color: inherit;
+}
+
+/* 흰색 배경 요소들의 텍스트 색상 명시 */
+.container *, 
+.test-form *, 
+.payload-section *,
+.result-box *,
+.vulnerable-demo * {
+    color: #212529 !important;
+}
+
+/* 인라인 스타일 덮어쓰기 */
+div[style*="color"]:not(.info-box) *,
+.result-box[style*="color"] *,
+.test-form[style*="color"] * {
+    color: #212529 !important;
+}
+
+/* 링크와 버튼 색상 예외 처리 */
+.container a:not(.btn), 
+.test-form a:not(.btn), 
+.payload-section a:not(.btn) {
+    color: #007bff;
+}
+
+.container .btn, 
+.test-form .btn, 
+.payload-section .btn {
+    color: white !important;
+}
+
 .container {
     max-width: 960px;
     margin: 0 auto;
     background: #ffffff;
+    color: #212529;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -80,6 +119,7 @@ body {
 
 .payload-section {
     background: #f8f9fa;
+    color: #212529;
     border: 1px solid #dee2e6;
     border-radius: 8px;
     padding: 20px;
@@ -109,6 +149,7 @@ body {
 
 .test-form {
     background: white;
+    color: #212529;
     border: 2px solid #dc3545;
     border-radius: 8px;
     padding: 20px;
@@ -134,9 +175,17 @@ body {
 }
 
 .info-box {
-    background: #d1ecf1;
-    border: 1px solid #bee5eb;
-    color: #0c5460;
+    background: #ffffff !important;
+    border: 2px solid #007bff !important;
+    color: #000000 !important;
+    color-scheme: light !important;
+}
+
+.info-box *, .info-box h1, .info-box h2, .info-box h3, .info-box h4, .info-box h5, .info-box h6, .info-box p {
+    background: transparent !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    text-shadow: none !important;
 }
 
 .vulnerable-demo {
@@ -153,6 +202,18 @@ textarea {
     border-radius: 4px;
     padding: 10px;
     box-sizing: border-box;
+    color: #212529;
+    background-color: #ffffff;
+}
+
+input[type="text"], input[type="url"], input[type="email"], input[type="password"] {
+    color: #212529;
+    background-color: #ffffff;
+}
+
+select {
+    color: #212529;
+    background-color: #ffffff;
 }
 
 code {
@@ -358,9 +419,16 @@ li {
     }
     
     .info-box {
-        background-color: #2d3748;
-        border-color: #4a5568;
-        color: #e2e8f0;
+        background: #ffffff !important;
+        border: 2px solid #007bff !important;
+        color: #000000 !important;
+    }
+    
+    .info-box *, .info-box h1, .info-box h2, .info-box h3, .info-box h4, .info-box h5, .info-box h6, .info-box p {
+        background: transparent !important;
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+        text-shadow: none !important;
     }
     
     .defense-box {

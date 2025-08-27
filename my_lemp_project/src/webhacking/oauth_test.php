@@ -1,4 +1,21 @@
 <?php
+// 출력 버퍼링 시작 (헤더 전송 문제 방지)
+ob_start();
+
+// 세션 시작 (TestPage 전에)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . "/../db.php";
+require_once __DIR__ . "/../utils.php";
+
+// 로그인 확인
+if (!is_logged_in()) {
+    header("Location: ../login.php");
+    exit();
+}
+
 require_once 'TestPage.php';
 
 // 간소화된 OAuth 2.0 시뮬레이션 설정
@@ -41,6 +58,10 @@ if (isset($_GET['code'])) {
     $info_message = "인증 코드를 받았습니다: {$code}\n이제 이 코드를 사용하여 액세스 토큰을 요청합니다.";
 }
 
+// 공격 예시 URL 생성
+$malicious_redirect = 'http://attacker.com/callback';
+$attack_url = $auth_server . '?response_type=code&client_id=' . $client_id . '&redirect_uri=' . urlencode($malicious_redirect);
+
 $test_form_ui = <<<HTML
 <form method="post" class="test-form">
     <h3>🧪 OAuth 2.0 인증 시작</h3>
@@ -48,16 +69,10 @@ $test_form_ui = <<<HTML
     <a href="{$auth_server}?response_type=code&client_id={$client_id}&redirect_uri={$redirect_uri}" class="btn" style="background: #007bff;">인증 시작하기</a>
 </form>
 
-<div class="info-box" style="background: #fff3cd; border-color: #ffeaa7; color: #856404;">
+<div class="info-box" style="background: #fff3cd; border-color: #ffeaa7;">
     <h4>공격 예시 URL:</h4>
     <p>만약 인증 서버가 `redirect_uri`를 제대로 검증하지 않는다면, 공격자는 `redirect_uri`를 자신의 서버 주소로 변경하여 인증 코드를 탈취할 수 있습니다.</p>
-    <pre><code>
-        <?php 
-        $malicious_redirect = 'http://attacker.com/callback';
-        $attack_url = $auth_server . '?response_type=code&client_id=' . $client_id . '&redirect_uri=' . urlencode($malicious_redirect);
-        echo htmlspecialchars($attack_url);
-        ?>
-    </code></pre>
+    <pre><code>{$attack_url}</code></pre>
     <p><small>사용자가 위 링크를 클릭하면, 인증 후 `attacker.com`으로 리디렉션되어 인증 코드가 유출됩니다.</small></p>
 </div>
 HTML;

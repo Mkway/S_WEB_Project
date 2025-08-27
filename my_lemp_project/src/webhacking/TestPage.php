@@ -10,7 +10,7 @@ class TestPage {
     private $test_logic_callback;
 
     private array $result = [];
-    private string $base_path = '../';
+    private string $base_path = './';
 
     public function __construct(string $page_title, string $description, array $payloads, array $defense_methods, array $references) {
         $this->page_title = $page_title;
@@ -24,16 +24,8 @@ class TestPage {
     }
 
     private function initialize() {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-        require_once __DIR__ . '/../db.php';
-        require_once __DIR__ . '/../utils.php';
-
-        if (!is_logged_in()) {
-            header('Location: ../login.php');
-            exit();
-        }
+        // 세션과 로그인 확인은 이미 호출한 파일에서 처리됨
+        // 중복 초기화 방지
     }
 
     public function set_test_form(string $html): void {

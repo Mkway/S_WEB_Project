@@ -10,7 +10,7 @@ $base_path = $base_path ?? '../';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($page_title); ?> - S_WEB_Project</title>
-    <link rel="stylesheet" href="<?php echo $base_path; ?>webhacking/assets/style.css">
+    <link rel="stylesheet" href="<?php echo $base_path; ?>assets/style.css?v=<?php echo time(); ?>">
 </head>
 <body>
     <div class="container">

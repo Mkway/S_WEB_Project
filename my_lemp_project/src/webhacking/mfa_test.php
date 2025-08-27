@@ -1,4 +1,21 @@
 <?php
+// 출력 버퍼링 시작 (헤더 전송 문제 방지)
+ob_start();
+
+// 세션 시작 (TestPage 전에)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . "/../db.php";
+require_once __DIR__ . "/../utils.php";
+
+// 로그인 확인
+if (!is_logged_in()) {
+    header("Location: ../login.php");
+    exit();
+}
+
 require_once '../config.php';
 
 $pageTitle = "Multi-Factor Authentication (MFA) Security Test";
