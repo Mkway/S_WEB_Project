@@ -1,4 +1,21 @@
 <?php
+// 출력 버퍼링 시작 (헤더 전송 문제 방지)
+ob_start();
+
+// 세션 시작 (TestPage 전에)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../utils.php';
+
+// 로그인 확인
+if (!is_logged_in()) {
+    header('Location: ../login.php');
+    exit();
+}
+
 require_once 'TestPage.php';
 
 // 1. 페이지 설정
@@ -75,8 +92,8 @@ $test_form_ui = <<<HTML
     <h3>🧪 File Inclusion 테스트</h3>
     
     <div class="test-type-selector">
-        <label><input type="radio" name="test_type" value="lfi" {$test_type === 'lfi' ? 'checked' : ''}> Local File Inclusion (LFI)</label>
-        <label><input type="radio" name="test_type" value="rfi" {$test_type === 'rfi' ? 'checked' : ''}> Remote File Inclusion (RFI)</label>
+        <label><input type="radio" name="test_type" value="lfi" {($test_type === 'lfi' ? 'checked' : '')}> Local File Inclusion (LFI)</label>
+        <label><input type="radio" name="test_type" value="rfi" {($test_type === 'rfi' ? 'checked' : '')}> Remote File Inclusion (RFI)</label>
     </div>
     
     <label for="payload">파일 경로:</label>

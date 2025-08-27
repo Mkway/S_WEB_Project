@@ -1,5 +1,22 @@
 
 <?php
+// 출력 버퍼링 시작 (헤더 전송 문제 방지)
+ob_start();
+
+// 세션 시작 (TestPage 전에)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../utils.php';
+
+// 로그인 확인
+if (!is_logged_in()) {
+    header('Location: ../login.php');
+    exit();
+}
+
 require_once 'TestPage.php';
 
 // 1. 페이지 설정
@@ -70,9 +87,9 @@ $test_form_ui = <<<HTML
     <h3>🧪 LDAP 쿼리 테스트</h3>
     <label for="query_type">🔍 LDAP 작업 유형:</label><br>
     <select id="query_type" name="query_type">
-        <option value="search" {$query_type === 'search' ? 'selected' : ''}>Search (검색)</option>
-        <option value="bind" {$query_type === 'bind' ? 'selected' : ''}>Bind (인증)</option>
-        <option value="modify" {$query_type === 'modify' ? 'selected' : ''}>Modify (수정)</option>
+        <option value="search" {($query_type === 'search' ? 'selected' : '')}>Search (검색)</option>
+        <option value="bind" {($query_type === 'bind' ? 'selected' : '')}>Bind (인증)</option>
+        <option value="modify" {($query_type === 'modify' ? 'selected' : '')}>Modify (수정)</option>
     </select><br><br>
     
     <label for="payload">🎯 LDAP 쿼리 입력:</label><br>
@@ -132,7 +149,7 @@ $test_logic_callback = function($form_data) {
         $response_sim .= "쿼리가 정상적으로 처리될 것으로 예상됩니다.";
     }
 
-    return ['result' => "<pre>{"$response_sim"}</pre>", 'error' => $error];
+    return ['result' => "<pre>" . htmlspecialchars($response_sim) . "</pre>", 'error' => $error];
 };
 
 // 7. TestPage 인스턴스 생성 및 실행

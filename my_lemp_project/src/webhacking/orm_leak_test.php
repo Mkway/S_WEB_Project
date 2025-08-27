@@ -1,5 +1,22 @@
 
 <?php
+// 출력 버퍼링 시작 (헤더 전송 문제 방지)
+ob_start();
+
+// 세션 시작 (TestPage 전에)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../utils.php';
+
+// 로그인 확인
+if (!is_logged_in()) {
+    header('Location: ../login.php');
+    exit();
+}
+
 require_once 'TestPage.php';
 
 // 모의 사용자 데이터
@@ -82,17 +99,17 @@ $test_form_ui = <<<HTML
     <h3>🧪 ORM 쿼리 시뮬레이터</h3>
     <label for="query_type">쿼리 유형 선택:</label>
     <select name="query_type" id="query_type">
-        <option value="user_profile" {$query_type_selected === 'user_profile' ? 'selected' : ''}>사용자 프로필 조회</option>
-        <option value="debug_mode" {$query_type_selected === 'debug_mode' ? 'selected' : ''}>디버그 모드 정보 노출</option>
-        <option value="api_response" {$query_type_selected === 'api_response' ? 'selected' : ''}>API 응답 과다 노출</option>
+        <option value="user_profile" {($query_type_selected === 'user_profile' ? 'selected' : '')}>사용자 프로필 조회</option>
+        <option value="debug_mode" {($query_type_selected === 'debug_mode' ? 'selected' : '')}>디버그 모드 정보 노출</option>
+        <option value="api_response" {($query_type_selected === 'api_response' ? 'selected' : '')}>API 응답 과다 노출</option>
     </select><br><br>
 
-    <div id="user_profile_fields" style="display: {$query_type_selected === 'user_profile' ? 'block' : 'none';}">
+    <div id="user_profile_fields" style="display: {($query_type_selected === 'user_profile' ? 'block' : 'none')}">
         <label for="user_id">사용자 ID:</label>
         <input type="number" name="user_id" id="user_id" value="{$user_id_input}" min="1" required>
     </div>
 
-    <div id="api_response_fields" style="display: {$query_type_selected === 'api_response' ? 'block' : 'none';}">
+    <div id="api_response_fields" style="display: {($query_type_selected === 'api_response' ? 'block' : 'none')}">
         <label for="api_user_id">API 사용자 ID:</label>
         <input type="number" name="api_user_id" id="api_user_id" value="{$user_id_input}" min="1" required>
     </div>
