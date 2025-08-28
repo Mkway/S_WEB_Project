@@ -59,10 +59,41 @@ jobs:
         define('DB_NAME', 'test_database');
         define('DB_USER', 'test_user');
         define('DB_PASS', 'test_password');
-        define('SITE_NAME', 'Test Site');
-        define('VULNERABILITY_MODE', false);
-        define('DEBUG_MODE', true);
+        define('DB_CHARSET', 'utf8mb4');
+        define('POSTS_PER_PAGE', 10);
+        define('COMMENTS_PER_PAGE', 20);
+        define('UPLOAD_DIR', 'uploads/');
+        define('MAX_FILE_SIZE', 5242880);
+        define('ALLOWED_IMAGE_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+        define('ALLOWED_DOCUMENT_EXTENSIONS', ['pdf', 'doc', 'docx', 'txt']);
+        define('MIN_PASSWORD_LENGTH', 8);
         define('SESSION_TIMEOUT', 3600);
+        define('CSRF_TOKEN_NAME', 'csrf_token');
+        define('MAX_NOTIFICATIONS', 50);
+        define('NOTIFICATION_CLEANUP_DAYS', 30);
+        define('SITE_NAME', 'Test Site');
+        define('SITE_DESCRIPTION', '게시판 사이트');
+        define('DEFAULT_TIMEZONE', 'Asia/Seoul');
+        define('LOG_DIR', 'logs/');
+        define('LOG_MAX_SIZE', 10485760);
+        define('LOG_MAX_FILES', 5);
+        define('DEBUG_MODE', true);
+        define('SHOW_ERRORS', true);
+        define('VULNERABILITY_MODE', false);
+        date_default_timezone_set(DEFAULT_TIMEZONE);
+        if (SHOW_ERRORS) {
+            error_reporting(E_ALL);
+            ini_set('display_errors', 1);
+        } else {
+            error_reporting(0);
+            ini_set('display_errors', 0);
+        }
+        if (session_status() === PHP_SESSION_NONE) {
+            ini_set('session.cookie_httponly', 1);
+            ini_set('session.cookie_secure', 0);
+            ini_set('session.use_strict_mode', 1);
+            ini_set('session.cookie_samesite', 'Strict');
+        }
         ?>" > config.php
 
     - name: Wait for MySQL
