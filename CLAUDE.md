@@ -1,5 +1,45 @@
 # Claude Code Development Workflow
 
+## 🤖 Claude Development System Prompt
+
+**Use this prompt to ensure efficient development workflow:**
+
+```
+You are working on the S_WEB_Project websec-lab vulnerability testing platform. 
+
+MANDATORY DEVELOPMENT RULES:
+1. 🔄 ALWAYS use TodoWrite tool for every multi-step task
+2. 🔄 ALWAYS commit & push after completing each individual feature  
+3. 🔄 NEVER batch multiple features into one commit
+4. 🔄 Use Korean for commit messages with detailed descriptions
+
+WORKFLOW FOR EACH TASK:
+1. TodoWrite: Plan the task with specific steps
+2. Execute: Complete one feature at a time  
+3. Commit: Detailed Korean commit message following format below
+4. Push: Immediately push to backup progress
+5. Update TodoWrite: Mark completed and move to next
+
+COMMIT MESSAGE FORMAT:
+feat/fix/refactor: [한국어 제목]
+
+- 구체적 변경사항 1
+- 구체적 변경사항 2
+- 실행 가능한 새로운 기능 설명
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+Co-Authored-By: Claude <noreply@anthropic.com>
+
+CURRENT PROJECT CONTEXT:
+- Main goal: Make vulnerability tests execute real attacks (not simulations)
+- Show vulnerable vs safe output comparisons
+- Include security recommendations
+- Priority: SQL injection, XSS, Command injection, File upload, CSRF, LFI, Directory traversal, Auth bypass completed
+- Next priority: XXE, SSRF, SSTI, Open redirect, XPath injection
+
+Always ask which specific vulnerability test to work on next and follow the workflow above.
+```
+
 ## Git Commit Guidelines
 
 ### 🔄 Commit After Every Feature Development
@@ -93,32 +133,64 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 git commit -m "update files"
 ```
 
----
+## 📊 Project Status Tracking
 
-## Development Environment Setup
+### ✅ Completed Vulnerability Tests (Real Execution Enabled)
+- [x] **SQL Injection** - 실제 DB 쿼리 실행 및 결과 표시
+- [x] **XSS** - 실제 스크립트 실행 (필터링 없음)
+- [x] **Command Injection** - 실제 시스템 명령어 실행 
+- [x] **File Upload** - 실제 파일 업로드 및 위험 확장자 감지
+- [x] **CSRF** - 실제 토큰 검증 우회 시뮬레이션
+- [x] **File Inclusion (LFI/RFI)** - 실제 파일 읽기 실행
+- [x] **Directory Traversal** - 실제 경로 순회 및 파일 접근
+- [x] **Auth Bypass** - SQL/NoSQL/LDAP 인젝션 우회 실행
 
-### Required Tools
+### 🔄 Next Priority (중간 우선순위)
+- [ ] **XXE (XML External Entity)** - XML 파싱 취약점
+- [ ] **SSRF (Server-Side Request Forgery)** - 서버 요청 위조
+- [ ] **SSTI (Server-Side Template Injection)** - 템플릿 인젝션  
+- [ ] **Open Redirect** - 리다이렉트 조작
+- [ ] **XPath Injection** - XPath 쿼리 조작
+
+### 📋 Development Environment Setup
+
+**Required Tools:**
 - Git (version control)
-- PHP 7.4+ (웹 서버)
+- PHP 7.4+ (웹 서버) 
 - MySQL/MariaDB (데이터베이스)
 - Node.js 18+ (프론트엔드 도구)
 
-### Project Structure
+**Project Structure:**
 ```
 S_WEB_Project/
 ├── websec-lab/src/           # 메인 애플리케이션
-│   ├── webhacking/          # 취약점 테스트 페이지들
+│   ├── webhacking/          # 취약점 테스트 페이지들  
 │   ├── analysis/           # 취약점 분석 문서
 │   └── uploads/            # 파일 업로드 디렉토리
-├── g_mcp_auto_setting/     # MCP 설정 파일들  
-└── CLAUDE.md              # 이 파일
+├── g_mcp_auto_setting/     # MCP 설정 파일들
+└── CLAUDE.md              # 개발 가이드 (이 파일)
 ```
 
-### Testing Guidelines
-- 각 취약점 테스트는 실제 공격이 실행되도록 구현
-- 교육 목적으로 안전한 환경에서만 사용
-- 보안 권장사항을 함께 제공
+**Testing Implementation Pattern:**
+```php
+// 1. 취약한 실행부
+$result .= "<div class='vulnerable-output'>실제 공격 실행 결과</div>";
+
+// 2. 안전한 구현 비교  
+$result .= "<div class='safe-comparison'>안전한 구현이었다면</div>";
+
+// 3. 보안 권장사항
+$result .= "<div class='security-recommendations'>보안 권장사항</div>";
+```
 
 ---
 
-*이 파일은 Claude Code 개발 시 참고용으로 작성되었습니다.*
+## 🚀 Quick Start for Next Development
+
+**Copy this prompt when starting new session:**
+
+```
+Following CLAUDE.md workflow: Work on S_WEB_Project websec-lab. Use TodoWrite for planning, complete one vulnerability test modification at a time, commit & push immediately after each feature. Focus on making tests execute real attacks with vulnerable vs safe comparisons. Which vulnerability test should I work on next from the middle priority list: XXE, SSRF, SSTI, Open Redirect, or XPath?
+```
+
+*이 파일은 효율적인 Claude Code 개발을 위한 시스템 가이드입니다.*
