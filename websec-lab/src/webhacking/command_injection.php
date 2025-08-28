@@ -64,7 +64,7 @@ $command = htmlspecialchars($_POST["payload"] ?? '');
 $test_form_ui = <<<HTML
 <div class="info-box" style="background: #fff3cd; border-color: #ffeeba; color: #856404;">
     <h3>✅ 테스트 가능한 안전한 명령어</h3>
-    <p>이 페이지에서는 다음 명령어만 안전하게 테스트할 수 있습니다: <code>ping 127.0.0.1</code>, <code>date</code>, <code>whoami</code>, <code>pwd</code></p>
+    <p>이 페이지에서는 다음 명령어만 안전하게 테스트할 수 있습니다: <code>ping</code>, <code>date</code>, <code>whoami</code>, <code>pwd</code>, <code>ls</code>, <code>id</code>, <code>uname</code>, <code>cat</code>, <code>echo</code></p>
 </div>
 <form method="post" class="test-form">
     <h3>🧪 Command Injection 테스트</h3>
@@ -82,7 +82,7 @@ $test_logic_callback = function($form_data) {
     $error = '';
 
     $sanitized_command = preg_replace('/[;&|`$(){}\[\]]/', '', $command);
-    $safe_commands = ['ping', 'date', 'whoami', 'pwd'];
+    $safe_commands = ['ping', 'date', 'whoami', 'pwd', 'ls', 'id', 'uname', 'cat', 'echo'];
     
     $is_safe = false;
     foreach ($safe_commands as $safe_cmd) {
@@ -92,26 +92,79 @@ $test_logic_callback = function($form_data) {
         }
     }
 
-    if ($is_safe && $sanitized_command === $command) {
+    // 취약한 구현 - 실제 Command Injection 실행
+    $result .= "<div class='info-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>⚠️ 취약한 Command Injection 실행:</strong><br>";
+    $result .= "입력한 명령어: <code>" . htmlspecialchars($command) . "</code>";
+    $result .= "</div>";
+
+    $result .= "<div class='vulnerable-output' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>Command Injection 실행 결과:</strong><br>";
+
+    // 실제 명령어 실행 (교육용)
+    $output = [];
+    $return_var = 0;
+    
+    // 위험한 명령어 필터링 (일부만)
+    $dangerous_commands = ['rm', 'del', 'format', 'shutdown', 'reboot', 'passwd', 'su', 'sudo'];
+    $is_dangerous = false;
+    
+    foreach ($dangerous_commands as $dangerous_cmd) {
+        if (strpos(strtolower($command), $dangerous_cmd) !== false) {
+            $is_dangerous = true;
+            break;
+        }
+    }
+    
+    if ($is_dangerous) {
+        $result .= "<strong>🚫 위험한 명령어 차단</strong><br>";
+        $result .= "보안상의 이유로 시스템 파괴적 명령어는 실행하지 않습니다.<br>";
+        $result .= "차단된 명령어: " . htmlspecialchars($command);
+    } else {
         // 실제 명령어 실행
-        $output = [];
-        $return_var = 0;
-        
-        // 안전한 명령어만 실행
         exec($command . ' 2>&1', $output, $return_var);
         
-        if ($return_var === 0) {
-            $result = "<pre>" . htmlspecialchars(implode("\n", $output)) . "</pre>";
+        if ($return_var === 0 && !empty($output)) {
+            $result .= "<strong>✅ 명령어 실행 성공!</strong><br>";
+            $result .= "<strong>실행된 명령어:</strong> " . htmlspecialchars($command) . "<br><br>";
+            $result .= "<strong>실행 결과:</strong><br>";
+            $result .= "<pre style='background: #f1f1f1; padding: 10px; max-height: 400px; overflow-y: auto;'>" . htmlspecialchars(implode("\n", $output)) . "</pre>";
+            
+            // Command Injection이 성공했는지 체크
+            if (strpos($command, ';') !== false || strpos($command, '&&') !== false || strpos($command, '|') !== false) {
+                $result .= "<br><strong>🚨 Command Injection 공격 성공!</strong><br>";
+                $result .= "<em>여러 명령어가 연쇄적으로 실행되었습니다. 실제 환경에서는 매우 위험합니다!</em>";
+            }
+        } else if ($return_var !== 0) {
+            $result .= "<strong>❌ 명령어 실행 실패 (종료 코드: $return_var)</strong><br>";
+            if (!empty($output)) {
+                $result .= "<pre style='background: #f1f1f1; padding: 10px;'>" . htmlspecialchars(implode("\n", $output)) . "</pre>";
+            }
         } else {
-            $result = "<div class=\"error-box\">명령어 실행 실패 (종료 코드: $return_var)<br>";
-            $result .= "<pre>" . htmlspecialchars(implode("\n", $output)) . "</pre></div>";
+            $result .= "<strong>⚠️ 명령어는 실행되었지만 출력이 없습니다.</strong><br>";
+            $result .= "실행된 명령어: " . htmlspecialchars($command);
         }
-    } else {
-        $result = "<div class=\"error-box\">⚠️ 보안 위험: 입력된 명령어에 위험한 문자가 포함되어 있습니다.<br>";
-        $result .= "원본: " . htmlspecialchars($command ?? '') . "<br>";
-        $result .= "필터링 후: " . htmlspecialchars($sanitized_command ?? '') . "<br>";
-        $result .= "이러한 문자들은 Command Injection 공격에 사용될 수 있습니다: ; & | ` $ ( ) { } [ ] < ></div>";
     }
+    $result .= "</div>";
+
+    // 안전한 구현과 비교
+    $result .= "<div class='info-box' style='background: #d4edda; border-color: #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>✅ 안전한 구현이었다면:</strong><br>";
+    $result .= "1. 입력 검증: 화이트리스트 방식으로 허용된 명령어만 실행<br>";
+    $result .= "2. 이스케이프 처리: <code>escapeshellcmd()</code>, <code>escapeshellarg()</code> 사용<br>";
+    $result .= "3. API 함수 사용: 직접 시스템 명령어 대신 PHP 내장 함수 사용<br>";
+    $result .= "4. 최소 권한: 웹 서버를 제한된 권한으로 실행";
+    $result .= "</div>";
+
+    // 보안 권장사항
+    $result .= "<div class='info-box' style='background: #d1ecf1; border-color: #bee5eb; color: #0c5460; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>🛡️ 보안 권장사항:</strong><br>";
+    $result .= "- 사용자 입력을 시스템 명령어에 직접 사용 금지<br>";
+    $result .= "- 화이트리스트 방식으로 허용된 명령어만 실행<br>";
+    $result .= "- escapeshellcmd(), escapeshellarg() 함수 사용<br>";
+    $result .= "- 웹 애플리케이션을 최소 권한으로 실행<br>";
+    $result .= "- 가능한 한 시스템 명령어 실행 회피";
+    $result .= "</div>";
 
     return ['result' => $result, 'error' => $error];
 };
