@@ -102,9 +102,9 @@ $test_form_ui = <<<HTML
     <h3>🧪 Authentication Bypass 테스트</h3>
     
     <div class="test-type-selector">
-        <label><input type="radio" name="test_type" value="sql_auth" {$test_type_selected === 'sql_auth' ? 'checked' : ''}> SQL Injection Auth</label>
-        <label><input type="radio" name="test_type" value="nosql_auth" {$test_type_selected === 'nosql_auth' ? 'checked' : ''}> NoSQL Injection Auth</label>
-        <label><input type="radio" name="test_type" value="ldap_auth" {$test_type_selected === 'ldap_auth' ? 'checked' : ''}> LDAP Injection Auth</label>
+        <label><input type="radio" name="test_type" value="sql_auth" <?= $test_type_selected === 'sql_auth' ? 'checked' : '' ?>> SQL Injection Auth</label>
+        <label><input type="radio" name="test_type" value="nosql_auth" <?= $test_type_selected === 'nosql_auth' ? 'checked' : '' ?>> NoSQL Injection Auth</label>
+        <label><input type="radio" name="test_type" value="ldap_auth" <?= $test_type_selected === 'ldap_auth' ? 'checked' : '' ?>> LDAP Injection Auth</label>
     </div>
     
     <label for="username">사용자명:</label>
@@ -215,7 +215,7 @@ $test_logic_callback = function($form_data) use ($mock_users) {
             break;
         case 'nosql_auth':
             $result_html .= "적절한 타입 검증과 쿼리 빌더 사용:<br>";
-            $result_html .= "<code>db.users.find({username: {$type: 'string'}, password: {$type: 'string'}})</code>";
+            $result_html .= "<code>db.users.find({username: {\$type: 'string'}, password: {\$type: 'string'}})</code>";
             break;
         case 'ldap_auth':
             $result_html .= "LDAP 이스케이프 함수 사용:<br>";
