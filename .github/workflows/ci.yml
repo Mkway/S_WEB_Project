@@ -44,7 +44,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cd my_lemp_project/src
+        cd websec-lab/src
         if [ -f composer.lock ]; then
           composer install --prefer-dist --no-progress
         else
@@ -53,7 +53,7 @@ jobs:
 
     - name: Setup test environment
       run: |
-        cd my_lemp_project/src
+        cd websec-lab/src
         cp config.php.example config.php || true
         # 테스트 환경 설정
         echo "<?php
@@ -82,7 +82,7 @@ jobs:
 
     - name: Run PHPUnit tests
       run: |
-        cd my_lemp_project/src
+        cd websec-lab/src
         # 환경 변수 설정
         export CI=true
         export GITHUB_ACTIONS=true
@@ -98,7 +98,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        file: ./my_lemp_project/src/coverage.xml
+        file: ./websec-lab/src/coverage.xml
         flags: unittests
         name: codecov-umbrella
 
@@ -117,17 +117,17 @@ jobs:
 
     - name: Install Composer dependencies
       run: |
-        cd my_lemp_project/src
+        cd websec-lab/src
         composer install --prefer-dist --no-progress --no-dev
 
     - name: Run security audit
       run: |
-        cd my_lemp_project/src
+        cd websec-lab/src
         composer audit || true
 
     - name: Check for known vulnerabilities
       run: |
-        cd my_lemp_project/src
+        cd websec-lab/src
         # composer require --dev sensiolabs/security-checker
         # vendor/bin/security-checker security:check composer.lock
 
@@ -146,17 +146,17 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cd my_lemp_project/src
+        cd websec-lab/src
         composer install --prefer-dist --no-progress
 
     - name: Run PHP_CodeSniffer
       run: |
-        cd my_lemp_project/src
+        cd websec-lab/src
         # vendor/bin/phpcs --standard=PSR12 --ignore=vendor,test . || true
 
     - name: Run PHPStan
       run: |
-        cd my_lemp_project/src  
+        cd websec-lab/src  
         # vendor/bin/phpstan analyse --level=5 . || true
 
   docker-build:
@@ -172,7 +172,7 @@ jobs:
 
     - name: Build and test Docker images
       run: |
-        cd my_lemp_project
+        cd websec-lab
         docker-compose -f docker-compose.yml build
         docker-compose -f docker-compose.yml up -d
         sleep 30
@@ -183,7 +183,7 @@ jobs:
     - name: Run Docker security scan
       run: |
         # docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-        #   -v $(pwd):/src aquasec/trivy image my_lemp_project_nginx || true
+        #   -v $(pwd):/src aquasec/trivy image websec-lab_nginx || true
 
   deploy:
     runs-on: ubuntu-latest
