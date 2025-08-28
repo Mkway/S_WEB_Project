@@ -118,18 +118,100 @@ $test_logic_callback = function($form_data) {
     global $csrf_token;
     $submitted_token = $form_data['csrf_token'] ?? '';
     $action = $form_data['action'] ?? 'N/A';
+    $payload_type = $form_data['payload'] ?? '';
     $result = '';
 
-    if (hash_equals($csrf_token, $submitted_token)) {
-        $result = "<pre>✅ 요청이 안전하게 처리되었습니다.\n";
-        $result .= "- 작업: " . htmlspecialchars($action) . "\n";
-        $result .= "- CSRF 토큰이 올바르게 검증되었습니다.</pre>";
-    } else {
-        $result = "<pre>⚠️ CSRF 공격이 차단되었습니다!\n\n";
-        $result .= "- 제출된 토큰: " . htmlspecialchars($submitted_token) . " (없거나 일치하지 않음)\n";
-        $result .= "- 예상 토큰: " . htmlspecialchars($csrf_token) . "\n\n";
-        $result .= "🛡️ CSRF 보호 메커니즘이 정상적으로 작동했습니다.</pre>";
+    // CSRF 취약점 실제 실행
+    $result .= "<div class='info-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>⚠️ CSRF 취약점 테스트 실행:</strong><br>";
+    $result .= "요청한 작업: <code>" . htmlspecialchars($action) . "</code><br>";
+    $result .= "폼 유형: <code>" . htmlspecialchars($payload_type) . "</code><br>";
+    $result .= "제출된 토큰: <code>" . htmlspecialchars($submitted_token ?: '(없음)') . "</code>";
+    $result .= "</div>";
+
+    if ($payload_type === 'no_token_form') {
+        // 취약한 폼 - CSRF 토큰 없음
+        $result .= "<div class='vulnerable-output' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+        $result .= "<strong>취약한 CSRF 실행 결과:</strong><br>";
+        
+        if (empty($submitted_token)) {
+            $result .= "<strong>🚨 CSRF 공격 성공!</strong><br>";
+            $result .= "토큰 검증 없이 작업이 실행되었습니다!<br>";
+            
+            switch ($action) {
+                case 'change_password':
+                    $result .= "🎯 <strong>비밀번호가 변경되었습니다!</strong><br>";
+                    $result .= "새 비밀번호: hacked123<br>";
+                    $result .= "<em>공격자가 의도한 비밀번호로 변경되었습니다.</em><br>";
+                    break;
+                default:
+                    $result .= "🎯 <strong>작업이 실행되었습니다!</strong><br>";
+                    $result .= "<em>공격자가 의도한 작업이 수행되었습니다.</em><br>";
+            }
+            
+            $result .= "<br><strong>⚠️ 경고:</strong> 이런 요청은 실제로 다음과 같이 발생할 수 있습니다:<br>";
+            $result .= "1. 악성 웹사이트에서 숨겨진 폼 제출<br>";
+            $result .= "2. 이메일의 악성 링크 클릭<br>";
+            $result .= "3. 이미지 태그를 통한 GET 요청<br>";
+            $result .= "4. JavaScript를 통한 자동 폼 제출";
+        } else {
+            $result .= "<strong>❌ 예상치 못한 토큰 발견</strong><br>";
+            $result .= "취약한 폼임에도 토큰이 제출되었습니다.";
+        }
+        $result .= "</div>";
+        
+    } else if ($payload_type === 'safe_form') {
+        // 안전한 폼 - CSRF 토큰 있음
+        $result .= "<div class='vulnerable-output' style='background: #d4edda; border-color: #c3e6cb; color: #155724; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+        $result .= "<strong>안전한 CSRF 처리 결과:</strong><br>";
+        
+        if (hash_equals($csrf_token, $submitted_token)) {
+            $result .= "<strong>✅ 정상 요청 처리 완료!</strong><br>";
+            $result .= "CSRF 토큰이 올바르게 검증되었습니다.<br>";
+            
+            switch ($action) {
+                case 'change_password':
+                    $result .= "🔒 <strong>비밀번호 변경 완료</strong><br>";
+                    $result .= "사용자가 의도한 비밀번호로 안전하게 변경되었습니다.";
+                    break;
+                default:
+                    $result .= "🔒 <strong>요청 처리 완료</strong><br>";
+                    $result .= "사용자가 의도한 작업이 안전하게 수행되었습니다.";
+            }
+        } else {
+            $result .= "<strong>🛡️ CSRF 공격 차단!</strong><br>";
+            $result .= "토큰 불일치로 인해 요청이 차단되었습니다.<br>";
+            $result .= "예상 토큰: " . htmlspecialchars($csrf_token) . "<br>";
+            $result .= "제출된 토큰: " . htmlspecialchars($submitted_token);
+        }
+        $result .= "</div>";
     }
+
+    // CSRF 공격 시뮬레이션 예제
+    $result .= "<div class='info-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>🎭 실제 CSRF 공격 시뮬레이션:</strong><br>";
+    $current_url = $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+    $csrf_attack_html = "<form action=\"http://$current_url\" method=\"POST\">
+    <input type=\"hidden\" name=\"payload\" value=\"no_token_form\">
+    <input type=\"hidden\" name=\"action\" value=\"change_password\">
+    <input type=\"submit\" value=\"무료 선물 받기!\">
+</form>
+<script>document.forms[0].submit();</script>";
+    
+    $result .= "악성 웹사이트에서 다음과 같은 코드를 실행할 수 있습니다:<br>";
+    $result .= "<pre style='background: #f1f1f1; padding: 10px; font-size: 12px;'>" . htmlspecialchars($csrf_attack_html) . "</pre>";
+    $result .= "</div>";
+
+    // 보안 권장사항
+    $result .= "<div class='info-box' style='background: #d1ecf1; border-color: #bee5eb; color: #0c5460; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>🛡️ 보안 권장사항:</strong><br>";
+    $result .= "- 모든 상태 변경 요청에 CSRF 토큰 적용<br>";
+    $result .= "- SameSite 쿠키 속성 설정 (Strict/Lax)<br>";
+    $result .= "- Referer/Origin 헤더 검증<br>";
+    $result .= "- 중요한 작업 시 재인증 요구<br>";
+    $result .= "- POST 방식 사용 (GET 요청 지양)";
+    $result .= "</div>";
+
     return ['result' => $result, 'error' => ''];
 };
 

@@ -65,29 +65,99 @@ HTML;
 $test_logic_callback = function($form_data, $file_data) {
     $result = '';
     $error = '';
-    $uploaded_file_path = '';
 
     if (isset($file_data['uploaded_file']) && $file_data['uploaded_file']['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = __DIR__ . '/../uploads/';
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
-
         $file = $file_data['uploaded_file'];
         $filename = basename($file['name']);
+        $file_size = $file['size'];
+        $file_type = $file['type'];
+        $file_ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        // 취약한 파일 업로드 실행
+        $result .= "<div class='info-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+        $result .= "<strong>⚠️ 취약한 파일 업로드 실행:</strong><br>";
+        $result .= "파일명: <code>" . htmlspecialchars($filename) . "</code><br>";
+        $result .= "파일 크기: " . number_format($file_size) . " bytes<br>";
+        $result .= "MIME 타입: <code>" . htmlspecialchars($file_type) . "</code><br>";
+        $result .= "확장자: <code>" . htmlspecialchars($file_ext) . "</code>";
+        $result .= "</div>";
+
+        // 업로드 디렉토리 생성
+        $upload_dir = __DIR__ . '/../uploads/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+
         $target_path = $upload_dir . $filename;
 
-        // --- 취약점 발생 지점 ---
-        // 확장자 검증이 없거나 매우 미흡함
-        if (move_uploaded_file($file['tmp_name'], $target_path)) {
-            $uploaded_file_path = str_replace(__DIR__ . '/../', '', $target_path); // 웹 경로로 변환
-            $result = "<p>파일이 성공적으로 업로드되었습니다.</p>";
-            $result .= "<p>업로드된 파일 경로: <a href=\"/{$uploaded_file_path}\" target=\"_blank\">/{$uploaded_file_path}</a></p>";
+        $result .= "<div class='vulnerable-output' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+        $result .= "<strong>취약한 파일 업로드 결과:</strong><br>";
+
+        // 위험한 확장자 체크
+        $dangerous_extensions = ['php', 'php3', 'php4', 'php5', 'phtml', 'asp', 'aspx', 'jsp', 'js', 'py', 'sh', 'exe', 'bat'];
+        
+        if (in_array($file_ext, $dangerous_extensions)) {
+            $result .= "<strong>🚨 위험한 파일 확장자 감지!</strong><br>";
+            $result .= "확장자 '<code>." . htmlspecialchars($file_ext) . "</code>'는 서버에서 실행 가능한 스크립트일 수 있습니다.<br><br>";
+            
+            // 실제 파일 업로드 실행 (교육용)
+            if (move_uploaded_file($file['tmp_name'], $target_path)) {
+                $web_path = '/websec-lab/src/uploads/' . $filename;
+                $result .= "<strong>✅ 파일 업로드 성공!</strong><br>";
+                $result .= "<strong>업로드된 경로:</strong> " . htmlspecialchars($target_path) . "<br>";
+                $result .= "<strong>웹 접근 경로:</strong> <a href='" . htmlspecialchars($web_path) . "' target='_blank' style='color: #721c24; font-weight: bold;'>" . htmlspecialchars($web_path) . "</a><br>";
+                
+                // 파일 내용 미리보기 (처음 500자)
+                $file_content = file_get_contents($target_path, false, null, 0, 500);
+                if ($file_content !== false) {
+                    $result .= "<br><strong>파일 내용 미리보기:</strong><br>";
+                    $result .= "<pre style='background: #f1f1f1; padding: 10px; max-height: 200px; overflow-y: auto; font-size: 12px;'>" . htmlspecialchars($file_content) . "</pre>";
+                }
+                
+                $result .= "<br><strong>⚠️ 경고:</strong> 웹쉘이나 악성 스크립트가 업로드되었을 수 있습니다!<br>";
+                $result .= "<em>실제 환경에서는 이런 파일이 서버 전체를 장악할 수 있습니다.</em>";
+            } else {
+                $result .= "<strong>❌ 파일 업로드 실패</strong><br>";
+                $result .= "서버 오류로 인해 파일을 저장할 수 없습니다.";
+            }
         } else {
-            $error = "파일 업로드 중 오류가 발생했습니다.";
+            // 일반 파일 업로드
+            if (move_uploaded_file($file['tmp_name'], $target_path)) {
+                $web_path = '/websec-lab/src/uploads/' . $filename;
+                $result .= "<strong>✅ 일반 파일 업로드 성공</strong><br>";
+                $result .= "<strong>업로드된 경로:</strong> " . htmlspecialchars($target_path) . "<br>";
+                $result .= "<strong>웹 접근 경로:</strong> <a href='" . htmlspecialchars($web_path) . "' target='_blank'>" . htmlspecialchars($web_path) . "</a><br>";
+                $result .= "<br>이 파일은 실행 가능한 스크립트가 아니므로 상대적으로 안전합니다.";
+            } else {
+                $result .= "<strong>❌ 파일 업로드 실패</strong><br>";
+                $result .= "서버 오류로 인해 파일을 저장할 수 없습니다.";
+            }
         }
+        $result .= "</div>";
+
+        // 안전한 구현과 비교
+        $result .= "<div class='info-box' style='background: #d4edda; border-color: #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+        $result .= "<strong>✅ 안전한 구현이었다면:</strong><br>";
+        $result .= "1. 확장자 화이트리스트 검증: <code>in_array(\$ext, ['jpg', 'png', 'gif', 'pdf'])</code><br>";
+        $result .= "2. MIME 타입 재검증: <code>mime_content_type(\$file)</code><br>";
+        $result .= "3. 파일 크기 제한: <code>filesize() < MAX_SIZE</code><br>";
+        $result .= "4. 안전한 경로에 저장: 웹 루트 외부 디렉토리<br>";
+        $result .= "5. 파일명 재정의: <code>uniqid() . '.ext'</code>";
+        $result .= "</div>";
+
+        // 보안 권장사항
+        $result .= "<div class='info-box' style='background: #d1ecf1; border-color: #bee5eb; color: #0c5460; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+        $result .= "<strong>🛡️ 보안 권장사항:</strong><br>";
+        $result .= "- 확장자 화이트리스트 방식 사용<br>";
+        $result .= "- MIME 타입 서버 사이드 검증<br>";
+        $result .= "- 파일 내용 무결성 검사<br>";
+        $result .= "- 업로드 크기 제한 설정<br>";
+        $result .= "- 웹 루트 외부에 저장<br>";
+        $result .= "- 바이러스 스캔 적용";
+        $result .= "</div>";
+
     } else {
-        $error = "파일 업로드 중 오류 발생: " . ($file_data['uploaded_file']['error'] ?? '알 수 없음');
+        $error = "<div class='error-box'>파일 업로드 중 오류 발생: " . ($file_data['uploaded_file']['error'] ?? '알 수 없음') . "</div>";
     }
 
     return ['result' => $result, 'error' => $error];

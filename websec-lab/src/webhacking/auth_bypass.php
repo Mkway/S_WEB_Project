@@ -126,59 +126,113 @@ $test_logic_callback = function($form_data) use ($mock_users) {
     $password = $form_data['password'] ?? '';
     $test_type = $form_data['test_type'] ?? 'sql_auth';
 
-    $result_html .= "<pre>🔐 Authentication Bypass 테스트 결과\n\n";
-    $result_html .= "입력된 사용자명: " . htmlspecialchars($username) . "\n";
-    $result_html .= "입력된 비밀번호: " . htmlspecialchars($password) . "\n\n";
+    // 취약한 인증 우회 실행
+    $result_html .= "<div class='info-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result_html .= "<strong>⚠️ 취약한 인증 시스템 실행:</strong><br>";
+    $result_html .= "사용자명: <code>" . htmlspecialchars($username) . "</code><br>";
+    $result_html .= "비밀번호: <code>" . htmlspecialchars($password) . "</code>";
+    $result_html .= "</div>";
 
-    // 위험한 패턴 감지 (간단화)
-    $dangerous_patterns = [
-        '/'/',               // Single quotes
-        '/--/',               // SQL comments
-        '/\$ne/',             // NoSQL operators
-        '/\*\)\(/'            // LDAP injection
-    ];
-    
-    $is_dangerous = false;
-    foreach ($dangerous_patterns as $pattern) {
-        if (preg_match($pattern, $username) || preg_match($pattern, $password)) {
-            $is_dangerous = true;
+    $result_html .= "<div class='vulnerable-output' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result_html .= "<strong>Authentication Bypass 테스트 결과:</strong><br>";
+
+    // 취약한 인증 구현 시뮬레이션
+    switch ($test_type) {
+        case 'sql_auth':
+            // SQL 인젝션 기반 인증 우회
+            $vulnerable_query = "SELECT * FROM users WHERE username = '$username' AND password = '$password'";
+            $result_html .= "<strong>취약한 SQL 쿼리:</strong><br>";
+            $result_html .= "<code>" . htmlspecialchars($vulnerable_query) . "</code><br><br>";
+            
+            // SQL 인젝션 패턴 체크
+            if (preg_match("/'/", $username) || preg_match("/--/", $username) || 
+                preg_match("/ OR /i", $username) || preg_match("/ UNION /i", $username)) {
+                $result_html .= "<strong>✅ SQL 인젝션 공격 성공!</strong><br>";
+                $result_html .= "🎯 <strong>관리자 권한으로 로그인 성공</strong><br>";
+                $result_html .= "사용자: admin<br>";
+                $result_html .= "역할: administrator<br>";
+                $result_html .= "<em>SQL 쿼리가 조작되어 인증이 우회되었습니다!</em><br>";
+            } else {
+                // 정상 로그인 시도
+                $clean_username = strtolower(trim($username));
+                if (isset($mock_users[$clean_username]) && $mock_users[$clean_username]['password'] === $password) {
+                    $result_html .= "<strong>✅ 정상 로그인 성공</strong><br>";
+                    $result_html .= "사용자: " . htmlspecialchars($clean_username) . "<br>";
+                    $result_html .= "역할: " . htmlspecialchars($mock_users[$clean_username]['role']);
+                } else {
+                    $result_html .= "<strong>❌ 로그인 실패</strong><br>";
+                    $result_html .= "유효하지 않은 자격증명입니다.";
+                }
+            }
             break;
-        }
+            
+        case 'nosql_auth':
+            $result_html .= "<strong>취약한 NoSQL 쿼리:</strong><br>";
+            $result_html .= "<code>db.users.find({username: \"$username\", password: \"$password\"})</code><br><br>";
+            
+            // NoSQL 인젝션 패턴 체크
+            if (preg_match("/\{.*\\\$ne.*\}/", $username) || preg_match("/\{.*\\\$gt.*\}/", $username) ||
+                preg_match("/\{.*\\\$regex.*\}/", $username)) {
+                $result_html .= "<strong>✅ NoSQL 인젝션 공격 성공!</strong><br>";
+                $result_html .= "🎯 <strong>관리자 권한으로 로그인 성공</strong><br>";
+                $result_html .= "사용자: admin<br>";
+                $result_html .= "역할: administrator<br>";
+                $result_html .= "<em>NoSQL 연산자가 악용되어 인증이 우회되었습니다!</em><br>";
+            } else {
+                $result_html .= "<strong>❌ NoSQL 인젝션 실패</strong><br>";
+                $result_html .= "올바른 NoSQL 인젝션 페이로드를 사용하세요.";
+            }
+            break;
+            
+        case 'ldap_auth':
+            $vulnerable_ldap = "(&(uid=$username)(password=$password))";
+            $result_html .= "<strong>취약한 LDAP 필터:</strong><br>";
+            $result_html .= "<code>" . htmlspecialchars($vulnerable_ldap) . "</code><br><br>";
+            
+            // LDAP 인젝션 패턴 체크
+            if (preg_match("/\)\(/", $username) || preg_match("/\*\)/", $username)) {
+                $result_html .= "<strong>✅ LDAP 인젝션 공격 성공!</strong><br>";
+                $result_html .= "🎯 <strong>관리자 권한으로 로그인 성공</strong><br>";
+                $result_html .= "사용자: admin<br>";
+                $result_html .= "역할: administrator<br>";
+                $result_html .= "<em>LDAP 필터가 조작되어 인증이 우회되었습니다!</em><br>";
+            } else {
+                $result_html .= "<strong>❌ LDAP 인젝션 실패</strong><br>";
+                $result_html .= "올바른 LDAP 인젝션 페이로드를 사용하세요.";
+            }
+            break;
     }
+    $result_html .= "</div>";
 
-    if ($is_dangerous) {
-        $result_html .= "⚠️ 위험한 Authentication Bypass 공격 패턴이 감지되었습니다!\n\n";
-        switch ($test_type) {
-            case 'sql_auth':
-                $result_html .= "🎯 SQL Injection Authentication Bypass 시도:\n";
-                $result_html .= "- 일반적인 패턴: ' OR '1'='1'--, admin'--, UNION SELECT 등\n";
-                break;
-            case 'nosql_auth':
-                $result_html .= "🎯 NoSQL Injection Authentication Bypass 시도:\n";
-                $result_html .= "- MongoDB 등 NoSQL 데이터베이스의 연산자를 악용한 공격입니다.\n";
-                break;
-            case 'ldap_auth':
-                $result_html .= "🎯 LDAP Injection Authentication Bypass 시도:\n";
-                $result_html .= "- LDAP 쿼리 구조를 조작하여 인증을 우회하는 공격입니다.\n";
-                break;
-        }
-        $result_html .= "🛡️ 다행히 이 시스템은 다음과 같은 보안 조치로 보호되고 있습니다:\n- 준비된 문(Prepared Statements) 사용\n- 입력값 검증 및 필터링\n- 적절한 인코딩 및 이스케이프 처리\n";
-    } else {
-        // 정상적인 인증 시뮬레이션
-        $clean_username = strtolower(trim($username));
-        $clean_password = trim($password);
-        
-        if (isset($mock_users[$clean_username]) && $mock_users[$clean_username]['password'] === $clean_password) {
-            $result_html .= "✅ 정상적인 인증 성공!\n";
-            $result_html .= "사용자: " . htmlspecialchars($clean_username) . "\n";
-            $result_html .= "역할: " . htmlspecialchars($mock_users[$clean_username]['role']) . "\n";
-            $result_html .= "인증이 안전하게 처리되었습니다.\n";
-        } else {
-            $result_html .= "❌ 인증 실패\n";
-            $result_html .= "유효하지 않은 사용자명 또는 비밀번호입니다.\n";
-        }
+    // 안전한 구현과 비교
+    $result_html .= "<div class='info-box' style='background: #d4edda; border-color: #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result_html .= "<strong>✅ 안전한 구현이었다면:</strong><br>";
+    
+    switch ($test_type) {
+        case 'sql_auth':
+            $result_html .= "준비된 문(Prepared Statement) 사용:<br>";
+            $result_html .= "<code>SELECT * FROM users WHERE username = ? AND password = ?</code>";
+            break;
+        case 'nosql_auth':
+            $result_html .= "적절한 타입 검증과 쿼리 빌더 사용:<br>";
+            $result_html .= "<code>db.users.find({username: {$type: 'string'}, password: {$type: 'string'}})</code>";
+            break;
+        case 'ldap_auth':
+            $result_html .= "LDAP 이스케이프 함수 사용:<br>";
+            $result_html .= "<code>ldap_escape($username) 및 ldap_escape($password)</code>";
+            break;
     }
-    $result_html .= "</pre>";
+    $result_html .= "</div>";
+
+    // 보안 권장사항
+    $result_html .= "<div class='info-box' style='background: #d1ecf1; border-color: #bee5eb; color: #0c5460; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result_html .= "<strong>🛡️ 보안 권장사항:</strong><br>";
+    $result_html .= "- 준비된 문(Prepared Statement) 사용<br>";
+    $result_html .= "- 입력 검증 및 타입 체크<br>";
+    $result_html .= "- 강력한 비밀번호 정책<br>";
+    $result_html .= "- 다중 인증(MFA) 구현<br>";
+    $result_html .= "- 로그인 시도 제한 및 모니터링";
+    $result_html .= "</div>";
 
     return ['result' => $result_html, 'error' => $error];
 };

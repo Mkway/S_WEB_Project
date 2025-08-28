@@ -86,27 +86,74 @@ $test_logic_callback = function($form_data) {
         return ['result' => $result, 'error' => $error];
     }
 
-    // --- 취약점 발생 지점 --- (실제로는 안전한 경로로 제한)
-    // 실제 파일 시스템 접근을 시뮬레이션
-    $base_dir = __DIR__ . '/../'; // src 디렉토리 기준
-    $target_file = realpath($base_dir . $file_path_input);
+    // 취약한 구현 - 실제 Directory Traversal 실행
+    $result .= "<div class='info-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>⚠️ 취약한 Directory Traversal 실행:</strong><br>";
+    $result .= "요청한 파일 경로: <code>" . htmlspecialchars($file_path_input) . "</code>";
+    $result .= "</div>";
 
-    if ($target_file === false || strpos($target_file, realpath($base_dir)) !== 0) {
-        $result = "<div class=\"error-box\">⚠️ 경로 조작 시도 감지!</div>";
-        $result .= "<p>입력된 경로: <code>" . htmlspecialchars($file_path_input) . "</code></p>";
-        $result .= "<p>이 경로는 허용된 디렉토리(`" . htmlspecialchars(realpath($base_dir)) . "`)를 벗어나거나 유효하지 않습니다.</p>";
-        $result .= "<p><strong>방어 메커니즘이 작동하여 파일 읽기를 차단했습니다.</strong></p>";
-    } else {
-        if (file_exists($target_file) && is_readable($target_file)) {
-            $file_content = file_get_contents($target_file);
-            $result = "<div class=\"result-box\">✅ 파일 내용 읽기 성공 (시뮬레이션)</div>";
-            $result .= "<p>읽은 파일: <code>" . htmlspecialchars($target_file) . "</code></p>";
-            $result .= "<pre><code>" . htmlspecialchars(substr($file_content, 0, 500)) . (strlen($file_content) > 500 ? '...' : '') . "</code></pre>";
+    $result .= "<div class='vulnerable-output' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>Directory Traversal 실행 결과:</strong><br>";
+
+    // URL 디코딩 처리
+    $decoded_path = urldecode($file_path_input);
+    
+    // 취약한 파일 접근 시도 (교육용)
+    if (file_exists($decoded_path) && is_readable($decoded_path)) {
+        $file_content = file_get_contents($decoded_path, false, null, 0, 2000); // 최대 2000자만 읽기
+        if ($file_content !== false) {
+            $result .= "<strong>✅ 파일 읽기 성공!</strong><br>";
+            $result .= "<strong>실제 파일 경로:</strong> " . htmlspecialchars(realpath($decoded_path)) . "<br>";
+            $result .= "<strong>파일 크기:</strong> " . filesize($decoded_path) . " bytes<br><br>";
+            $result .= "<strong>파일 내용:</strong><br>";
+            $result .= "<pre style='background: #f1f1f1; padding: 10px; max-height: 400px; overflow-y: auto; font-size: 12px;'>" . htmlspecialchars($file_content) . "</pre>";
+            
+            // 파일이 잘렸을 경우 알림
+            if (strlen($file_content) >= 2000) {
+                $result .= "<em>※ 파일 내용이 2000자로 제한되어 표시되었습니다.</em>";
+            }
         } else {
-            $result = "<div class=\"error-box\">❌ 파일이 존재하지 않거나 읽을 수 없습니다.</div>";
-            $result .= "<p>시도된 경로: <code>" . htmlspecialchars($file_path_input) . "</code></p>";
+            $result .= "<strong>❌ 파일을 읽을 수 없습니다.</strong><br>";
+            $result .= "권한이 없거나 바이너리 파일일 수 있습니다.";
+        }
+    } else {
+        $result .= "<strong>❌ 파일이 존재하지 않거나 접근할 수 없습니다.</strong><br>";
+        $result .= "요청한 경로: " . htmlspecialchars($decoded_path) . "<br>";
+        
+        // 일반적으로 시도되는 파일들에 대한 힌트
+        $common_files = ['/etc/passwd', '/etc/hosts', '/proc/version', '/etc/shadow'];
+        $result .= "<br><strong>일반적으로 시도되는 파일들:</strong><br>";
+        foreach ($common_files as $file) {
+            $result .= "- " . htmlspecialchars($file) . "<br>";
         }
     }
+    $result .= "</div>";
+
+    // 안전한 구현과 비교
+    $result .= "<div class='info-box' style='background: #d4edda; border-color: #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>✅ 안전한 구현이었다면:</strong><br>";
+    
+    $base_dir = realpath(__DIR__ . '/../');
+    $safe_path = realpath($base_dir . '/' . basename($file_path_input));
+    
+    if ($safe_path && strpos($safe_path, $base_dir) === 0) {
+        $result .= "허용된 디렉토리 내의 파일만 접근 가능<br>";
+        $result .= "안전한 경로: " . htmlspecialchars($safe_path);
+    } else {
+        $result .= "<strong>접근 차단됨!</strong> 허용된 디렉토리를 벗어나는 경로입니다.<br>";
+        $result .= "기본 디렉토리: " . htmlspecialchars($base_dir);
+    }
+    $result .= "</div>";
+
+    // 보안 권장사항
+    $result .= "<div class='info-box' style='background: #d1ecf1; border-color: #bee5eb; color: #0c5460; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>🛡️ 보안 권장사항:</strong><br>";
+    $result .= "- realpath()로 경로 정규화 및 검증<br>";
+    $result .= "- basename()으로 파일명만 추출<br>";
+    $result .= "- 화이트리스트 기반 파일 접근<br>";
+    $result .= "- 최소 권한 원칙 적용<br>";
+    $result .= "- 사용자 입력 검증 및 필터링";
+    $result .= "</div>";
 
     return ['result' => $result, 'error' => $error];
 };

@@ -123,45 +123,65 @@ $test_logic_callback = function($form_data) {
         'readme.txt' => 'README file content for testing.'
     ];
 
-    // 위험한 패턴 감지
-    $dangerous_patterns = [
-        '/\\.\\.\\//',           // Directory traversal
-        '//etc//',          // System files
-        '/php:\\/\\//',         // PHP wrappers
-        '/data:\\/\\//',        // Data URLs
-        '/http:\\/\\//',        // Remote files
-        '/https?:\\/\\//',       // Remote files
-        '/%00/'              // Null byte
-    ];
-    
-    $is_dangerous = false;
-    $detected_patterns = [];
-    
-    foreach ($dangerous_patterns as $pattern) {
-        if (preg_match($pattern, $file_path_input)) {
-            $is_dangerous = true;
-            $detected_patterns[] = $pattern;
-        }
-    }
-    
-    if ($is_dangerous) {
-        $result = "<div class=\"error-box\">⚠️ 위험한 File Inclusion 패턴이 감지되었습니다!</div>";
-        $result .= "<p>입력된 경로: <code>" . htmlspecialchars($file_path_input) . "</code></p>";
-        $result .= "<p>감지된 패턴: " . htmlspecialchars(implode(', ', $detected_patterns)) . "</p>";
-        $result .= "<p>이러한 패턴들은 다음과 같은 공격에 사용될 수 있습니다:</p><ul><li>Local File Inclusion (LFI): 서버의 민감한 파일 읽기</li><li>Remote File Inclusion (RFI): 외부 악성 파일 실행</li></ul>";
-    } else {
-        // 안전한 파일만 처리
-        $clean_path = basename($file_path_input); // 경로 제거
+    // 실제 파일 포함 시도 (취약한 구현)
+    $result .= "<div class='info-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>⚠️ 취약한 파일 포함 실행:</strong><br>";
+    $result .= "요청한 파일 경로: <code>" . htmlspecialchars($file_path_input) . "</code>";
+    $result .= "</div>";
+
+    if ($test_type === 'lfi') {
+        // Local File Inclusion 시도
+        $result .= "<div class='vulnerable-output' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+        $result .= "<strong>LFI 실행 결과:</strong><br>";
         
-        if (isset($safe_files[$clean_path])) {
-            $result = "<div class=\"result-box\">✅ 안전한 파일에 접근했습니다.</div>";
-            $result .= "<p>파일명: <code>" . htmlspecialchars($clean_path) . "</code></p>";
-            $result .= "<pre><code>" . htmlspecialchars($safe_files[$clean_path]) . "</code></pre>";
+        // 실제 파일 읽기 시도 (교육용)
+        if (file_exists($file_path_input) && is_readable($file_path_input)) {
+            $file_content = file_get_contents($file_path_input, false, null, 0, 1000); // 최대 1000자만 읽기
+            if ($file_content !== false) {
+                $result .= "<strong>✅ 파일 읽기 성공!</strong><br>";
+                $result .= "<strong>파일 내용:</strong><br>";
+                $result .= "<pre style='background: #f1f1f1; padding: 10px; max-height: 300px; overflow-y: auto;'>" . htmlspecialchars($file_content) . "</pre>";
+            } else {
+                $result .= "<strong>❌ 파일을 읽을 수 없습니다.</strong><br>";
+            }
         } else {
-            $result = "<div class=\"error-box\">❌ 요청한 파일을 찾을 수 없습니다.</div>";
-            $result .= "<p>사용 가능한 파일: " . htmlspecialchars(implode(', ', array_keys($safe_files))) . "</p>";
+            // 안전한 파일이라면 허용
+            $clean_path = basename($file_path_input);
+            if (isset($safe_files[$clean_path])) {
+                $result .= "<strong>✅ 안전한 파일 접근:</strong><br>";
+                $result .= "<pre style='background: #f1f1f1; padding: 10px;'>" . htmlspecialchars($safe_files[$clean_path]) . "</pre>";
+            } else {
+                $result .= "<strong>❌ 파일이 존재하지 않거나 접근할 수 없습니다.</strong><br>";
+                $result .= "파일 경로: " . htmlspecialchars($file_path_input) . "<br>";
+            }
         }
+        $result .= "</div>";
+        
+    } else if ($test_type === 'rfi') {
+        // Remote File Inclusion 시도 (시뮬레이션)
+        $result .= "<div class='vulnerable-output' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+        $result .= "<strong>RFI 실행 결과:</strong><br>";
+        
+        if (filter_var($file_path_input, FILTER_VALIDATE_URL)) {
+            $result .= "<strong>⚠️ 원격 파일 요청 감지!</strong><br>";
+            $result .= "요청한 URL: " . htmlspecialchars($file_path_input) . "<br>";
+            $result .= "<strong>보안상의 이유로 실제 원격 파일은 실행하지 않습니다.</strong><br>";
+            $result .= "<em>실제 환경에서는 이런 요청이 원격 코드 실행으로 이어질 수 있습니다.</em>";
+        } else {
+            $result .= "<strong>❌ 유효한 URL이 아닙니다.</strong><br>";
+            $result .= "RFI 테스트를 위해서는 http:// 또는 https://로 시작하는 URL을 입력하세요.";
+        }
+        $result .= "</div>";
     }
+
+    // 보안 권장사항
+    $result .= "<div class='info-box' style='background: #d1ecf1; border-color: #bee5eb; color: #0c5460; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>🛡️ 보안 권장사항:</strong><br>";
+    $result .= "- 파일 포함 시 화이트리스트 방식 사용<br>";
+    $result .= "- realpath()로 경로 정규화<br>";
+    $result .= "- allow_url_include 비활성화<br>";
+    $result .= "- 사용자 입력 검증 및 필터링";
+    $result .= "</div>";
 
     return ['result' => $result, 'error' => $error];
 };
