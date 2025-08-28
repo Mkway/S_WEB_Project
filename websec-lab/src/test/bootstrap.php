@@ -2,6 +2,9 @@
 
 // 테스트 환경 설정
 
+// 메인 애플리케이션 설정을 먼저 로드하여 상수들을 정의
+require_once __DIR__ . '/../config.php';
+
 // CI 환경 감지 및 데이터베이스 연결 설정
 $isCI = getenv('CI') || getenv('GITHUB_ACTIONS');
 

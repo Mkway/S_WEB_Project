@@ -22,9 +22,13 @@ function create_database_connection() {
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET
+        PDO::ATTR_EMULATE_PREPARES => false
     ];
+    
+    // MySQL PDO extension이 사용 가능한 경우에만 MySQL 특정 속성 추가
+    if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+        $options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES " . DB_CHARSET;
+    }
     
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
