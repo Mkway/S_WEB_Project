@@ -81,42 +81,35 @@ $test_logic_callback = function($form_data) {
     $result = '';
     $error = '';
 
-    $sanitized_command = preg_replace('/[;&|`$(){}[\]/', '', $command);
+    $sanitized_command = preg_replace('/[;&|`$(){}\[\]]/', '', $command);
     $safe_commands = ['ping', 'date', 'whoami', 'pwd'];
     
     $is_safe = false;
     foreach ($safe_commands as $safe_cmd) {
-        if (strpos($sanitized_command, $safe_cmd) !== false) {
+        if ($sanitized_command !== null && strpos($sanitized_command, $safe_cmd) !== false) {
             $is_safe = true;
             break;
         }
     }
 
     if ($is_safe && $sanitized_command === $command) {
-        ob_start();
-        // 실제 명령어 실행 대신 시뮬레이션
-        switch (true) {
-            case strpos($command, 'ping') !== false:
-                $sim_result = "PING 시뮬레이션:\n64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.1ms";
-                break;
-            case strpos($command, 'date') !== false:
-                $sim_result = date('Y-m-d H:i:s');
-                break;
-            case strpos($command, 'whoami') !== false:
-                $sim_result = "www-data";
-                break;
-            case strpos($command, 'pwd') !== false:
-                $sim_result = "/var/www/html";
-                break;
-            default:
-                $sim_result = "명령어가 실행되었습니다 (시뮬레이션)";
+        // 실제 명령어 실행
+        $output = [];
+        $return_var = 0;
+        
+        // 안전한 명령어만 실행
+        exec($command . ' 2>&1', $output, $return_var);
+        
+        if ($return_var === 0) {
+            $result = "<pre>" . htmlspecialchars(implode("\n", $output)) . "</pre>";
+        } else {
+            $result = "<div class=\"error-box\">명령어 실행 실패 (종료 코드: $return_var)<br>";
+            $result .= "<pre>" . htmlspecialchars(implode("\n", $output)) . "</pre></div>";
         }
-        $result = "<pre>" . htmlspecialchars($sim_result) . "</pre>";
-        ob_end_clean();
     } else {
         $result = "<div class=\"error-box\">⚠️ 보안 위험: 입력된 명령어에 위험한 문자가 포함되어 있습니다.<br>";
-        $result .= "원본: " . htmlspecialchars($command) . "<br>";
-        $result .= "필터링 후: " . htmlspecialchars($sanitized_command) . "<br>";
+        $result .= "원본: " . htmlspecialchars($command ?? '') . "<br>";
+        $result .= "필터링 후: " . htmlspecialchars($sanitized_command ?? '') . "<br>";
         $result .= "이러한 문자들은 Command Injection 공격에 사용될 수 있습니다: ; & | ` $ ( ) { } [ ] < ></div>";
     }
 

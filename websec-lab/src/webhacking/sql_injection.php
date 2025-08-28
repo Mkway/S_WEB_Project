@@ -128,25 +128,52 @@ $test_logic_callback = function($form_data) {
     $error = '';
 
     try {
-        $safe_query = "SELECT id, username FROM users WHERE id = ?";
-        $stmt = $pdo->prepare($safe_query);
-        $stmt->execute([$payload]);
-        $results = $stmt->fetchAll();
+        // 취약한 쿼리 실제 실행 (교육용)
+        $vulnerable_query = "SELECT id, username FROM users WHERE id = '" . $payload . "'";
+        $result .= "<div class='info-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404;'>";
+        $result .= "<strong>⚠️ 취약한 쿼리 실행:</strong><br>";
+        $result .= "<code>" . htmlspecialchars($vulnerable_query) . "</code></div><br>";
         
-        if ($results) {
-            $result = "쿼리가 실행되었지만 준비된 문(Prepared Statement)으로 인해 안전하게 처리되었습니다.<br>";
-            $result .= "결과: " . count($results) . "개의 레코드가 발견되었습니다.";
+        // 실제 취약한 쿼리 실행
+        $stmt = $pdo->query($vulnerable_query);
+        
+        if ($stmt) {
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if ($results) {
+                $result .= "<div class='success-box' style='background: #d4edda; border-color: #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+                $result .= "<strong>✅ 쿼리 실행 성공!</strong><br>";
+                $result .= "발견된 레코드 수: " . count($results) . "<br><br>";
+                
+                foreach ($results as $index => $row) {
+                    $result .= "<strong>레코드 " . ($index + 1) . ":</strong><br>";
+                    foreach ($row as $column => $value) {
+                        $result .= "- " . htmlspecialchars($column) . ": " . htmlspecialchars($value ?? '') . "<br>";
+                    }
+                    $result .= "<br>";
+                }
+                $result .= "</div>";
+            } else {
+                $result .= "<div class='warning-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+                $result .= "쿼리는 실행되었지만 결과가 없습니다.";
+                $result .= "</div>";
+            }
         } else {
-            $result = "쿼리가 실행되었지만 결과가 없습니다. 준비된 문이 SQL Injection을 방지했습니다.";
+            $result .= "<div class='error-box' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+            $result .= "쿼리 실행에 실패했습니다.";
+            $result .= "</div>";
         }
         
-        $vulnerable_query = "SELECT id, username FROM users WHERE id = '" . htmlspecialchars($payload, ENT_QUOTES) . "'";
-        $result .= "<br><br><strong>만약 취약한 쿼리였다면:</strong><br>";
-        $result .= "<code>" . $vulnerable_query . "</code><br>";
-        $result .= "<em>이 쿼리는 실제로 실행되지 않았습니다.</em>";
+        // 보안 권장사항 표시
+        $result .= "<div class='info-box' style='background: #d1ecf1; border-color: #bee5eb; color: #0c5460; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+        $result .= "<strong>🛡️ 보안 권장사항:</strong><br>";
+        $result .= "실제 환경에서는 준비된 문(Prepared Statement)을 사용하여 이러한 공격을 방지해야 합니다.";
+        $result .= "</div>";
         
     } catch (Exception $e) {
-        $error = "테스트 중 오류가 발생했습니다: " . $e->getMessage();
+        $error = "<div class='error-box' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+        $error .= "쿼리 실행 중 오류 발생: " . htmlspecialchars($e->getMessage());
+        $error .= "</div>";
     }
 
     return ['result' => $result, 'error' => $error];

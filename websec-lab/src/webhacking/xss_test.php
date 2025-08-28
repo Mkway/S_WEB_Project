@@ -108,30 +108,57 @@ HTML;
 $test_logic_callback = function($form_data) {
     $payload = $form_data['payload'] ?? '';
     $test_type = $form_data['test_type'] ?? 'reflected';
-    $safe_payload = htmlspecialchars($payload, ENT_QUOTES, 'UTF-8');
     $result = '';
-    $output = '';
+
+    // 취약한 출력 (실제 XSS 실행 가능)
+    $result .= "<div class='info-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>⚠️ 취약한 출력 (실제 XSS 실행):</strong><br>";
+    $result .= "</div>";
 
     switch ($test_type) {
         case 'reflected':
-            $output = "입력값: " . $safe_payload;
-            $result = "Reflected XSS 테스트가 실행되었습니다. htmlspecialchars()로 인해 스크립트가 무력화되었습니다.";
+            $result .= "<div class='vulnerable-output' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+            $result .= "<strong>Reflected XSS 결과:</strong><br>";
+            $result .= "입력값: " . $payload; // 의도적으로 필터링하지 않음
+            $result .= "</div>";
             break;
         case 'stored':
-            $output = "저장될 데이터: " . $safe_payload;
-            $result = "Stored XSS 테스트가 실행되었습니다. 실제로는 데이터베이스에 저장되지 않으며, 저장 시에도 적절한 인코딩이 적용됩니다.";
+            $result .= "<div class='vulnerable-output' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+            $result .= "<strong>Stored XSS 결과:</strong><br>";
+            $result .= "저장된 데이터: " . $payload; // 의도적으로 필터링하지 않음
+            $result .= "<br><em>※ 실제로는 데이터베이스에 저장되지 않습니다.</em>";
+            $result .= "</div>";
             break;
         case 'dom':
-            $output = "DOM 조작 시뮬레이션: " . $safe_payload;
-            $result = "DOM-based XSS 테스트가 실행되었습니다. 서버 측에서 안전하게 처리되었습니다.";
+            $result .= "<div class='vulnerable-output' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 15px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+            $result .= "<strong>DOM-based XSS 결과:</strong><br>";
+            $result .= "<div id='dom-output'>" . $payload . "</div>"; // 의도적으로 필터링하지 않음
+            $result .= "<script>";
+            $result .= "document.getElementById('dom-output').innerHTML = '" . addslashes($payload) . "';";
+            $result .= "</script>";
+            $result .= "</div>";
             break;
         default:
-            $result = "알 수 없는 테스트 유형입니다.";
+            $result .= "<div class='error-box'>알 수 없는 테스트 유형입니다.</div>";
     }
-    
-    $vulnerable_output = "<br><br><strong>만약 취약했다면 출력:</strong><br><code>" . htmlspecialchars($payload) . "</code><br><em>이 코드는 시연용이며 실제 실행되지 않습니다.</em>";
 
-    return ['result' => $result . $vulnerable_output, 'error' => ''];
+    // 안전한 출력 비교
+    $safe_payload = htmlspecialchars($payload, ENT_QUOTES, 'UTF-8');
+    $result .= "<div class='info-box' style='background: #d4edda; border-color: #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>✅ 안전한 출력 (인코딩 적용):</strong><br>";
+    $result .= "입력값: " . $safe_payload;
+    $result .= "</div>";
+
+    // 보안 권장사항
+    $result .= "<div class='info-box' style='background: #d1ecf1; border-color: #bee5eb; color: #0c5460; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
+    $result .= "<strong>🛡️ 보안 권장사항:</strong><br>";
+    $result .= "실제 환경에서는 모든 사용자 입력을 적절히 인코딩하거나 필터링해야 합니다.<br>";
+    $result .= "- HTML 컨텍스트: htmlspecialchars() 사용<br>";
+    $result .= "- JavaScript 컨텍스트: JSON 인코딩<br>";
+    $result .= "- CSP (Content Security Policy) 헤더 설정";
+    $result .= "</div>";
+
+    return ['result' => $result, 'error' => ''];
 };
 
 // 7. TestPage 인스턴스 생성 및 실행
