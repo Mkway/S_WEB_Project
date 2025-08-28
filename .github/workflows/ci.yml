@@ -45,11 +45,9 @@ jobs:
     - name: Install dependencies
       run: |
         cd websec-lab/src
-        if [ -f composer.lock ]; then
-          composer install --prefer-dist --no-progress
-        else
-          composer update --no-progress --prefer-dist
-        fi
+        # composer.lock이 최신이 아닐 수 있으므로 update 사용
+        composer update --no-progress --prefer-dist
+        # 또는 composer install --prefer-dist --no-progress --no-dev (production용)
 
     - name: Setup test environment
       run: |
@@ -90,8 +88,8 @@ jobs:
         if [ -f vendor/bin/phpunit ]; then
           vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
         else
-          echo "PHPUnit not found, installing dependencies first..."
-          composer install --prefer-dist --no-progress
+          echo "PHPUnit not found, updating dependencies first..."
+          composer update --prefer-dist --no-progress
           vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
         fi
 
@@ -118,7 +116,7 @@ jobs:
     - name: Install Composer dependencies
       run: |
         cd websec-lab/src
-        composer install --prefer-dist --no-progress --no-dev
+        composer update --prefer-dist --no-progress --no-dev
 
     - name: Run security audit
       run: |
@@ -147,7 +145,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd websec-lab/src
-        composer install --prefer-dist --no-progress
+        composer update --prefer-dist --no-progress
 
     - name: Run PHP_CodeSniffer
       run: |
