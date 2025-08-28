@@ -24,18 +24,18 @@ h1, h2, h3, h4, h5, h6, p, div, span, li, td, th, label {
 }
 
 /* 흰색 배경 요소들의 텍스트 색상 명시 */
-.container *, 
-.test-form *, 
-.payload-section *,
-.result-box *,
-.vulnerable-demo * {
+.container *:not(code), 
+.test-form *:not(code), 
+.payload-section *:not(code),
+.result-box *:not(code),
+.vulnerable-demo *:not(code) {
     color: #212529 !important;
 }
 
 /* 인라인 스타일 덮어쓰기 */
-div[style*="color"]:not(.info-box) *,
-.result-box[style*="color"] *,
-.test-form[style*="color"] * {
+div[style*="color"]:not(.info-box) *:not(code),
+.result-box[style*="color"] *:not(code),
+.test-form[style*="color"] *:not(code) {
     color: #212529 !important;
 }
 
@@ -264,11 +264,11 @@ select {
 }
 
 code {
-    background: #e9ecef;
+    background: #e9ecef !important;
     padding: 2px 4px;
     border-radius: 3px;
-    font-family: monospace;
-    color: #c7254e;
+    font-family: monospace !important;
+    color: #c7254e !important;
 }
 
 pre code {

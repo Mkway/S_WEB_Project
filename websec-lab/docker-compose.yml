@@ -53,6 +53,7 @@ services:
       MYSQL_PASSWORD: 'my_password'
     volumes:
       - ./src:/var/www/html
+      - ./security_analysis:/var/www/security_analysis # security_analysis 디렉토리 마운트
       - uploads_data:/var/www/html/uploads # 명시적 볼륨 사용
     depends_on:
       - db

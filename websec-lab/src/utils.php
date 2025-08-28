@@ -430,4 +430,111 @@ function safe_redirect($url, $default_url = 'index.php') {
     header("Location: $url");
     exit;
 }
+
+/**
+ * 간단한 마크다운을 HTML로 변환
+ * @param string $markdown 마크다운 텍스트
+ * @return string HTML로 변환된 텍스트
+ */
+function parse_markdown($markdown) {
+    // HTML 인젝션 방지를 위해 기본 이스케이프
+    $html = htmlspecialchars($markdown, ENT_QUOTES, 'UTF-8');
+    
+    // 제목 변환 (H1-H6)
+    $html = preg_replace('/^# (.+)$/m', '<h1>$1</h1>', $html);
+    $html = preg_replace('/^## (.+)$/m', '<h2>$1</h2>', $html);
+    $html = preg_replace('/^### (.+)$/m', '<h3>$1</h3>', $html);
+    $html = preg_replace('/^#### (.+)$/m', '<h4>$1</h4>', $html);
+    $html = preg_replace('/^##### (.+)$/m', '<h5>$1</h5>', $html);
+    $html = preg_replace('/^###### (.+)$/m', '<h6>$1</h6>', $html);
+    
+    // 굵은 글씨 변환
+    $html = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $html);
+    $html = preg_replace('/__(.+?)__/', '<strong>$1</strong>', $html);
+    
+    // 기울임 글씨 변환
+    $html = preg_replace('/\*(.+?)\*/', '<em>$1</em>', $html);
+    $html = preg_replace('/_(.+?)_/', '<em>$1</em>', $html);
+    
+    // 인라인 코드 변환
+    $html = preg_replace('/`(.+?)`/', '<code>$1</code>', $html);
+    
+    // 링크 변환
+    $html = preg_replace('/\[(.+?)\]\((.+?)\)/', '<a href="$2" target="_blank">$1</a>', $html);
+    
+    // 코드 블록 변환 (```로 감싸진 부분)
+    $html = preg_replace('/```([a-zA-Z]*)\n(.*?)\n```/s', '<pre><code class="language-$1">$2</code></pre>', $html);
+    
+    // 목록 변환
+    $lines = explode("\n", $html);
+    $in_list = false;
+    $result = [];
+    
+    foreach ($lines as $line) {
+        $line = trim($line);
+        
+        // 순서 없는 목록
+        if (preg_match('/^[-\*\+] (.+)$/', $line, $matches)) {
+            if (!$in_list) {
+                $result[] = '<ul>';
+                $in_list = 'ul';
+            } elseif ($in_list === 'ol') {
+                $result[] = '</ol><ul>';
+                $in_list = 'ul';
+            }
+            $result[] = '<li>' . $matches[1] . '</li>';
+        }
+        // 순서 있는 목록
+        elseif (preg_match('/^\d+\. (.+)$/', $line, $matches)) {
+            if (!$in_list) {
+                $result[] = '<ol>';
+                $in_list = 'ol';
+            } elseif ($in_list === 'ul') {
+                $result[] = '</ul><ol>';
+                $in_list = 'ol';
+            }
+            $result[] = '<li>' . $matches[1] . '</li>';
+        }
+        // 일반 텍스트
+        else {
+            if ($in_list) {
+                $result[] = '</' . $in_list . '>';
+                $in_list = false;
+            }
+            
+            if (!empty($line)) {
+                // 단락 처리
+                if (!preg_match('/^<[h1-6|pre|ul|ol]/', $line)) {
+                    $line = '<p>' . $line . '</p>';
+                }
+            }
+            $result[] = $line;
+        }
+    }
+    
+    // 목록이 끝나지 않은 경우 닫기
+    if ($in_list) {
+        $result[] = '</' . $in_list . '>';
+    }
+    
+    return implode("\n", $result);
+}
+
+/**
+ * 마크다운 파일을 읽고 HTML로 변환하여 반환
+ * @param string $file_path 마크다운 파일 경로
+ * @return string|null HTML로 변환된 내용 또는 null (파일이 없는 경우)
+ */
+function load_and_parse_markdown($file_path) {
+    if (!file_exists($file_path)) {
+        return null;
+    }
+    
+    $markdown_content = file_get_contents($file_path);
+    if ($markdown_content === false) {
+        return null;
+    }
+    
+    return parse_markdown($markdown_content);
+}
 ?>

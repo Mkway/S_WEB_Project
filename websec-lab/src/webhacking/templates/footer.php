@@ -3,9 +3,13 @@
     <script>
         // 공통으로 사용될 수 있는 스크립트
         function setPayload(payload) {
+            console.log('setPayload called with:', payload);
             const payloadTextarea = document.getElementById('payload');
             if (payloadTextarea) {
                 payloadTextarea.value = payload;
+                console.log('Payload set successfully');
+            } else {
+                console.error('Payload textarea not found with ID "payload"');
             }
         }
 

@@ -7,7 +7,7 @@
     <p><?php echo htmlspecialchars($section_description); ?></p>
     <div class="payload-buttons">
         <?php foreach ($payloads_array as $p): ?>
-            <button class="payload-btn" onclick="<?php echo sprintf("%s('%s')", $onclick_handler, addslashes(htmlspecialchars($p))); ?>">
+            <button class="payload-btn" data-payload="<?php echo htmlspecialchars($p, ENT_QUOTES); ?>" onclick="<?php echo $onclick_handler; ?>(this.getAttribute('data-payload'))">
                 <?php echo htmlspecialchars(substr($p, 0, 40)) . (strlen($p) > 40 ? '...' : ''); ?>
             </button>
         <?php endforeach; ?>
