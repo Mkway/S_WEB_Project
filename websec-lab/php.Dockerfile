@@ -7,8 +7,8 @@ WORKDIR /var/www/html
 COPY src/composer.json composer.json
 COPY src/composer.lock composer.lock
 
-RUN docker-php-ext-install pdo_mysql \
-    && apk add --no-cache git \
+RUN docker-php-ext-install pdo_mysql pdo_pgsql \
+    && apk add --no-cache git postgresql-dev \
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     && composer install --no-dev --optimize-autoloader # Install production dependencies
 
@@ -16,8 +16,9 @@ RUN docker-php-ext-install pdo_mysql \
 FROM php:8.2-fpm-alpine
 
 # Copy only necessary extensions and application files
-# Assuming pdo_mysql is the only extension
-RUN docker-php-ext-install pdo_mysql
+# Install MySQL and PostgreSQL extensions
+RUN apk add --no-cache postgresql-dev \
+    && docker-php-ext-install pdo_mysql pdo_pgsql
 
 # Create uploads directory and set permissions
 RUN mkdir -p /var/www/html/uploads \

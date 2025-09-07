@@ -120,6 +120,13 @@ if (!is_logged_in()) {
                 <a href="sql_injection.php" style="display: none;"></a>
             </div>
 
+            <!-- PostgreSQL Injection -->
+            <div class="test-card">
+                <h3>🐘 PostgreSQL Injection</h3>
+                <p>PL/pgSQL 저장 프로시저 인젝션, COPY FROM PROGRAM 공격 등 PostgreSQL 특화 취약점을 테스트합니다.</p>
+                <a href="postgresql_injection_test.php" style="display: none;"></a>
+            </div>
+
             <!-- XSS -->
             <div class="test-card">
                 <h3>🚨 Cross-Site Scripting (XSS)</h3>

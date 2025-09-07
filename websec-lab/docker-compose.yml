@@ -75,6 +75,27 @@ services:
       timeout: 20s
       retries: 10
 
+  # PostgreSQL 데이터베이스 서비스 (보안 테스트용)
+  postgres:
+    image: postgres:15
+    container_name: security_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: security_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_pass
+      POSTGRES_MULTIPLE_DATABASES: "vuln_db,safe_db"
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./sql-challenges/postgres/init:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d security_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   my_node_app:
     build:
       context: ../node_app
@@ -87,3 +108,4 @@ services:
 
 volumes:
   uploads_data: # 업로드 파일을 위한 볼륨 추가
+  postgres_data: # PostgreSQL 데이터를 위한 볼륨
