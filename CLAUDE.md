@@ -145,12 +145,17 @@ git commit -m "update files"
 - [x] **Directory Traversal** - 실제 경로 순회 및 파일 접근
 - [x] **Auth Bypass** - SQL/NoSQL/LDAP 인젝션 우회 실행
 
-### 🔄 Next Priority (중간 우선순위)
-- [ ] **XXE (XML External Entity)** - XML 파싱 취약점
-- [ ] **SSRF (Server-Side Request Forgery)** - 서버 요청 위조
-- [ ] **SSTI (Server-Side Template Injection)** - 템플릿 인젝션  
-- [ ] **Open Redirect** - 리다이렉트 조작
-- [ ] **XPath Injection** - XPath 쿼리 조작
+### ✅ Middle Priority (중간 우선순위) - COMPLETED
+- [x] **XXE (XML External Entity)** - 실제 XML 외부 엔티티 파싱 실행
+- [x] **SSRF (Server-Side Request Forgery)** - 실제 서버 요청 실행 및 분석
+- [x] **SSTI (Server-Side Template Injection)** - 템플릿 인젝션 시뮬레이션  
+- [x] **Open Redirect** - 실제 리다이렉트 분석 및 시뮬레이션
+- [x] **XPath Injection** - 실제 XML 쿼리 실행 및 데이터 추출
+
+### 🔄 Current Priority (현재 작업중)
+- [ ] **MongoDB NoSQL Environment** - NoSQL Injection 테스트 환경 구축
+- [ ] **Redis Cache Environment** - 캐시 인젝션 테스트 환경
+- [ ] **Advanced Vulnerability Modules** - 고급 취약점 시나리오
 
 ### 📋 Development Environment Setup
 
