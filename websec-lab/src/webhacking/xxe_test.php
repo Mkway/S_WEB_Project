@@ -105,31 +105,85 @@ $test_logic_callback = function($form_data) {
         return ['result' => '', 'error' => $error];
     }
 
-    $response_sim = "[시뮬레이션] XXE 공격 분석\n";
-    $response_sim .= "입력 XML: " . htmlspecialchars($xml_input) . "\n\n";
-
-    // 교육 목적의 XXE 시뮬레이션
-    if (strpos($xml_input, '<!ENTITY') !== false && strpos($xml_input, 'SYSTEM') !== false) {
-        if (strpos($xml_input, 'file://') !== false) {
-            $response_sim .= "🚨 XXE 공격 감지됨: 로컬 파일 읽기 시도\n";
-            $response_sim .= "실제 환경에서는 /etc/passwd, 설정 파일 등이 노출될 수 있습니다.\n";
-        } elseif (strpos($xml_input, 'http://') !== false || strpos($xml_input, 'https://') !== false) {
-            $response_sim .= "🚨 XXE SSRF 공격 감지됨: 외부 서버 요청 시도\n";
-            $response_sim .= "실제 환경에서는 내부 네트워크 스캔, AWS 메타데이터 접근 등이 가능합니다.\n";
-        } elseif (strpos($xml_input, '<!ENTITY lol3') !== false) {
-            $response_sim .= "🚨 XXE DoS 공격 감지됨: XML 폭탄 시도\n";
-            $response_sim .= "실제 환경에서는 XML 파서가 과부하되어 서비스 거부가 발생할 수 있습니다.\n";
+    $result .= "<div class='vulnerable-output'>";
+    $result .= "<h4>🚨 취약한 XML 파싱 실행 결과</h4>";
+    
+    // 실제 XXE 공격 실행 (교육 목적)
+    try {
+        // 외부 엔티티 로딩 활성화 (취약한 설정)
+        $previous_value = libxml_disable_entity_loader(false);
+        
+        // XML 파서 생성 (외부 엔티티 허용)
+        $dom = new DOMDocument();
+        $dom->resolveExternals = true;
+        $dom->substituteEntities = true;
+        
+        // 실제 XML 파싱 시도
+        $parsed = $dom->loadXML($xml_input, LIBXML_DTDLOAD | LIBXML_NOENT);
+        
+        if ($parsed) {
+            $xml_content = $dom->saveXML();
+            $result .= "<p><strong>파싱된 XML 결과:</strong></p>";
+            $result .= "<pre class='attack-result'>" . htmlspecialchars($xml_content) . "</pre>";
+            
+            // 실제 파일 읽기 시도 확인
+            if (strpos($xml_content, 'root:x:') !== false || strpos($xml_content, '/bin/') !== false) {
+                $result .= "<p class='danger'>🔥 <strong>실제 파일 읽기 성공!</strong> /etc/passwd 파일이 노출되었습니다.</p>";
+            } elseif (strpos($xml_content, '<?xml') !== false && strpos($xml_content, '&') === false) {
+                $result .= "<p class='warning'>⚠️ XML 파싱은 성공했으나 외부 엔티티 해석에 실패했습니다.</p>";
+            }
         } else {
-            $response_sim .= "🚨 일반적인 XXE 공격 패턴 감지됨\n";
+            $result .= "<p class='error'>❌ XML 파싱 실패: " . htmlspecialchars(libxml_get_last_error()->message ?? 'Unknown error') . "</p>";
         }
-    } elseif (strpos($xml_input, '<!DOCTYPE') !== false && strpos($xml_input, '[') !== false) {
-        $response_sim .= "⚠️ DOCTYPE 선언 감지됨: 잠재적 XXE 공격 가능성\n";
-        $response_sim .= "ENTITY 선언을 통한 추가 공격이 가능할 수 있습니다.\n";
-    } else {
-        $response_sim .= "✅ 안전한 XML 파싱 완료: 위험한 패턴이 감지되지 않았습니다.\n";
+        
+        // 설정 복원
+        libxml_disable_entity_loader($previous_value);
+        
+    } catch (Exception $e) {
+        $result .= "<p class='error'>❌ XXE 실행 중 오류: " . htmlspecialchars($e->getMessage()) . "</p>";
     }
+    
+    $result .= "</div>";
+    
+    // 안전한 구현 비교
+    $result .= "<div class='safe-comparison'>";
+    $result .= "<h4>✅ 안전한 XML 파싱 구현</h4>";
+    
+    try {
+        // 안전한 설정으로 파싱
+        libxml_disable_entity_loader(true);
+        $safe_dom = new DOMDocument();
+        $safe_dom->resolveExternals = false;
+        $safe_dom->substituteEntities = false;
+        
+        $safe_parsed = $safe_dom->loadXML($xml_input, LIBXML_NONET | LIBXML_NOCDATA);
+        
+        if ($safe_parsed) {
+            $safe_content = $safe_dom->saveXML();
+            $result .= "<p><strong>안전한 파싱 결과:</strong></p>";
+            $result .= "<pre class='safe-result'>" . htmlspecialchars($safe_content) . "</pre>";
+            $result .= "<p class='success'>🛡️ 외부 엔티티가 비활성화되어 안전하게 파싱되었습니다.</p>";
+        }
+        
+    } catch (Exception $e) {
+        $result .= "<p>안전한 파싱도 실패: " . htmlspecialchars($e->getMessage()) . "</p>";
+    }
+    
+    $result .= "</div>";
+    
+    // 보안 권장사항
+    $result .= "<div class='security-recommendations'>";
+    $result .= "<h4>🔒 보안 권장사항</h4>";
+    $result .= "<ul>";
+    $result .= "<li><code>libxml_disable_entity_loader(true)</code>로 외부 엔티티 비활성화</li>";
+    $result .= "<li><code>LIBXML_NOENT</code>, <code>LIBXML_DTDLOAD</code> 플래그 제거</li>";
+    $result .= "<li>입력 데이터에서 <code>DOCTYPE</code>, <code>ENTITY</code> 선언 필터링</li>";
+    $result .= "<li>가능하면 XML 대신 JSON 사용 고려</li>";
+    $result .= "<li>XML 파서를 격리된 환경에서 실행</li>";
+    $result .= "</ul>";
+    $result .= "</div>";
 
-    return ['result' => "<pre>{"$response_sim"}</pre>", 'error' => $error];
+    return ['result' => $result, 'error' => $error];
 };
 
 // 7. TestPage 인스턴스 생성 및 실행
