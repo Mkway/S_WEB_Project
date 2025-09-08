@@ -120,37 +120,154 @@ $test_logic_callback = function($form_data) use ($sample_xml) {
         return ['result' => '', 'error' => $error];
     }
 
+    $result .= "<div class='vulnerable-output'>";
+    $result .= "<h4>🚨 취약한 XPath 실행 결과</h4>";
+    $result .= "<p><strong>실행된 쿼리:</strong> " . htmlspecialchars($xpath_input) . "</p>";
+    
+    // 실제 XPath Injection 공격 실행 (교육 목적)
     try {
         $dom = new DOMDocument();
         $dom->loadXML($sample_xml);
         $xpath = new DOMXPath($dom);
         
-        // --- 취약점 발생 지점 --- (사용자 입력을 직접 XPath 쿼리에 사용)
+        // 취약한 XPath 쿼리 실행 (사용자 입력을 직접 사용)
         $nodes = $xpath->query($xpath_input);
         
-        $response_sim = "[시뮬레이션] XPath 쿼리 결과\n";
-        $response_sim .= "쿼리: " . htmlspecialchars($xpath_input) . "\n";
-        $response_sim .= "결과 노드 수: " . $nodes->length . "\n\n";
-        
-        if ($nodes->length > 0) {
-            $response_sim .= "매칭된 노드:\n";
-            foreach ($nodes as $i => $node) {
-                if ($i < 5) { // 최대 5개만 표시
-                    $response_sim .= "- " . $node->nodeName . ": " . $node->textContent . "\n";
+        if ($nodes !== false) {
+            $result .= "<p><strong>쿼리 실행 성공!</strong> 매칭된 노드 수: {$nodes->length}개</p>";
+            
+            // 공격 패턴 분석
+            if (strpos($xpath_input, "' or '1'='1") !== false || strpos($xpath_input, "or 1=1") !== false) {
+                $result .= "<p class='danger'>🔥 <strong>인증 우회 공격 감지!</strong> 모든 사용자 정보에 접근 가능</p>";
+            } elseif (strpos($xpath_input, '//*') !== false || strpos($xpath_input, '//text()') !== false) {
+                $result .= "<p class='danger'>🔥 <strong>전체 데이터 추출 공격!</strong> XML 전체 구조 노출</p>";
+            } elseif (strpos($xpath_input, '//user/password') !== false) {
+                $result .= "<p class='danger'>🔥 <strong>패스워드 추출 공격!</strong> 모든 사용자 비밀번호 노출</p>";
+            } elseif (strpos($xpath_input, 'string-length') !== false || strpos($xpath_input, 'substring') !== false) {
+                $result .= "<p class='warning'>⚠️ <strong>블라인드 인젝션 시도!</strong> 데이터 길이/문자 추출 시도</p>";
+            }
+            
+            // 결과 표시 (민감한 정보 포함)
+            if ($nodes->length > 0) {
+                $result .= "<p><strong>매칭된 노드들:</strong></p>";
+                $result_data = "";
+                foreach ($nodes as $i => $node) {
+                    if ($i < 10) { // 최대 10개 표시
+                        $node_info = "";
+                        if ($node->nodeType === XML_ELEMENT_NODE) {
+                            $node_info = "{$node->nodeName}: " . trim($node->textContent);
+                            if ($node->hasAttributes()) {
+                                $attrs = [];
+                                foreach ($node->attributes as $attr) {
+                                    $attrs[] = "{$attr->name}='{$attr->value}'";
+                                }
+                                $node_info .= " [" . implode(', ', $attrs) . "]";
+                            }
+                        } else {
+                            $node_info = "텍스트: " . trim($node->textContent);
+                        }
+                        $result_data .= "- {$node_info}\n";
+                    }
+                }
+                if ($nodes->length > 10) {
+                    $result_data .= "... (추가 " . ($nodes->length - 10) . "개 노드 생략)\n";
+                }
+                $result .= "<pre class='attack-result'>" . htmlspecialchars($result_data) . "</pre>";
+                
+                // 민감한 데이터 노출 경고
+                if (strpos($result_data, 'password') !== false) {
+                    $result .= "<p class='danger'>🔥 <strong>민감한 정보 노출!</strong> 패스워드가 평문으로 노출되었습니다.</p>";
                 }
             }
-            if ($nodes->length > 5) {
-                $response_sim .= "... (더 많은 결과 생략)\n";
-            }
+            
         } else {
-            $response_sim .= "매칭된 노드가 없습니다.\n";
+            $result .= "<p class='error'>❌ XPath 쿼리 실행 실패</p>";
         }
-
+        
     } catch (Exception $e) {
-        $error = "XPath 쿼리 처리 중 오류 발생: " . $e->getMessage() . "\n올바른 XPath 문법을 사용해주세요.";
+        $result .= "<p class='error'>❌ XPath 실행 중 오류: " . htmlspecialchars($e->getMessage()) . "</p>";
+        $result .= "<p class='warning'>⚠️ 잘못된 XPath 문법이거나 공격 시도가 차단되었습니다.</p>";
     }
+    
+    $result .= "</div>";
+    
+    // 안전한 구현 비교
+    $result .= "<div class='safe-comparison'>";
+    $result .= "<h4>✅ 안전한 XPath 쿼리 구현</h4>";
+    
+    try {
+        // 입력 검증 및 필터링
+        $dangerous_patterns = ["'", '"', '[', ']', '(', ')', '//', '*', 'or', 'and', '|'];
+        $contains_dangerous = false;
+        
+        foreach ($dangerous_patterns as $pattern) {
+            if (stripos($xpath_input, $pattern) !== false) {
+                $contains_dangerous = true;
+                break;
+            }
+        }
+        
+        if ($contains_dangerous) {
+            $result .= "<p class='success'>🛡️ <strong>차단됨:</strong> 위험한 XPath 패턴이 감지되어 쿼리가 거부되었습니다.</p>";
+            $result .= "<p><strong>감지된 위험 요소:</strong> " . htmlspecialchars(implode(', ', array_filter($dangerous_patterns, function($p) use ($xpath_input) { 
+                return stripos($xpath_input, $p) !== false; 
+            }))) . "</p>";
+        } else {
+            // 안전한 쿼리 실행 (화이트리스트 기반)
+            $safe_patterns = ['/^\/\/user\[\@id=\'\d+\'\]$/', '/^\/\/user\/username$/', '/^\/\/user\/email$/'];
+            $is_safe_query = false;
+            
+            foreach ($safe_patterns as $pattern) {
+                if (preg_match($pattern, $xpath_input)) {
+                    $is_safe_query = true;
+                    break;
+                }
+            }
+            
+            if ($is_safe_query) {
+                $result .= "<p class='success'>✅ <strong>안전한 쿼리:</strong> 허용된 XPath 패턴입니다.</p>";
+                
+                // 제한된 안전한 실행
+                $dom = new DOMDocument();
+                $dom->loadXML($sample_xml);
+                $xpath = new DOMXPath($dom);
+                $safe_nodes = $xpath->query($xpath_input);
+                
+                if ($safe_nodes && $safe_nodes->length > 0) {
+                    $safe_result = "";
+                    foreach ($safe_nodes as $node) {
+                        // 민감한 정보 필터링 (패스워드 제외)
+                        if ($node->nodeName !== 'password') {
+                            $safe_result .= "- {$node->nodeName}: " . htmlspecialchars($node->textContent) . "\n";
+                        }
+                    }
+                    $result .= "<pre class='safe-result'>{$safe_result}</pre>";
+                }
+            } else {
+                $result .= "<p class='success'>🛡️ <strong>차단됨:</strong> 허용된 쿼리 패턴이 아닙니다.</p>";
+            }
+        }
+        
+    } catch (Exception $e) {
+        $result .= "<p class='success'>🛡️ 안전한 처리 중: " . htmlspecialchars($e->getMessage()) . "</p>";
+    }
+    
+    $result .= "</div>";
+    
+    // 보안 권장사항
+    $result .= "<div class='security-recommendations'>";
+    $result .= "<h4>🔒 XPath Injection 방어 권장사항</h4>";
+    $result .= "<ul>";
+    $result .= "<li><strong>입력 검증:</strong> XPath 메타문자 (<code>'</code>, <code>\"</code>, <code>[</code>, <code>]</code>, <code>/</code>) 필터링</li>";
+    $result .= "<li><strong>매개변수화:</strong> XPath 변수를 사용한 안전한 쿼리 구성</li>";
+    $result .= "<li><strong>화이트리스트:</strong> 허용된 XPath 패턴만 실행</li>";
+    $result .= "<li><strong>이스케이프 처리:</strong> 특수 문자를 적절히 이스케이프</li>";
+    $result .= "<li><strong>최소 권한:</strong> XML 데이터 접근 권한 최소화</li>";
+    $result .= "<li><strong>민감정보 보호:</strong> 패스워드 등 민감한 노드 접근 제한</li>";
+    $result .= "</ul>";
+    $result .= "</div>";
 
-    return ['result' => "<pre>{$response_sim}</pre>", 'error' => $error];
+    return ['result' => $result, 'error' => $error];
 };
 
 // 7. TestPage 인스턴스 생성 및 실행
