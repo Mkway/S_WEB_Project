@@ -70,33 +70,112 @@ $test_logic_callback = function($form_data) {
     $result = '';
     $error = '';
 
-    if (!empty($url)) {
-        // SSRF 방어 로직 (주석 처리하여 취약점 활성화)
-        /*
-        $parsed_url = parse_url($url);
-        if ($parsed_url === false || !isset($parsed_url['host'])) {
-            $error = '유효하지 않은 URL입니다.';
+    if (empty($url)) {
+        $error = 'URL을 입력해주세요.';
+        return ['result' => '', 'error' => $error];
+    }
+
+    $result .= "<div class='vulnerable-output'>";
+    $result .= "<h4>🚨 취약한 SSRF 실행 결과</h4>";
+    
+    // 실제 SSRF 공격 실행 (교육 목적)
+    try {
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 10,
+                'user_agent' => 'Mozilla/5.0 (Vulnerable SSRF Test)',
+                'follow_location' => 1,
+                'max_redirects' => 3
+            ]
+        ]);
+        
+        $response = @file_get_contents($url, false, $context);
+        
+        if ($response !== false) {
+            $response_length = strlen($response);
+            $result .= "<p><strong>요청 성공!</strong> 응답 크기: {$response_length} bytes</p>";
+            
+            // 응답 내용 분석
+            if (strpos($response, 'root:x:') !== false || strpos($response, '/bin/') !== false) {
+                $result .= "<p class='danger'>🔥 <strong>로컬 파일 읽기 성공!</strong> /etc/passwd 내용이 노출되었습니다.</p>";
+            } elseif (strpos($response, 'ami-') !== false || strpos($response, 'instance-id') !== false) {
+                $result .= "<p class='danger'>🔥 <strong>클라우드 메타데이터 접근 성공!</strong> AWS 인스턴스 정보가 노출되었습니다.</p>";
+            } elseif (strpos($response, '<html') !== false || strpos($response, '<!DOCTYPE') !== false) {
+                $result .= "<p class='warning'>⚠️ <strong>웹페이지 접근 성공!</strong> 내부/외부 웹 리소스에 접근했습니다.</p>";
+            }
+            
+            // 응답 내용 표시 (처음 500자만)
+            $preview = htmlspecialchars(substr($response, 0, 500));
+            if (strlen($response) > 500) {
+                $preview .= "\n... (추가 " . (strlen($response) - 500) . " bytes 생략)";
+            }
+            $result .= "<p><strong>응답 내용 미리보기:</strong></p>";
+            $result .= "<pre class='attack-result'>" . $preview . "</pre>";
+            
         } else {
-            $ip = gethostbyname($parsed_url['host']);
-            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                // 안전한 경우에만 요청
-                $result = @file_get_contents($url);
-            } else {
-                $error = '허용되지 않은 IP 주소입니다. (내부 IP 접근 불가)';
+            $result .= "<p class='error'>❌ 요청 실패: URL에 접근할 수 없습니다.</p>";
+            $last_error = error_get_last();
+            if ($last_error) {
+                $result .= "<p class='error'>오류 세부사항: " . htmlspecialchars($last_error['message']) . "</p>";
             }
         }
-        */
-
-        // 취약한 코드: 사용자 입력을 검증 없이 그대로 사용
-        $response = @file_get_contents($url);
-        if ($response === false) {
-            $error = '요청한 URL의 내용을 가져올 수 없습니다.';
-        } else {
-            $result = "<pre><code>" . htmlspecialchars($response) . "</code></pre>";
-        }
-    } else {
-        $error = 'URL을 입력해주세요.';
+        
+    } catch (Exception $e) {
+        $result .= "<p class='error'>❌ SSRF 실행 중 오류: " . htmlspecialchars($e->getMessage()) . "</p>";
     }
+    
+    $result .= "</div>";
+    
+    // 안전한 구현 비교
+    $result .= "<div class='safe-comparison'>";
+    $result .= "<h4>✅ 안전한 SSRF 방어 구현</h4>";
+    
+    $parsed_url = parse_url($url);
+    if ($parsed_url === false || !isset($parsed_url['host'])) {
+        $result .= "<p class='error'>🛡️ 차단됨: 유효하지 않은 URL 형식</p>";
+    } else {
+        $host = $parsed_url['host'];
+        $scheme = $parsed_url['scheme'] ?? '';
+        
+        // 프로토콜 검증
+        if (!in_array($scheme, ['http', 'https'])) {
+            $result .= "<p class='success'>🛡️ 차단됨: 허용되지 않은 프로토콜 '{$scheme}'</p>";
+        } else {
+            // IP 주소 해석
+            $ip = gethostbyname($host);
+            
+            // 내부 IP 대역 체크
+            $is_private = !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+            
+            if ($is_private) {
+                $result .= "<p class='success'>🛡️ 차단됨: 내부 네트워크 IP 주소 ({$ip})</p>";
+            } else {
+                // Whitelist 검증 (예시)
+                $allowed_domains = ['httpbin.org', 'example.com', 'jsonplaceholder.typicode.com'];
+                if (!in_array($host, $allowed_domains)) {
+                    $result .= "<p class='success'>🛡️ 차단됨: 허용되지 않은 도메인 '{$host}'</p>";
+                } else {
+                    $result .= "<p class='success'>✅ 안전한 요청: 허용된 도메인으로의 요청입니다.</p>";
+                    // 실제로는 안전한 요청을 수행할 수 있음
+                }
+            }
+        }
+    }
+    
+    $result .= "</div>";
+    
+    // 보안 권장사항
+    $result .= "<div class='security-recommendations'>";
+    $result .= "<h4>🔒 SSRF 방어 권장사항</h4>";
+    $result .= "<ul>";
+    $result .= "<li><strong>화이트리스트 기반 검증:</strong> 허용된 도메인/IP/포트만 접근 허용</li>";
+    $result .= "<li><strong>내부 IP 차단:</strong> RFC 1918 사설 IP 대역(10.x, 192.168.x, 172.16-31.x) 차단</li>";
+    $result .= "<li><strong>프로토콜 제한:</strong> HTTP/HTTPS 외 프로토콜(file://, gopher://) 차단</li>";
+    $result .= "<li><strong>리다이렉트 제한:</strong> 자동 리다이렉트 비활성화 또는 제한</li>";
+    $result .= "<li><strong>응답 크기 제한:</strong> 응답 데이터 크기 및 시간 제한 설정</li>";
+    $result .= "<li><strong>네트워크 분리:</strong> 웹 애플리케이션을 내부망과 분리</li>";
+    $result .= "</ul>";
+    $result .= "</div>";
 
     return ['result' => $result, 'error' => $error];
 };
