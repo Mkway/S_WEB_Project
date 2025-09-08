@@ -105,44 +105,121 @@ $test_logic_callback = function($form_data) {
         return ['result' => '', 'error' => $error];
     }
 
-    $response_sim = "[시뮬레이션] SSTI 공격 분석\n";
-    $response_sim .= "템플릿 엔진: " . strtoupper($engine_type) . "\n";
-    $response_sim .= "입력 템플릿: " . htmlspecialchars($template_input) . "\n\n";
-
-    // 위험한 패턴 검사
-    $dangerous_patterns = [
-        'twig' => ['{{', '}}', '_self', 'dump', 'exec'],
-        'jinja2' => ['{{', '}}', '__class__', '__mro__', '__subclasses__'],
-        'smarty' => ['{', '}', 'php', 'eval', 'system'],
-        'freemarker' => ['${', '}', 'new', 'execute'],
-        'velocity' => ['$', '{', '}', 'class', 'runtime']
-    ];
-
-    $payload_detected = false;
-    $detected_patterns = [];
-    if (isset($dangerous_patterns[$engine_type])) {
-        foreach ($dangerous_patterns[$engine_type] as $pattern) {
-            if (stripos($template_input, $pattern) !== false) {
-                $payload_detected = true;
-                $detected_patterns[] = $pattern;
+    $result .= "<div class='vulnerable-output'>";
+    $result .= "<h4>🚨 취약한 SSTI 실행 결과</h4>";
+    $result .= "<p><strong>템플릿 엔진:</strong> " . strtoupper($engine_type) . "</p>";
+    $result .= "<p><strong>입력 템플릿:</strong> " . htmlspecialchars($template_input) . "</p>";
+    
+    // 실제 SSTI 공격 실행 시뮬레이션 (교육 목적)
+    try {
+        $rendered_output = "";
+        $execution_result = "";
+        
+        // 간단한 템플릿 처리 엔진 시뮬레이션
+        if ($engine_type === 'twig' || $engine_type === 'jinja2') {
+            // {{ expression }} 패턴 처리
+            if (preg_match('/\{\{(.+?)\}\}/', $template_input, $matches)) {
+                $expression = trim($matches[1]);
+                $result .= "<p class='warning'>⚠️ <strong>위험한 템플릿 표현식 감지:</strong> <code>" . htmlspecialchars($expression) . "</code></p>";
+                
+                // 위험한 패턴 체크 및 실행 시뮬레이션
+                if (strpos($expression, 'file_get_contents') !== false) {
+                    $result .= "<p class='danger'>🔥 <strong>파일 읽기 시도 감지!</strong></p>";
+                    if (strpos($expression, '/etc/passwd') !== false) {
+                        $execution_result = "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\n...";
+                        $result .= "<p class='danger'>🔥 실제 환경에서는 /etc/passwd 파일 내용이 노출될 수 있습니다.</p>";
+                    }
+                } elseif (strpos($expression, 'exec') !== false || strpos($expression, 'system') !== false) {
+                    $result .= "<p class='danger'>🔥 <strong>시스템 명령 실행 시도 감지!</strong></p>";
+                    $execution_result = "uid=33(www-data) gid=33(www-data) groups=33(www-data)";
+                    $result .= "<p class='danger'>🔥 실제 환경에서는 서버 명령이 실행될 수 있습니다.</p>";
+                } elseif (strpos($expression, '__class__') !== false || strpos($expression, '__mro__') !== false) {
+                    $result .= "<p class='danger'>🔥 <strong>Python 객체 접근 시도 감지!</strong></p>";
+                    $execution_result = "&lt;class 'str'&gt;, &lt;class 'object'&gt;, &lt;class 'subprocess.Popen'&gt;";
+                    $result .= "<p class='danger'>🔥 실제 환경에서는 시스템 클래스에 접근할 수 있습니다.</p>";
+                } else {
+                    // 기본 변수 치환
+                    $name = "TestUser";
+                    $rendered_output = str_replace('name', '"' . $name . '"', $expression);
+                    $result .= "<p class='success'>✅ 기본 템플릿 변수 처리</p>";
+                }
+            }
+        } elseif ($engine_type === 'smarty') {
+            // {php} 태그 처리
+            if (strpos($template_input, '{php}') !== false && strpos($template_input, '{/php}') !== false) {
+                $result .= "<p class='danger'>🔥 <strong>Smarty PHP 태그 실행 시도!</strong></p>";
+                
+                if (strpos($template_input, 'file_get_contents') !== false) {
+                    $execution_result = "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin";
+                    $result .= "<p class='danger'>🔥 실제 환경에서는 파일 내용이 노출될 수 있습니다.</p>";
+                } elseif (strpos($template_input, 'id') !== false || strpos($template_input, 'whoami') !== false) {
+                    $execution_result = "uid=33(www-data) gid=33(www-data) groups=33(www-data)";
+                    $result .= "<p class='danger'>🔥 실제 환경에서는 시스템 명령이 실행될 수 있습니다.</p>";
+                }
+            } elseif (preg_match('/\{\$(.+?)\}/', $template_input, $matches)) {
+                $variable = trim($matches[1]);
+                $result .= "<p class='success'>✅ Smarty 변수 처리: <code>\${$variable}</code></p>";
+                $rendered_output = "TestValue";
             }
         }
+        
+        // 실행 결과 표시
+        if ($execution_result) {
+            $result .= "<p><strong>실행 결과:</strong></p>";
+            $result .= "<pre class='attack-result'>" . htmlspecialchars($execution_result) . "</pre>";
+        } elseif ($rendered_output) {
+            $result .= "<p><strong>렌더링 결과:</strong></p>";
+            $result .= "<pre class='attack-result'>" . htmlspecialchars($rendered_output) . "</pre>";
+        }
+        
+    } catch (Exception $e) {
+        $result .= "<p class='error'>❌ SSTI 실행 중 오류: " . htmlspecialchars($e->getMessage()) . "</p>";
     }
-
-    if ($payload_detected) {
-        $response_sim .= "🚨 공격 감지됨!\n";
-        $response_sim .= "감지된 패턴: " . implode(', ', $detected_patterns) . "\n";
-        $response_sim .= "예상 공격 유형: " . strtoupper($engine_type) . " SSTI\n\n";
-        $response_sim .= "이러한 패턴들은 서버 사이드 코드 실행, 파일 읽기, 시스템 명령 실행 등에 사용될 수 있습니다.\n";
-        $response_sim .= "실제 환경에서는 심각한 보안 문제를 야기할 수 있습니다.";
+    
+    $result .= "</div>";
+    
+    // 안전한 구현 비교
+    $result .= "<div class='safe-comparison'>";
+    $result .= "<h4>✅ 안전한 템플릿 처리 구현</h4>";
+    
+    // 입력 검증 및 필터링
+    $dangerous_patterns = ['{{', '}}', '{php}', '{/php}', '__class__', '__mro__', 'file_get_contents', 'exec', 'system', 'eval'];
+    $contains_dangerous = false;
+    
+    foreach ($dangerous_patterns as $pattern) {
+        if (stripos($template_input, $pattern) !== false) {
+            $contains_dangerous = true;
+            break;
+        }
+    }
+    
+    if ($contains_dangerous) {
+        $result .= "<p class='success'>🛡️ <strong>차단됨:</strong> 위험한 템플릿 구문이 감지되어 처리를 거부했습니다.</p>";
+        $result .= "<p><strong>안전한 처리 결과:</strong> 입력이 일반 텍스트로 처리됨</p>";
+        $result .= "<pre class='safe-result'>" . htmlspecialchars($template_input) . "</pre>";
     } else {
-        $response_sim .= "✅ 안전한 템플릿입니다.\n";
-        $response_sim .= "위험한 패턴이 감지되지 않았습니다.\n";
-        $response_sim .= "템플릿이 정상적으로 처리될 것으로 예상됩니다.\n\n";
-        $response_sim .= "예상 렌더링 결과: " . htmlspecialchars($template_input);
+        $result .= "<p class='success'>✅ <strong>안전한 템플릿:</strong> 위험한 구문이 없어 정상 처리됩니다.</p>";
+        // 안전한 변수 치환 예시
+        $safe_output = str_replace(['name', 'user'], ['SafeUser', 'SafeValue'], $template_input);
+        $result .= "<pre class='safe-result'>" . htmlspecialchars($safe_output) . "</pre>";
     }
+    
+    $result .= "</div>";
+    
+    // 보안 권장사항
+    $result .= "<div class='security-recommendations'>";
+    $result .= "<h4>🔒 SSTI 방어 권장사항</h4>";
+    $result .= "<ul>";
+    $result .= "<li><strong>입력 검증:</strong> 템플릿 구문 문자 (<code>{{</code>, <code>{}</code>, <code>\$</code>) 필터링</li>";
+    $result .= "<li><strong>샌드박스 모드:</strong> 템플릿 엔진의 안전 모드 활성화</li>";
+    $result .= "<li><strong>화이트리스트:</strong> 허용된 함수/메서드만 사용 가능하도록 제한</li>";
+    $result .= "<li><strong>정적 템플릿:</strong> 사용자 입력으로 템플릿 생성 금지</li>";
+    $result .= "<li><strong>권한 분리:</strong> 템플릿 렌더링을 최소 권한으로 실행</li>";
+    $result .= "<li><strong>CSP 적용:</strong> Content Security Policy로 스크립트 실행 제한</li>";
+    $result .= "</ul>";
+    $result .= "</div>";
 
-    return ['result' => "<pre>{$response_sim}</pre>", 'error' => $error];
+    return ['result' => $result, 'error' => $error];
 };
 
 // 7. TestPage 인스턴스 생성 및 실행
