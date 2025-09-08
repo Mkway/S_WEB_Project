@@ -101,61 +101,166 @@ $test_logic_callback = function($form_data) {
         return ['result' => '', 'error' => $error];
     }
 
-    $response_sim = "[시뮬레이션] Open Redirect 공격 분석\n";
-    $response_sim .= "공격 유형: " . strtoupper($type) . "\n";
-    $response_sim .= "리다이렉트 URL: " . htmlspecialchars($url) . "\n\n";
+    $result .= "<div class='vulnerable-output'>";
+    $result .= "<h4>🚨 취약한 Open Redirect 실행 결과</h4>";
+    $result .= "<p><strong>공격 유형:</strong> " . strtoupper($type) . "</p>";
+    $result .= "<p><strong>리다이렉트 URL:</strong> " . htmlspecialchars($url) . "</p>";
+    
+    // 실제 Open Redirect 공격 실행 분석 (교육 목적)
+    try {
+        $parsed_url = parse_url($url);
+        $is_external = false;
+        $is_dangerous = false;
+        $attack_vector = [];
+        $redirect_simulation = '';
 
-    $parsed_url = parse_url($url);
-    $is_external = false;
-    $is_dangerous = false;
-    $attack_vector = [];
+        // URL 파싱 및 분석
+        if ($parsed_url === false) {
+            $result .= "<p class='error'>❌ 잘못된 URL 형식입니다.</p>";
+        } else {
+            // 호스트 검증
+            if (isset($parsed_url['host'])) {
+                $host = strtolower($parsed_url['host']);
+                $current_domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                
+                if ($host !== $current_domain && $host !== 'localhost' && $host !== '127.0.0.1') {
+                    $is_external = true;
+                    $result .= "<p class='danger'>🔥 <strong>외부 도메인 리다이렉트!</strong> 도메인: {$host}</p>";
+                }
 
-    if (isset($parsed_url['host'])) {
-        $host = strtolower($parsed_url['host']);
-        $safe_domains = ['example.com', 'localhost', '127.0.0.1'];
+                // 악성 패턴 검사
+                $malicious_patterns = ['evil', 'malicious', 'phishing', 'fake', 'attacker'];
+                foreach ($malicious_patterns as $pattern) {
+                    if (strpos($host, $pattern) !== false) {
+                        $is_dangerous = true;
+                        $attack_vector[] = "악의적 도메인명 포함: {$pattern}";
+                        $result .= "<p class='danger'>🔥 <strong>악의적 도메인 감지!</strong> 패턴: {$pattern}</p>";
+                        break;
+                    }
+                }
+            } elseif (strpos($url, '//') === 0) {
+                // Protocol-relative URL (//example.com)
+                $is_external = true;
+                $attack_vector[] = "프로토콜 상대 URL 사용";
+                $result .= "<p class='warning'>⚠️ <strong>프로토콜 상대 URL 감지!</strong> 필터 우회 시도 가능</p>";
+            }
+
+            // 프로토콜 검증
+            if (isset($parsed_url['scheme'])) {
+                $scheme = strtolower($parsed_url['scheme']);
+                if (in_array($scheme, ['javascript', 'data', 'vbscript', 'file'])) {
+                    $is_dangerous = true;
+                    $attack_vector[] = "위험한 프로토콜: {$scheme}";
+                    $result .= "<p class='danger'>🔥 <strong>위험한 프로토콜 감지!</strong> {$scheme}://</p>";
+                }
+            }
+
+            // 실제 리다이렉트 시뮬레이션
+            if ($is_external || $is_dangerous) {
+                $redirect_simulation = "실제 환경에서는 사용자가 다음 URL로 리다이렉트됩니다:\n";
+                $redirect_simulation .= "→ " . htmlspecialchars($url) . "\n\n";
+                
+                if ($is_dangerous) {
+                    $redirect_simulation .= "⚠️ 이는 다음과 같은 공격으로 이어질 수 있습니다:\n";
+                    $redirect_simulation .= "- 피싱 사이트로 유도하여 계정 정보 탈취\n";
+                    $redirect_simulation .= "- 멀웨어 다운로드 페이지로 리다이렉트\n";
+                    $redirect_simulation .= "- OAuth 토큰 가로채기\n";
+                    $redirect_simulation .= "- 세션 하이재킹\n";
+                } else {
+                    $redirect_simulation .= "외부 사이트로의 리다이렉트로 인한 보안 위험이 존재합니다.";
+                }
+                
+                // 취약한 PHP 코드 예시 표시
+                $result .= "<p class='danger'>🔥 <strong>취약한 리다이렉트 실행!</strong></p>";
+                $result .= "<p><strong>실행된 취약한 코드:</strong></p>";
+                $result .= "<pre class='attack-result'>header('Location: " . htmlspecialchars($url) . "');\nexit();</pre>";
+                
+            } else {
+                $redirect_simulation = "내부 도메인으로의 안전한 리다이렉트입니다.\n";
+                $redirect_simulation .= "→ " . htmlspecialchars($url);
+                $result .= "<p class='success'>✅ 내부 도메인으로의 리다이렉트</p>";
+            }
+            
+            $result .= "<p><strong>리다이렉트 시뮬레이션 결과:</strong></p>";
+            $result .= "<pre class='attack-result'>" . $redirect_simulation . "</pre>";
+        }
         
-        if (!in_array($host, $safe_domains)) {
-            $is_external = true;
-        }
-
-        $malicious_patterns = ['evil', 'malicious', 'phishing', 'fake'];
-        foreach ($malicious_patterns as $pattern) {
-            if (strpos($host, $pattern) !== false) {
-                $is_dangerous = true;
-                $attack_vector[] = "악의적 도메인명 포함: {$pattern}";
-                break;
-            }
-        }
+    } catch (Exception $e) {
+        $result .= "<p class='error'>❌ Open Redirect 분석 중 오류: " . htmlspecialchars($e->getMessage()) . "</p>";
     }
+    
+    $result .= "</div>";
+    
+    // 안전한 구현 비교
+    $result .= "<div class='safe-comparison'>";
+    $result .= "<h4>✅ 안전한 리다이렉트 방어 구현</h4>";
+    
+    $parsed_url = parse_url($url);
+    $is_safe = true;
+    $validation_messages = [];
 
-    if (isset($parsed_url['scheme'])) {
-        $scheme = strtolower($parsed_url['scheme']);
-        if (in_array($scheme, ['javascript', 'data', 'vbscript', 'file'])) {
-            $is_dangerous = true;
-            $attack_vector[] = "위험한 프로토콜: {$scheme}";
-        }
-    }
-
-    if ($is_dangerous || $is_external) {
-        $response_sim .= "🚨 취약점 발견: Open Redirect 공격 가능\n\n";
-        if ($is_external) {
-            $response_sim .= "위험 요소: 외부 도메인으로 리다이렉트\n";
-        }
-        if (!empty($attack_vector)) {
-            $response_sim .= "감지된 공격 기법:\n";
-            foreach ($attack_vector as $vector) {
-                $response_sim .= "- " . $vector . "\n";
-            }
-        }
-        $response_sim .= "\n공격 시나리오: 피싱, 멀웨어 배포, OAuth 토큰 탈취 등\n";
-        $response_sim .= "실제 리다이렉트 결과: ❌ 위험: 악의적 사이트로 리다이렉트됨\n";
+    // 1. URL 형식 검증
+    if ($parsed_url === false) {
+        $validation_messages[] = "🛡️ 차단됨: 잘못된 URL 형식";
+        $is_safe = false;
     } else {
-        $response_sim .= "✅ 안전한 리다이렉트 URL\n";
-        $response_sim .= "내부 도메인으로의 리다이렉트입니다.\n";
-        $response_sim .= "위험한 패턴이 감지되지 않았습니다.\n";
+        // 2. 프로토콜 검증
+        $allowed_schemes = ['http', 'https'];
+        $scheme = $parsed_url['scheme'] ?? '';
+        if (!empty($scheme) && !in_array(strtolower($scheme), $allowed_schemes)) {
+            $validation_messages[] = "🛡️ 차단됨: 허용되지 않은 프로토콜 '{$scheme}'";
+            $is_safe = false;
+        }
+
+        // 3. 도메인 화이트리스트 검증
+        if (isset($parsed_url['host'])) {
+            $host = strtolower($parsed_url['host']);
+            $allowed_domains = ['localhost', '127.0.0.1', $_SERVER['HTTP_HOST'] ?? 'localhost'];
+            
+            if (!in_array($host, $allowed_domains)) {
+                $validation_messages[] = "🛡️ 차단됨: 허용되지 않은 외부 도메인 '{$host}'";
+                $is_safe = false;
+            }
+        } elseif (strpos($url, '//') === 0) {
+            $validation_messages[] = "🛡️ 차단됨: 프로토콜 상대 URL 사용";
+            $is_safe = false;
+        }
+
+        // 4. 상대 경로 확인
+        if (empty($parsed_url['host']) && strpos($url, '/') === 0) {
+            $validation_messages[] = "✅ 허용됨: 안전한 상대 경로";
+        }
     }
 
-    return ['result' => "<pre>{"$response_sim"}</pre>", 'error' => $error];
+    if ($is_safe && !empty($validation_messages)) {
+        foreach ($validation_messages as $msg) {
+            $result .= "<p class='success'>{$msg}</p>";
+        }
+        $result .= "<p><strong>안전한 리다이렉트 결과:</strong></p>";
+        $result .= "<pre class='safe-result'>안전한 경로로 리다이렉트: " . htmlspecialchars($url) . "</pre>";
+    } else {
+        foreach ($validation_messages as $msg) {
+            $result .= "<p class='success'>{$msg}</p>";
+        }
+        $result .= "<p class='success'>🛡️ 리다이렉트가 보안 정책에 의해 차단되었습니다.</p>";
+    }
+    
+    $result .= "</div>";
+    
+    // 보안 권장사항
+    $result .= "<div class='security-recommendations'>";
+    $result .= "<h4>🔒 Open Redirect 방어 권장사항</h4>";
+    $result .= "<ul>";
+    $result .= "<li><strong>화이트리스트 검증:</strong> 허용된 도메인/경로만 리다이렉트 허용</li>";
+    $result .= "<li><strong>절대 URL 금지:</strong> 가능한 상대 경로만 사용</li>";
+    $result .= "<li><strong>URL 파싱 검증:</strong> <code>parse_url()</code>로 URL 구성 요소 검증</li>";
+    $result .= "<li><strong>프로토콜 제한:</strong> HTTP/HTTPS만 허용</li>";
+    $result .= "<li><strong>사용자 확인:</strong> 외부 리다이렉트 시 경고 메시지 표시</li>";
+    $result .= "<li><strong>서명된 토큰:</strong> 리다이렉트 URL에 검증 가능한 토큰 포함</li>";
+    $result .= "</ul>";
+    $result .= "</div>";
+
+    return ['result' => $result, 'error' => $error];
 };
 
 // 7. TestPage 인스턴스 생성 및 실행
