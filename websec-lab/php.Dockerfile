@@ -5,21 +5,28 @@ WORKDIR /var/www/html
 
 # Copy composer files first to leverage caching
 COPY src/composer.json composer.json
-COPY src/composer.lock composer.lock
+# COPY src/composer.lock composer.lock
 
-RUN docker-php-ext-install pdo_mysql pdo_pgsql \
-    && apk add --no-cache git postgresql-dev openssl-dev \
+RUN apk add --no-cache git postgresql-dev openssl-dev libpq $PHPIZE_DEPS \
+    && docker-php-ext-install pdo_mysql pdo_pgsql \
     && pecl install mongodb \
-    && docker-php-ext-enable mongodb \
-    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-    && composer install --no-dev --optimize-autoloader # Install production dependencies
+    && docker-php-ext-enable mongodb
+
+# Install Composer separately
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Create vendor directory and set permissions
+RUN mkdir -p vendor && chown -R www-data:www-data vendor
+
+# Install composer dependencies without dev dependencies and without scripts
+RUN composer install --no-dev --optimize-autoloader --no-scripts || true
 
 # Stage 2: Production
 FROM php:8.2-fpm-alpine
 
 # Copy only necessary extensions and application files
 # Install MySQL, PostgreSQL and MongoDB extensions
-RUN apk add --no-cache postgresql-dev openssl-dev \
+RUN apk add --no-cache postgresql-dev openssl-dev libpq $PHPIZE_DEPS \
     && docker-php-ext-install pdo_mysql pdo_pgsql \
     && pecl install mongodb \
     && docker-php-ext-enable mongodb
