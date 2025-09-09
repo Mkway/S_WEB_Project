@@ -36,7 +36,7 @@ try {
         
         if ($user) {
             echo "<p style='color: green;'>✅ 사용자 조회 성공:</p>\n";
-            echo "<pre>" . json_encode($user->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "</pre>\n";
+            echo "<pre>" . json_encode(iterator_to_array($user), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "</pre>\n";
         } else {
             echo "<p style='color: orange;'>⚠️ 관리자 사용자를 찾을 수 없습니다.</p>\n";
         }

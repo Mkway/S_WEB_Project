@@ -98,7 +98,7 @@ class MongoDBConnection {
             'active' => true
         ]);
         
-        return $result ? $result->toArray() : null;
+        return $result ? iterator_to_array($result) : null;
     }
     
     /**
@@ -190,7 +190,7 @@ class MongoDBConnection {
             'active' => true
         ]);
         
-        return $result ? $result->toArray() : null;
+        return $result ? iterator_to_array($result) : null;
     }
     
     /**
