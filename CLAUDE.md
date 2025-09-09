@@ -133,36 +133,16 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 git commit -m "update files"
 ```
 
-## 📊 Project Status Tracking
+## 📊 Project Overview
 
-### ✅ Completed Vulnerability Tests (Real Execution Enabled)
-- [x] **SQL Injection** - 실제 DB 쿼리 실행 및 결과 표시
-- [x] **XSS** - 실제 스크립트 실행 (필터링 없음)
-- [x] **Command Injection** - 실제 시스템 명령어 실행 
-- [x] **File Upload** - 실제 파일 업로드 및 위험 확장자 감지
-- [x] **CSRF** - 실제 토큰 검증 우회 시뮬레이션
-- [x] **File Inclusion (LFI/RFI)** - 실제 파일 읽기 실행
-- [x] **Directory Traversal** - 실제 경로 순회 및 파일 접근
-- [x] **Auth Bypass** - SQL/NoSQL/LDAP 인젝션 우회 실행
+**현재 상태**: Advanced Vulnerability Modules 구현 중
 
-### ✅ Middle Priority (중간 우선순위) - COMPLETED
-- [x] **XXE (XML External Entity)** - 실제 XML 외부 엔티티 파싱 실행
-- [x] **SSRF (Server-Side Request Forgery)** - 실제 서버 요청 실행 및 분석
-- [x] **SSTI (Server-Side Template Injection)** - 템플릿 인젝션 시뮬레이션  
-- [x] **Open Redirect** - 실제 리다이렉트 분석 및 시뮬레이션
-- [x] **XPath Injection** - 실제 XML 쿼리 실행 및 데이터 추출
+**프로젝트 세부 계획**: 
+- 📋 **진행 상황**: `/planning/project-status.md`
+- 🚀 **로드맵**: `/planning/roadmap.md`  
+- 🎯 **취약점 스펙**: `/planning/vulnerability-specs.md`
 
-### 🔄 Current Priority (현재 작업중) - 완료!
-- [x] **MongoDB NoSQL Environment** - NoSQL Injection 테스트 환경 구축 ✅ COMPLETED
-  - MongoDB 7 Docker 컨테이너 정상 실행
-  - 4개 컬렉션 초기 데이터 구성 (users, products, posts, logs)  
-  - MongoDB PHP 드라이버 연동 및 호환성 문제 해결
-  - NoSQL Operator Injection 실제 공격 테스트 완료
-
-### 🚀 Next Priority Options (다음 우선순위 옵션)
-- [ ] **Redis Cache Environment** - 캐시 인젝션 테스트 환경
-- [ ] **Advanced Vulnerability Modules** - 고급 취약점 시나리오
-- [ ] **Web Interface Enhancement** - MongoDB 테스트 페이지 웹 접근성 완성
+**주요 완료 모듈**: 16개 (기본 8개 + 중간 5개 + 고급 3개)
 
 ### 📋 Development Environment Setup
 
