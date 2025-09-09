@@ -134,18 +134,31 @@ services:
       timeout: 3s
       retries: 5
 
-  my_node_app:
+  # Node.js Vulnerability Testing Suite (Java Deserialization + Prototype Pollution)
+  node_app:
     build:
       context: ../node_app
       dockerfile: Dockerfile
-    container_name: my_node_app
+    container_name: vulnerability_node_app
+    restart: always
     ports:
       - "3000:3000"
     volumes:
-      - ./node_app:/app
+      - ../node_app:/app
+      - node_uploads:/app/uploads
+      - node_payloads:/app/java-payloads
+    environment:
+      NODE_ENV: development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   uploads_data: # 업로드 파일을 위한 볼륨 추가
   postgres_data: # PostgreSQL 데이터를 위한 볼륨
   mongodb_data: # MongoDB 데이터를 위한 볼륨
   redis_data: # Redis 데이터를 위한 볼륨
+  node_uploads: # Node.js 파일 업로드를 위한 볼륨
+  node_payloads: # Java 직렬화 페이로드를 위한 볼륨
