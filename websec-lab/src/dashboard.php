@@ -180,26 +180,18 @@ class VulnerabilityDashboard {
                 throw new Exception("테스트 파일을 찾을 수 없습니다: $test_file");
             }
             
-            // 테스트 실행을 위한 안전한 방법
-            ob_start();
-            
-            // POST 데이터 설정
-            if (!empty($payload)) {
-                $_POST['dashboard_test'] = true;
-                $_POST['payload'] = $payload;
-            }
-            
-            include $file_path;
-            $output = ob_get_contents();
-            ob_end_clean();
-            
+            // 대신 파일 URL로 리다이렉트하는 방식으로 변경
             $execution_time = microtime(true) - $start_time;
+            
+            // 테스트 파일의 웹 경로 생성
+            $web_path = str_replace(__DIR__ . '/', '', $file_path);
+            $web_url = '/' . $web_path;
             
             $result = [
                 'success' => true,
-                'output' => $output,
-                'execution_time' => round($execution_time * 1000, 3), // ms 단위
-                'message' => '테스트가 성공적으로 실행되었습니다.'
+                'redirect_url' => $web_url,
+                'execution_time' => round($execution_time * 1000, 3),
+                'message' => '테스트 페이지로 이동합니다.'
             ];
             
         } catch (Exception $e) {
@@ -292,6 +284,15 @@ if (isset($_POST['ajax_action'])) {
         case 'get_recent_results':
             $recent = $dashboard->getRecentResults(20);
             echo json_encode($recent);
+            exit;
+            
+        case 'log_result':
+            $test_name = $_POST['test_name'] ?? '';
+            $result_type = $_POST['result_type'] ?? 'vulnerable';
+            $execution_time = (float)($_POST['execution_time'] ?? 0);
+            
+            $dashboard->logTestResult($test_name, $result_type, $execution_time);
+            echo json_encode(['success' => true]);
             exit;
     }
 }
@@ -990,22 +991,49 @@ $recent_results = $dashboard->getRecentResults(10);
                 const result = await response.json();
                 
                 loading.style.display = 'none';
-                results.style.display = 'block';
                 
-                modalTitle.textContent = `📊 ${testName} 실행 결과`;
-                
-                const executionInfo = document.getElementById('executionInfo');
-                const testOutput = document.getElementById('testOutput');
-                
-                executionInfo.innerHTML = `
-                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                        <span><strong>🎯 상태:</strong> ${result.success ? '✅ 성공' : '❌ 실패'}</span>
-                        <span><strong>⏱️ 실행 시간:</strong> ${result.execution_time}ms</span>
-                        <span><strong>📝 메시지:</strong> ${result.message}</span>
-                    </div>
-                `;
-                
-                testOutput.innerHTML = result.output || '출력 데이터가 없습니다.';
+                if (result.success && result.redirect_url) {
+                    // 새 탭에서 테스트 페이지 열기
+                    window.open(result.redirect_url, '_blank');
+                    closeModal();
+                    
+                    // 결과 로깅
+                    const resultType = 'vulnerable'; // 기본값
+                    logTestResult(testName, resultType, result.execution_time);
+                    
+                } else if (result.success) {
+                    results.style.display = 'block';
+                    modalTitle.textContent = `📊 ${testName} 실행 결과`;
+                    
+                    const executionInfo = document.getElementById('executionInfo');
+                    const testOutput = document.getElementById('testOutput');
+                    
+                    executionInfo.innerHTML = `
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <span><strong>🎯 상태:</strong> ✅ 성공</span>
+                            <span><strong>⏱️ 실행 시간:</strong> ${result.execution_time}ms</span>
+                            <span><strong>📝 메시지:</strong> ${result.message}</span>
+                        </div>
+                    `;
+                    
+                    testOutput.innerHTML = result.output || '출력 데이터가 없습니다.';
+                } else {
+                    // 오류 표시
+                    results.style.display = 'block';
+                    modalTitle.textContent = `❌ ${testName} 실행 오류`;
+                    
+                    const executionInfo = document.getElementById('executionInfo');
+                    const testOutput = document.getElementById('testOutput');
+                    
+                    executionInfo.innerHTML = `
+                        <div style="color: #e74c3c;">
+                            <span><strong>❌ 오류:</strong> ${result.message}</span>
+                            <span><strong>⏱️ 실행 시간:</strong> ${result.execution_time}ms</span>
+                        </div>
+                    `;
+                    
+                    testOutput.innerHTML = '테스트 실행 중 오류가 발생했습니다.';
+                }
                 
                 // 통계 새로고침
                 refreshStats();
@@ -1033,6 +1061,24 @@ $recent_results = $dashboard->getRecentResults(10);
             const modal = document.getElementById('testModal');
             if (event.target === modal) {
                 closeModal();
+            }
+        }
+        
+        // 테스트 결과 로깅
+        async function logTestResult(testName, resultType, executionTime) {
+            try {
+                const formData = new FormData();
+                formData.append('ajax_action', 'log_result');
+                formData.append('test_name', testName);
+                formData.append('result_type', resultType);
+                formData.append('execution_time', executionTime);
+                
+                await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                });
+            } catch (error) {
+                console.error('결과 로깅 오류:', error);
             }
         }
         
