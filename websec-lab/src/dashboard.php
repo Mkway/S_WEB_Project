@@ -1,8 +1,9 @@
 <?php
 session_start();
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/VulnerabilityDashboard.php';
 
-class VulnerabilityDashboard {
+// AJAX 요청은 별도 파일(dashboard_ajax.php)에서 처리
     private $db;
     
     public function __construct($db) {
@@ -257,45 +258,7 @@ $dashboard = new VulnerabilityDashboard($pdo);
 $result = '';
 $ajax_response = null;
 
-// AJAX 요청 처리
-if (isset($_POST['ajax_action'])) {
-    header('Content-Type: application/json');
-    
-    switch ($_POST['ajax_action']) {
-        case 'execute_test':
-            $test_file = $_POST['test_file'] ?? '';
-            $payload = $_POST['payload'] ?? '';
-            $test_name = $_POST['test_name'] ?? '';
-            
-            $test_result = $dashboard->executeVulnerabilityTest($test_file, $payload);
-            
-            // 결과 로깅
-            $result_type = $test_result['success'] ? 'vulnerable' : 'error';
-            $dashboard->logTestResult($test_name, $result_type, $test_result['execution_time'], $payload, $test_result['output']);
-            
-            echo json_encode($test_result);
-            exit;
-            
-        case 'get_stats':
-            $stats = $dashboard->getDashboardStats();
-            echo json_encode($stats);
-            exit;
-            
-        case 'get_recent_results':
-            $recent = $dashboard->getRecentResults(20);
-            echo json_encode($recent);
-            exit;
-            
-        case 'log_result':
-            $test_name = $_POST['test_name'] ?? '';
-            $result_type = $_POST['result_type'] ?? 'vulnerable';
-            $execution_time = (float)($_POST['execution_time'] ?? 0);
-            
-            $dashboard->logTestResult($test_name, $result_type, $execution_time);
-            echo json_encode(['success' => true]);
-            exit;
-    }
-}
+// AJAX 처리는 dashboard_ajax.php에서 수행
 
 // 일반 POST 요청 처리
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
@@ -311,6 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
     }
 }
 
+// HTML 출력을 위한 데이터 준비
 $all_tests = $dashboard->getAllTests();
 $test_categories = $dashboard->getTestsByCategory();
 $stats = $dashboard->getDashboardStats();
@@ -983,12 +947,22 @@ $recent_results = $dashboard->getRecentResults(10);
                 formData.append('test_file', testFile);
                 formData.append('payload', ''); // 기본 페이로드
                 
-                const response = await fetch(window.location.href, {
+                const response = await fetch(dashboard_ajax.php, {
                     method: 'POST',
                     body: formData
                 });
                 
-                const result = await response.json();
+                const responseText = await response.text();
+                console.log('Raw response:', responseText); // 디버깅용
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('JSON 파싱 오류:', parseError);
+                    console.error('응답 내용:', responseText);
+                    throw new Error('서버 응답을 파싱할 수 없습니다: ' + responseText.substring(0, 100));
+                }
                 
                 loading.style.display = 'none';
                 
@@ -1073,7 +1047,7 @@ $recent_results = $dashboard->getRecentResults(10);
                 formData.append('result_type', resultType);
                 formData.append('execution_time', executionTime);
                 
-                await fetch(window.location.href, {
+                await fetch(dashboard_ajax.php, {
                     method: 'POST',
                     body: formData
                 });
@@ -1088,7 +1062,7 @@ $recent_results = $dashboard->getRecentResults(10);
                 const formData = new FormData();
                 formData.append('ajax_action', 'get_recent_results');
                 
-                const response = await fetch(window.location.href, {
+                const response = await fetch(dashboard_ajax.php, {
                     method: 'POST',
                     body: formData
                 });
