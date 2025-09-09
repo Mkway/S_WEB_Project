@@ -1,6 +1,6 @@
 <?php
 session_start();
-include_once 'db_connection.php';
+require_once __DIR__ . '/db.php';
 
 class VulnerabilityDashboard {
     private $db;
@@ -257,6 +257,10 @@ class VulnerabilityDashboard {
 }
 
 // 메인 처리
+global $pdo;
+if (!isset($pdo) || !$pdo) {
+    die("데이터베이스 연결에 실패했습니다. 설정을 확인해주세요.");
+}
 $dashboard = new VulnerabilityDashboard($pdo);
 $result = '';
 $ajax_response = null;
