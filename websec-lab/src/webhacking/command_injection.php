@@ -39,7 +39,7 @@ $payloads = [
     'blind' => [
         'title' => '👁️ Blind Command Injection',
         'description' => '출력을 직접 볼 수 없을 때 사용하는 블라인드 인젝션 페이로드입니다.',
-        'payloads' => ['; sleep 5', '&& ping -c 4 127.0.0.1', '| curl http://example.com']
+        'payloads' => ['ping 127.0.0.1; sleep 5', 'echo test && sleep 3', 'whoami | sleep 2']
     ]
 ];
 
@@ -121,12 +121,18 @@ $test_logic_callback = function($form_data) {
         $result .= "보안상의 이유로 시스템 파괴적 명령어는 실행하지 않습니다.<br>";
         $result .= "차단된 명령어: " . htmlspecialchars($command);
     } else {
+        // 명령어 앞에 유효한 명령어 추가 (빈 명령어로 시작하는 경우 방지)
+        $full_command = $command;
+        if (preg_match('/^[;&|]/', trim($command))) {
+            $full_command = 'echo "starting command"' . $command;
+        }
+        
         // 실제 명령어 실행
-        exec($command . ' 2>&1', $output, $return_var);
+        exec($full_command . ' 2>&1', $output, $return_var);
         
         if ($return_var === 0 && !empty($output)) {
             $result .= "<strong>✅ 명령어 실행 성공!</strong><br>";
-            $result .= "<strong>실행된 명령어:</strong> " . htmlspecialchars($command) . "<br><br>";
+            $result .= "<strong>실행된 명령어:</strong> " . htmlspecialchars($full_command) . "<br><br>";
             $result .= "<strong>실행 결과:</strong><br>";
             $result .= "<pre style='background: #f1f1f1; padding: 10px; max-height: 400px; overflow-y: auto;'>" . htmlspecialchars(implode("\n", $output)) . "</pre>";
             
@@ -135,14 +141,34 @@ $test_logic_callback = function($form_data) {
                 $result .= "<br><strong>🚨 Command Injection 공격 성공!</strong><br>";
                 $result .= "<em>여러 명령어가 연쇄적으로 실행되었습니다. 실제 환경에서는 매우 위험합니다!</em>";
             }
-        } else if ($return_var !== 0) {
-            $result .= "<strong>❌ 명령어 실행 실패 (종료 코드: $return_var)</strong><br>";
-            if (!empty($output)) {
-                $result .= "<pre style='background: #f1f1f1; padding: 10px;'>" . htmlspecialchars(implode("\n", $output)) . "</pre>";
+        } else if ($return_var === 0) {
+            $result .= "<strong>✅ 명령어 실행 성공! (출력 없음)</strong><br>";
+            $result .= "<strong>실행된 명령어:</strong> " . htmlspecialchars($full_command) . "<br>";
+            
+            // Blind Command Injection 감지
+            if (strpos($command, 'sleep') !== false) {
+                $result .= "<br><strong>💤 Blind Command Injection 성공!</strong><br>";
+                $result .= "<em>Sleep 명령어가 실행되어 시스템이 일시정지되었습니다. 시간 기반 공격이 성공했습니다!</em>";
+            }
+            
+            // Command Injection이 성공했는지 체크
+            if (strpos($command, ';') !== false || strpos($command, '&&') !== false || strpos($command, '|') !== false) {
+                $result .= "<br><strong>🚨 Command Injection 공격 성공!</strong><br>";
+                $result .= "<em>여러 명령어가 연쇄적으로 실행되었습니다. 실제 환경에서는 매우 위험합니다!</em>";
             }
         } else {
-            $result .= "<strong>⚠️ 명령어는 실행되었지만 출력이 없습니다.</strong><br>";
-            $result .= "실행된 명령어: " . htmlspecialchars($command);
+            $result .= "<strong>❌ 명령어 실행 실패 (종료 코드: $return_var)</strong><br>";
+            if (!empty($output)) {
+                $result .= "<strong>오류 메시지:</strong><br>";
+                $result .= "<pre style='background: #f8d7da; padding: 10px; border: 1px solid #f5c6cb;'>" . htmlspecialchars(implode("\n", $output)) . "</pre>";
+            }
+            
+            // 구문 오류 감지 및 도움말 제공
+            if ($return_var === 2 && (strpos($command, ';') === 0 || strpos($command, '&&') === 0 || strpos($command, '|') === 0)) {
+                $result .= "<br><strong>💡 도움말:</strong><br>";
+                $result .= "명령어가 특수문자로 시작하면 구문 오류가 발생합니다.<br>";
+                $result .= "올바른 예시: <code>ping 127.0.0.1; sleep 5</code> 또는 <code>echo test && sleep 3</code>";
+            }
         }
     }
     $result .= "</div>";
