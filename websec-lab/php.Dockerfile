@@ -9,8 +9,8 @@ COPY src/composer.json composer.json
 
 RUN apk add --no-cache git postgresql-dev openssl-dev libpq $PHPIZE_DEPS \
     && docker-php-ext-install pdo_mysql pdo_pgsql \
-    && pecl install mongodb \
-    && docker-php-ext-enable mongodb
+    && pecl install mongodb redis \
+    && docker-php-ext-enable mongodb redis
 
 # Install Composer separately
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -28,8 +28,8 @@ FROM php:8.2-fpm-alpine
 # Install MySQL, PostgreSQL and MongoDB extensions
 RUN apk add --no-cache postgresql-dev openssl-dev libpq $PHPIZE_DEPS \
     && docker-php-ext-install pdo_mysql pdo_pgsql \
-    && pecl install mongodb \
-    && docker-php-ext-enable mongodb
+    && pecl install mongodb redis \
+    && docker-php-ext-enable mongodb redis
 
 # Create uploads directory and set permissions
 RUN mkdir -p /var/www/html/uploads \

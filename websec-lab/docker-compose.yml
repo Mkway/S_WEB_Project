@@ -116,6 +116,24 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis NoSQL 캐시 서비스 (Cache Injection 보안 테스트용)
+  redis:
+    image: redis:7-alpine
+    container_name: security_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./nosql-challenges/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./nosql-challenges/redis/init:/docker-entrypoint-initdb.d
+      - redis_data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   my_node_app:
     build:
       context: ../node_app
@@ -130,3 +148,4 @@ volumes:
   uploads_data: # 업로드 파일을 위한 볼륨 추가
   postgres_data: # PostgreSQL 데이터를 위한 볼륨
   mongodb_data: # MongoDB 데이터를 위한 볼륨
+  redis_data: # Redis 데이터를 위한 볼륨
