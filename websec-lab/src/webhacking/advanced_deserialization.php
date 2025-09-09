@@ -1,6 +1,14 @@
 <?php
-session_start();
-include_once '../db_connection.php';
+// 출력 버퍼링 시작 (헤더 전송 문제 방지)
+ob_start();
+
+// 세션 시작 (헤더 전송 전)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../utils.php';
 
 class AdvancedDeserializationTest {
     private $db;
@@ -448,7 +456,7 @@ class AdvancedDeserializationTest {
                         $result .= "};\n\n";
                         $result .= "// 직렬화 (클라이언트로 전송)\n";
                         $result .= "const serialized = serialize(xssPayload);\n";
-                        $result .= "res.send(`<script>var data = ${serialized};</script>`);\n\n";
+                        $result .= 'res.send(`<script>var data = ${serialized};</script>`);\n\n';
                         $result .= "// 🚨 브라우저에서 스크립트 실행됨";
                         break;
                         
@@ -741,7 +749,18 @@ const data = msgpack.decode(userInput); // MessagePack</code></pre>
     }
 }
 
+// 로그인 확인
+if (!is_logged_in()) {
+    header('Location: ../login.php');
+    exit();
+}
+
 // 메인 처리
+global $pdo;
+if (!isset($pdo) || !$pdo) {
+    die("데이터베이스 연결에 실패했습니다. 설정을 확인해주세요.");
+}
+
 $deserializationTest = new AdvancedDeserializationTest($pdo);
 $result = '';
 
