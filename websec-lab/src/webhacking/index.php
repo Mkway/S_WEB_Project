@@ -94,6 +94,7 @@ if (!is_logged_in()) {
             <h1>보안 취약점 테스트</h1>
             <div class="nav-links">
                 <span>환영합니다, <?php echo safe_output($_SESSION['username']); ?>님!</span>
+                <a href="../dashboard.php" class="btn">📊 대시보드</a>
                 <a href="../index.php" class="btn">메인으로</a>
                 <a href="../logout.php" class="btn">로그아웃</a>
             </div>
@@ -109,6 +110,15 @@ if (!is_logged_in()) {
             <strong>⚠️ 주의사항:</strong> 이 페이지는 교육 목적으로만 사용되어야 합니다. 
             실제 운영 환경에서는 이러한 테스트를 수행하지 마세요. 
             모든 테스트는 통제된 환경에서만 실행하시기 바랍니다.
+        </div>
+
+        <!-- 대시보드 바로가기 -->
+        <div style="text-align: center; margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+            <h3 style="color: white; margin-bottom: 15px;">🛡️ WebSec-Lab 통합 대시보드</h3>
+            <p style="color: #f0f0f0; margin-bottom: 20px;">모든 취약점 테스트를 한눈에 관리하고, 실행 통계를 확인하세요!</p>
+            <a href="../dashboard.php" style="display: inline-block; padding: 12px 30px; background: white; color: #667eea; text-decoration: none; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease;">
+                📊 대시보드로 이동 →
+            </a>
         </div>
 
         <!-- 테스트 카테고리 -->

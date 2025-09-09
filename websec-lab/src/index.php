@@ -323,6 +323,10 @@ try {
                             <i class="bi bi-shield-exclamation"></i> 보안 테스트
                         </a>
                         
+                        <a href="dashboard.php" class="nav-link me-2">
+                            <i class="bi bi-speedometer2"></i> 대시보드
+                        </a>
+                        
                         <a href="logout.php" class="nav-link">
                             <i class="bi bi-box-arrow-right"></i> 로그아웃
                         </a>
@@ -526,6 +530,9 @@ try {
                     <div class="mb-2">
                         <a href="webhacking/index.php" class="text-decoration-none me-3">
                             <i class="bi bi-shield-exclamation"></i> 보안 테스트
+                        </a>
+                        <a href="dashboard.php" class="text-decoration-none me-3">
+                            <i class="bi bi-speedometer2"></i> 대시보드
                         </a>
                         <?php if (is_admin()): ?>
                             <a href="admin.php" class="text-decoration-none">
