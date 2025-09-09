@@ -72,14 +72,19 @@ $references = [
 $redirect_url = htmlspecialchars($_POST['payload'] ?? '');
 $attack_type = htmlspecialchars($_POST['attack_type'] ?? 'basic');
 
+// Select options 미리 계산
+$basic_selected = ($attack_type === 'basic') ? 'selected' : '';
+$phishing_selected = ($attack_type === 'phishing') ? 'selected' : '';
+$bypass_selected = ($attack_type === 'bypass') ? 'selected' : '';
+
 $test_form_ui = <<<HTML
 <form method="post" class="test-form">
     <h3>🧪 Open Redirect 테스트</h3>
     <label for="attack_type">🎯 공격 유형 선택:</label>
     <select id="attack_type" name="attack_type">
-        <option value="basic" {$attack_type === 'basic' ? 'selected' : ''}>Basic Redirect</option>
-        <option value="phishing" {$attack_type === 'phishing' ? 'selected' : ''}>Phishing Attack</option>
-        <option value="bypass" {$attack_type === 'bypass' ? 'selected' : ''}>Filter Bypass</option>
+        <option value="basic" {$basic_selected}>Basic Redirect</option>
+        <option value="phishing" {$phishing_selected}>Phishing Attack</option>
+        <option value="bypass" {$bypass_selected}>Filter Bypass</option>
     </select><br><br>
     
     <label for="payload">🌐 리다이렉트 URL 입력:</label>
