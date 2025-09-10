@@ -68,16 +68,23 @@ $references = [
 $serialized_input = htmlspecialchars($_POST['payload'] ?? '');
 $format_type = htmlspecialchars($_POST['format'] ?? 'php');
 
+// 선택된 옵션 처리를 위한 변수들
+$php_selected = ($format_type === 'php') ? 'selected' : '';
+$java_selected = ($format_type === 'java') ? 'selected' : '';
+$python_selected = ($format_type === 'python') ? 'selected' : '';
+$dotnet_selected = ($format_type === 'dotnet') ? 'selected' : '';
+$nodejs_selected = ($format_type === 'nodejs') ? 'selected' : '';
+
 $test_form_ui = <<<HTML
 <form method="post" class="test-form">
     <h3>🧪 Deserialization 시뮬레이션</h3>
     <label for="format">🔧 직렬화 형식 선택:</label><br>
     <select id="format" name="format">
-        <option value="php" {$format_type === 'php' ? 'selected' : ''}>PHP Serialization</option>
-        <option value="java" {$format_type === 'java' ? 'selected' : ''}>Java Serialization</option>
-        <option value="python" {$format_type === 'python' ? 'selected' : ''}>Python Pickle</option>
-        <option value="dotnet" {$format_type === 'dotnet' ? 'selected' : ''}>.NET BinaryFormatter</option>
-        <option value="nodejs" {$format_type === 'nodejs' ? 'selected' : ''}>Node.js JSON</option>
+        <option value="php" $php_selected>PHP Serialization</option>
+        <option value="java" $java_selected>Java Serialization</option>
+        <option value="python" $python_selected>Python Pickle</option>
+        <option value="dotnet" $dotnet_selected>.NET BinaryFormatter</option>
+        <option value="nodejs" $nodejs_selected>Node.js JSON</option>
     </select><br><br>
     
     <label for="payload">🎯 직렬화된 데이터 입력:</label><br>
