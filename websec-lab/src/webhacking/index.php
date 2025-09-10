@@ -389,25 +389,11 @@ if (!is_logged_in()) {
                 <a href="tabnabbing_test.php" style="display: none;"></a>
             </div>
 
-            <!-- Tabnabbing -->
-            <div class="test-card">
-                <h3>👁️‍🗨️ Tabnabbing</h3>
-                <p>백그라운드 탭의 내용을 피싱 사이트로 변경하여 사용자를 속이는 공격을 테스트합니다.</p>
-                <a href="tabnabbing_test.php" style="display: none;"></a>
-            </div>
-
             <!-- DOM Clobbering -->
             <div class="test-card">
                 <h3>🧱 DOM Clobbering</h3>
                 <p>HTML 요소로 JavaScript 전역 변수를 오염시키는 취약점을 테스트합니다.</p>
                 <a href="dom_clobbering_test.php" style="display: none;"></a>
-            </div>
-
-            <!-- Clickjacking -->
-            <div class="test-card">
-                <h3>🖱️ Clickjacking</h3>
-                <p>투명한 iframe을 사용하여 사용자의 클릭을 가로채는 취약점을 테스트합니다.</p>
-                <a href="clickjacking_test.php" style="display: none;"></a>
             </div>
 
             <!-- Clickjacking -->
