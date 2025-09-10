@@ -106,6 +106,15 @@ $references = [
 $test_scenario_selected = htmlspecialchars($_POST['scenario'] ?? '');
 $test_data_input = htmlspecialchars($_POST['payload'] ?? '');
 
+$price_manipulation_selected = ($test_scenario_selected === 'price_manipulation') ? 'selected' : '';
+$quantity_manipulation_selected = ($test_scenario_selected === 'quantity_manipulation') ? 'selected' : '';
+$workflow_bypass_selected = ($test_scenario_selected === 'workflow_bypass') ? 'selected' : '';
+$time_manipulation_selected = ($test_scenario_selected === 'time_manipulation') ? 'selected' : '';
+$state_manipulation_selected = ($test_scenario_selected === 'state_manipulation') ? 'selected' : '';
+$rate_limit_bypass_selected = ($test_scenario_selected === 'rate_limit_bypass') ? 'selected' : '';
+
+$test_data_input_html = htmlspecialchars($test_data_input);
+
 $test_form_ui = <<<HTML
 <div class="info-box" style="background: #e3f2fd; border-color: #2196f3;">
     <h4>👤 현재 사용자 정보 (시뮬레이션)</h4>
@@ -121,16 +130,16 @@ $test_form_ui = <<<HTML
     <label for="scenario">테스트 시나리오 선택:</label>
     <select id="scenario" name="scenario">
         <option value="">-- 시나리오 선택 --</option>
-        <option value="price_manipulation" {$test_scenario_selected === 'price_manipulation' ? 'selected' : ''}>가격 조작 (Price Manipulation)</option>
-        <option value="quantity_manipulation" {$test_scenario_selected === 'quantity_manipulation' ? 'selected' : ''}>수량 조작 (Quantity Manipulation)</option>
-        <option value="workflow_bypass" {$test_scenario_selected === 'workflow_bypass' ? 'selected' : ''}>워크플로우 우회 (Workflow Bypass)</option>
-        <option value="time_manipulation" {$test_scenario_selected === 'time_manipulation' ? 'selected' : ''}>시간 조작 (Time Manipulation)</option>
-        <option value="state_manipulation" {$test_scenario_selected === 'state_manipulation' ? 'selected' : ''}>상태 조작 (State Manipulation)</option>
-        <option value="rate_limit_bypass" {$test_scenario_selected === 'rate_limit_bypass' ? 'selected' : ''}>Rate Limit 우회</option>
+        <option value="price_manipulation" {$price_manipulation_selected}>가격 조작 (Price Manipulation)</option>
+        <option value="quantity_manipulation" {$quantity_manipulation_selected}>수량 조작 (Quantity Manipulation)</option>
+        <option value="workflow_bypass" {$workflow_bypass_selected}>워크플로우 우회 (Workflow Bypass)</option>
+        <option value="time_manipulation" {$time_manipulation_selected}>시간 조작 (Time Manipulation)</option>
+        <option value="state_manipulation" {$state_manipulation_selected}>상태 조작 (State Manipulation)</option>
+        <option value="rate_limit_bypass" {$rate_limit_bypass_selected}>Rate Limit 우회</option>
     </select><br><br>
     
     <label for="payload">테스트 데이터 입력:</label>
-    <input type="text" id="payload" name="payload" value="{$test_data_input}" placeholder="시나리오별 테스트 데이터를 입력하세요">
+    <input type="text" id="payload" name="payload" value="{$test_data_input_html}" placeholder="시나리오별 테스트 데이터를 입력하세요">
     <br><br>
     <button type="submit" class="btn">Business Logic 테스트</button>
 </form>

@@ -1,4 +1,3 @@
-
 <?php
 // 출력 버퍼링 시작 (헤더 전송 문제 방지)
 ob_start();
@@ -166,8 +165,8 @@ $test_form_ui = <<<HTML
         document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
         
-        document.querySelector(`button[onclick="switchTab('${tabName}')"]`).classList.add('active');
-        document.getElementById(`${tabName}-tab`).classList.add('active');
+        document.querySelector(\`button[onclick="switchTab('\${tabName}')"]\`).classList.add('active');
+        document.getElementById(\`\${tabName}-tab\`).classList.add('active');
     }
 
     // 초기 로드 시 첫 번째 탭 활성화
@@ -204,25 +203,96 @@ $test_logic_callback = function($form_data) {
     // 헬퍼 함수들 (이 파일 내에서만 사용)
     function vulnerableCounterIncrement($counter_name = 'default') {
         $counter_file = sys_get_temp_dir() . '/counter_' . $counter_name . '.txt';
-        if (!file_exists($counter_file)) { file_put_contents($counter_file, '0'); $current_value = 0; }
-        else { $current_value = (int)file_get_contents($counter_file); }
-        $new_value = $current_value + 1; file_put_contents($counter_file, $new_value);
+        if (!file_exists($counter_file)) { 
+            file_put_contents($counter_file, '0'); 
+            $current_value = 0; 
+        } else { 
+            $current_value = (int)file_get_contents($counter_file); 
+        }
+        $new_value = $current_value + 1; 
+        file_put_contents($counter_file, $new_value);
         return ['previous_value' => $current_value, 'new_value' => $new_value, 'file' => $counter_file];
     }
+    
     function secureCounterIncrement($counter_name = 'default') {
-        $counter_file = sys_get_temp_dir() . '/secure_counter_' . $counter_name . '.txt'; $lock_file = $counter_file . '.lock';
+        $counter_file = sys_get_temp_dir() . '/secure_counter_' . $counter_name . '.txt'; 
+        $lock_file = $counter_file . '.lock';
         $lock = fopen($lock_file, 'c');
-        if (flock($lock, LOCK_EX)) { try { if (!file_exists($counter_file)) { file_put_contents($counter_file, '0'); $current_value = 0; } else { $current_value = (int)file_get_contents($counter_file); } $new_value = $current_value + 1; file_put_contents($counter_file, $new_value); return ['previous_value' => $current_value, 'new_value' => $new_value, 'file' => $counter_file, 'locked' => true]; } finally { flock($lock, LOCK_UN); fclose($lock); } } else { return ['error' => 'Could not acquire lock', 'file' => $counter_file, 'locked' => false]; } }
+        if (flock($lock, LOCK_EX)) { 
+            try { 
+                if (!file_exists($counter_file)) { 
+                    file_put_contents($counter_file, '0'); 
+                    $current_value = 0; 
+                } else { 
+                    $current_value = (int)file_get_contents($counter_file); 
+                } 
+                $new_value = $current_value + 1; 
+                file_put_contents($counter_file, $new_value); 
+                return ['previous_value' => $current_value, 'new_value' => $new_value, 'file' => $counter_file, 'locked' => true]; 
+            } finally { 
+                flock($lock, LOCK_UN); 
+                fclose($lock); 
+            } 
+        } else { 
+            return ['error' => 'Could not acquire lock', 'file' => $counter_file, 'locked' => false]; 
+        } 
+    }
+    
     function simulateBankTransfer($from_account, $to_account, $amount, $secure = false) {
         $accounts_file = sys_get_temp_dir() . '/bank_accounts.json';
-        if (!file_exists($accounts_file)) { $initial_accounts = ['account_1' => 1000,'account_2' => 500,'account_3' => 750]; file_put_contents($accounts_file, json_encode($initial_accounts)); }
+        if (!file_exists($accounts_file)) { 
+            $initial_accounts = ['account_1' => 1000,'account_2' => 500,'account_3' => 750]; 
+            file_put_contents($accounts_file, json_encode($initial_accounts)); 
+        }
         $accounts = json_decode(file_get_contents($accounts_file), true);
-        if (!isset($accounts[$from_account]) || !isset($accounts[$to_account])) { return ['error' => 'Account not found']; }
-        if ($accounts[$from_account] < $amount) { return ['error' => 'Insufficient funds']; }
-        if ($secure) { /* 안전한 로직 */ $accounts[$from_account] -= $amount; $accounts[$to_account] += $amount; file_put_contents($accounts_file, json_encode($accounts)); return ['success' => true, 'from_account' => $from_account, 'to_account' => $to_account, 'amount' => $amount, 'from_balance' => $accounts[$from_account], 'to_balance' => $accounts[$to_account]]; } else { /* 취약한 로직 */ usleep(rand(100, 2000)); $accounts = json_decode(file_get_contents($accounts_file), true); $accounts[$from_account] -= $amount; $accounts[$to_account] += $amount; file_put_contents($accounts_file, json_encode($accounts)); return ['success' => true, 'from_account' => $from_account, 'to_account' => $to_account, 'amount' => $amount, 'from_balance' => $accounts[$from_account], 'to_balance' => $accounts[$to_account], 'warning' => 'Race condition possible!']; } }
+        if (!isset($accounts[$from_account]) || !isset($accounts[$to_account])) { 
+            return ['error' => 'Account not found']; 
+        }
+        if ($accounts[$from_account] < $amount) { 
+            return ['error' => 'Insufficient funds']; 
+        }
+        if ($secure) { 
+            /* 안전한 로직 */ 
+            $accounts[$from_account] -= $amount; 
+            $accounts[$to_account] += $amount; 
+            file_put_contents($accounts_file, json_encode($accounts)); 
+            return ['success' => true, 'from_account' => $from_account, 'to_account' => $to_account, 'amount' => $amount, 'from_balance' => $accounts[$from_account], 'to_balance' => $accounts[$to_account]]; 
+        } else { 
+            /* 취약한 로직 */ 
+            usleep(rand(100, 2000)); 
+            $accounts = json_decode(file_get_contents($accounts_file), true); 
+            $accounts[$from_account] -= $amount; 
+            $accounts[$to_account] += $amount; 
+            file_put_contents($accounts_file, json_encode($accounts)); 
+            return ['success' => true, 'from_account' => $from_account, 'to_account' => $to_account, 'amount' => $amount, 'from_balance' => $accounts[$from_account], 'to_balance' => $accounts[$to_account], 'warning' => 'Race condition possible!']; 
+        } 
+    }
+    
     function simulateFileOperation($filename, $content, $operation_type = 'write') {
         $file_path = sys_get_temp_dir() . '/' . $filename;
-        switch ($operation_type) { case 'write': file_put_contents($file_path, $content); return "File written: $filename"; case 'read': if (file_exists($file_path)) { return file_get_contents($file_path); } return "File not found: $filename"; case 'delete': if (file_exists($file_path)) { unlink($file_path); return "File deleted: $filename"; } return "File not found: $filename"; case 'append': file_put_contents($file_path, $content, FILE_APPEND); return "Content appended to: $filename"; default: return "Unknown operation"; } }
+        switch ($operation_type) { 
+            case 'write': 
+                file_put_contents($file_path, $content); 
+                return "File written: $filename"; 
+            case 'read': 
+                if (file_exists($file_path)) { 
+                    return file_get_contents($file_path); 
+                } 
+                return "File not found: $filename"; 
+            case 'delete': 
+                if (file_exists($file_path)) { 
+                    unlink($file_path); 
+                    return "File deleted: $filename"; 
+                } 
+                return "File not found: $filename"; 
+            case 'append': 
+                file_put_contents($file_path, $content, FILE_APPEND); 
+                return "Content appended to: $filename"; 
+            default: 
+                return "Unknown operation"; 
+        } 
+    }
+    
     function resetAccounts() {
         $accounts_file = sys_get_temp_dir() . '/bank_accounts.json';
         $initial_accounts = ['account_1' => 1000,'account_2' => 500,'account_3' => 750];
@@ -236,11 +306,17 @@ $test_logic_callback = function($form_data) {
     switch ($test_type) {
         case 'counter':
             $counter_name = $form_data['counter_name'] ?? 'test';
-            if ($vulnerability_enabled) { $result_data = vulnerableCounterIncrement($counter_name); } else { $result_data = secureCounterIncrement($counter_name); }
+            if ($vulnerability_enabled) { 
+                $result_data = vulnerableCounterIncrement($counter_name); 
+            } else { 
+                $result_data = secureCounterIncrement($counter_name); 
+            }
             $result_html .= "<p><strong>이전 값:</strong> " . ($result_data['previous_value'] ?? 'N/A') . "</p>";
             $result_html .= "<p><strong>새 값:</strong> " . ($result_data['new_value'] ?? 'N/A') . "</p>";
             $result_html .= "<p><strong>보안 모드:</strong> " . ($vulnerability_enabled ? 'No' : 'Yes') . "</p>";
-            if (isset($result_data['locked'])) { $result_html .= "<p><strong>파일 잠금:</strong> " . ($result_data['locked'] ? 'Yes' : 'No') . "</p>"; }
+            if (isset($result_data['locked'])) { 
+                $result_html .= "<p><strong>파일 잠금:</strong> " . ($result_data['locked'] ? 'Yes' : 'No') . "</p>"; 
+            }
             break;
             
         case 'bank_transfer':
@@ -252,8 +328,12 @@ $test_logic_callback = function($form_data) {
                 $result_html .= "<p><strong>이체 성공:</strong> $" . $result_data['amount'] . " (" . $result_data['from_account'] . " → " . $result_data['to_account'] . ")</p>";
                 $result_html .= "<p><strong>출금 계좌 잔액:</strong> $" . number_format($result_data['from_balance'], 2) . "</p>";
                 $result_html .= "<p><strong>입금 계좌 잔액:</strong> $" . number_format($result_data['to_balance'], 2) . "</p>";
-                if (isset($result_data['warning'])) { $result_html .= "<p style=\"color:orange;\"><strong>⚠️ 경고:</strong> " . $result_data['warning'] . "</p>"; }
-            } else { $result_html .= "<p><strong>오류:</strong> " . $result_data['error'] . "</p>"; }
+                if (isset($result_data['warning'])) { 
+                    $result_html .= "<p style=\"color:orange;\"><strong>⚠️ 경고:</strong> " . $result_data['warning'] . "</p>"; 
+                }
+            } else { 
+                $result_html .= "<p><strong>오류:</strong> " . $result_data['error'] . "</p>"; 
+            }
             break;
             
         case 'file_operation':
@@ -268,7 +348,9 @@ $test_logic_callback = function($form_data) {
         case 'reset_accounts':
             $result_data = resetAccounts();
             $result_html .= "<p><strong>계좌 초기화 완료</strong></p>";
-            foreach ($result_data as $account => $balance) { $result_html .= "<p>" . htmlspecialchars($account) . ": $" . number_format($balance, 2) . "</p>"; }
+            foreach ($result_data as $account => $balance) { 
+                $result_html .= "<p>" . htmlspecialchars($account) . ": $" . number_format($balance, 2) . "</p>"; 
+            }
             break;
     }
 
@@ -280,3 +362,4 @@ $test_page = new TestPage($page_title, $description, $payloads, $defense_methods
 $test_page->set_test_form($test_form_ui);
 $test_page->set_test_logic($test_logic_callback);
 $test_page->run();
+?>
