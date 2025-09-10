@@ -722,10 +722,6 @@ $recent_results = $dashboard->getRecentResults(10);
                     window.open(result.redirect_url, '_blank');
                     closeModal();
                     
-                    // 결과 로깅
-                    const resultType = 'vulnerable'; // 기본값
-                    logTestResult(testName, resultType, result.execution_time);
-                    
                 } else if (result.success) {
                     results.style.display = 'block';
                     modalTitle.textContent = `📊 ${testName} 실행 결과`;

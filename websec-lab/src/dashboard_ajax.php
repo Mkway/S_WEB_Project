@@ -37,9 +37,11 @@ switch ($action) {
         
         $test_result = $dashboard->executeVulnerabilityTest($test_file, $payload);
         
-        // 결과 로깅
-        $result_type = $test_result['success'] ? 'vulnerable' : 'error';
-        $dashboard->logTestResult($test_name, $result_type, $test_result['execution_time'], $payload, $test_result['output'] ?? '');
+        // 결과 로깅 (리다이렉트가 아닌 경우만)
+        if (!isset($test_result['redirect_url'])) {
+            $result_type = $test_result['success'] ? 'vulnerable' : 'error';
+            $dashboard->logTestResult($test_name, $result_type, $test_result['execution_time'], $payload, $test_result['output'] ?? '');
+        }
         
         echo json_encode($test_result);
         break;
