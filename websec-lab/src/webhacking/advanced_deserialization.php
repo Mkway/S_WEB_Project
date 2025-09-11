@@ -11,6 +11,7 @@ require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../utils.php';
 
 class AdvancedDeserializationTest {
+    private $last_api_request_info = null;
     private $db;
     
     public function __construct($db) {
@@ -391,8 +392,21 @@ class AdvancedDeserializationTest {
             $api_result = $this->callNodeJsAPI($payload_type, $custom_payload);
             
             if ($api_result) {
+                // API 요청 정보 표시
+                $api_request_info = $this->getLastApiRequestInfo();
+                if ($api_request_info) {
+                    $result .= "<div style='background: #2a2a2a; color: #ffd700; padding: 15px; border-radius: 5px; margin: 10px 0;'>";
+                    $result .= "<h5>📤 실제 API 요청:</h5>";
+                    $result .= "<div style='margin-bottom: 10px;'><strong>URL:</strong> " . htmlspecialchars($api_request_info['url']) . "</div>";
+                    $result .= "<div style='margin-bottom: 10px;'><strong>Method:</strong> POST</div>";
+                    $result .= "<div style='margin-bottom: 10px;'><strong>Payload:</strong></div>";
+                    $result .= "<pre style='background: #1a1a1a; padding: 10px; border-radius: 3px;'>" . htmlspecialchars(json_encode($api_request_info['data'], JSON_PRETTY_PRINT)) . "</pre>";
+                    $result .= "</div>";
+                }
+                
+                // API 응답 표시
                 $result .= "<div style='background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 5px; margin: 10px 0;'>";
-                $result .= "<h5>🚀 실제 API 응답:</h5>";
+                $result .= "<h5>📥 실제 API 응답:</h5>";
                 $result .= "<pre>" . htmlspecialchars(json_encode($api_result, JSON_PRETTY_PRINT)) . "</pre>";
                 $result .= "</div>";
             }
@@ -571,6 +585,10 @@ class AdvancedDeserializationTest {
         return $result;
     }
     
+    private function getLastApiRequestInfo() {
+        return $this->last_api_request_info;
+    }
+    
     private function callNodeJsAPI($payload_type, $custom_payload = '') {
         $api_url = 'http://vulnerability_node_app:3000/nodejs/';
         $timeout = 10; // 10초 타임아웃
@@ -626,10 +644,22 @@ class AdvancedDeserializationTest {
                     return ['error' => 'Unknown payload type'];
             }
             
+            // API 요청 정보 저장
+            $full_url = $api_url . $endpoint;
+            $this->last_api_request_info = [
+                'url' => $full_url,
+                'method' => 'POST',
+                'data' => $post_data,
+                'headers' => [
+                    'Content-Type: application/json',
+                    'User-Agent: WebSec-Lab-PHP-Client/1.0'
+                ]
+            ];
+            
             // cURL 요청
             $ch = curl_init();
             curl_setopt_array($ch, [
-                CURLOPT_URL => $api_url . $endpoint,
+                CURLOPT_URL => $full_url,
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => json_encode($post_data),
                 CURLOPT_RETURNTRANSFER => true,
