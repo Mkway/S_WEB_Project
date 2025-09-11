@@ -128,52 +128,144 @@ $test_logic_callback = function($form_data) {
     $error = '';
 
     try {
-        // 취약한 쿼리 실제 실행 (교육용)
+        // 취약한 쿼리 구성
         $vulnerable_query = "SELECT id, username FROM users WHERE id = '" . $payload . "'";
-        $result .= "<div class='info-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404;'>";
-        $result .= "<strong>⚠️ 취약한 쿼리 실행:</strong><br>";
-        $result .= "<code>" . htmlspecialchars($vulnerable_query) . "</code></div><br>";
         
-        // 실제 취약한 쿼리 실행
-        $stmt = $pdo->query($vulnerable_query);
+        $result .= "<div class='vulnerable-output'>";
+        $result .= "<h4>🚨 취약한 SQL 쿼리 실행 결과</h4>";
+        $result .= "<p><strong>구성된 쿼리:</strong></p>";
+        $result .= "<pre class='attack-result'>" . htmlspecialchars($vulnerable_query) . "</pre>";
         
-        if ($stmt) {
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // SQL 인젝션 패턴 분석
+        $injection_detected = false;
+        $attack_type = "";
+        
+        if (preg_match("/('|\"|;|--|\/\*|\*\/|union|select|insert|update|delete|drop|create|alter)/i", $payload)) {
+            $injection_detected = true;
             
-            if ($results) {
-                $result .= "<div class='success-box' style='background: #d4edda; border-color: #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
-                $result .= "<strong>✅ 쿼리 실행 성공!</strong><br>";
-                $result .= "발견된 레코드 수: " . count($results) . "<br><br>";
-                
-                foreach ($results as $index => $row) {
-                    $result .= "<strong>레코드 " . ($index + 1) . ":</strong><br>";
-                    foreach ($row as $column => $value) {
-                        $result .= "- " . htmlspecialchars($column) . ": " . htmlspecialchars($value ?? '') . "<br>";
-                    }
-                    $result .= "<br>";
-                }
-                $result .= "</div>";
+            // 공격 유형 분석
+            if (stripos($payload, 'union') !== false) {
+                $attack_type = "UNION-based SQL Injection";
+            } elseif (stripos($payload, "' or") !== false || stripos($payload, "or 1=1") !== false) {
+                $attack_type = "Boolean-based SQL Injection";
+            } elseif (stripos($payload, 'sleep') !== false || stripos($payload, 'waitfor') !== false) {
+                $attack_type = "Time-based SQL Injection";
+            } elseif (stripos($payload, 'extractvalue') !== false || stripos($payload, 'updatexml') !== false) {
+                $attack_type = "Error-based SQL Injection";
             } else {
-                $result .= "<div class='warning-box' style='background: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
-                $result .= "쿼리는 실행되었지만 결과가 없습니다.";
-                $result .= "</div>";
+                $attack_type = "SQL Injection";
             }
-        } else {
-            $result .= "<div class='error-box' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
-            $result .= "쿼리 실행에 실패했습니다.";
-            $result .= "</div>";
         }
         
-        // 보안 권장사항 표시
-        $result .= "<div class='info-box' style='background: #d1ecf1; border-color: #bee5eb; color: #0c5460; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
-        $result .= "<strong>🛡️ 보안 권장사항:</strong><br>";
-        $result .= "실제 환경에서는 준비된 문(Prepared Statement)을 사용하여 이러한 공격을 방지해야 합니다.";
+        // 실제 쿼리 실행 시도
+        try {
+            $stmt = $pdo->query($vulnerable_query);
+            
+            if ($stmt) {
+                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                if ($injection_detected) {
+                    $result .= "<p class='danger'>🔥 <strong>{$attack_type} 공격 감지!</strong></p>";
+                }
+                
+                $result .= "<p><strong>쿼리 실행 상태:</strong> 성공</p>";
+                $result .= "<p><strong>반환된 레코드 수:</strong> " . count($results) . "개</p>";
+                
+                if ($results) {
+                    $result .= "<p><strong>조회된 데이터:</strong></p>";
+                    $result_data = "";
+                    foreach ($results as $index => $row) {
+                        $result_data .= "레코드 " . ($index + 1) . ":\n";
+                        foreach ($row as $column => $value) {
+                            $result_data .= "  - {$column}: " . ($value ?? 'NULL') . "\n";
+                        }
+                        $result_data .= "\n";
+                        
+                        // 최대 5개 레코드만 표시
+                        if ($index >= 4) {
+                            if (count($results) > 5) {
+                                $result_data .= "... (추가 " . (count($results) - 5) . "개 레코드 생략)\n";
+                            }
+                            break;
+                        }
+                    }
+                    $result .= "<pre class='attack-result'>" . htmlspecialchars($result_data) . "</pre>";
+                    
+                    // 민감한 정보 노출 경고
+                    $sensitive_data = false;
+                    foreach ($results as $row) {
+                        if (isset($row['password']) || isset($row['email']) || count($results) > 1) {
+                            $sensitive_data = true;
+                            break;
+                        }
+                    }
+                    
+                    if ($sensitive_data) {
+                        $result .= "<p class='danger'>🔥 <strong>민감한 데이터 노출 위험!</strong> 실제 환경에서는 사용자 정보가 노출될 수 있습니다.</p>";
+                    }
+                } else {
+                    $result .= "<p class='warning'>⚠️ 쿼리는 성공했지만 조건에 맞는 데이터가 없습니다.</p>";
+                }
+            }
+            
+        } catch (PDOException $db_error) {
+            $result .= "<p class='error'>❌ <strong>데이터베이스 오류:</strong> " . htmlspecialchars($db_error->getMessage()) . "</p>";
+            
+            // Error-based injection 감지
+            if ($injection_detected && stripos($payload, 'extractvalue') !== false || stripos($payload, 'updatexml') !== false) {
+                $result .= "<p class='danger'>🔥 <strong>Error-based SQL Injection 시도!</strong> 오류 메시지를 통한 정보 추출 시도가 감지되었습니다.</p>";
+            }
+            
+            // 구문 오류에 대한 교육적 설명
+            if (strpos($db_error->getMessage(), 'syntax error') !== false) {
+                $result .= "<p class='warning'>💡 <strong>구문 오류 발생:</strong> 잘못된 SQL 문법으로 인해 쿼리가 실패했습니다. 실제 공격에서는 이러한 오류를 통해 데이터베이스 구조를 파악할 수 있습니다.</p>";
+            }
+        }
+        
+        $result .= "</div>";
+        
+        // 안전한 구현 비교
+        $result .= "<div class='safe-comparison'>";
+        $result .= "<h4>✅ 안전한 Prepared Statement 구현</h4>";
+        
+        try {
+            // 안전한 쿼리 실행
+            $safe_query = "SELECT id, username FROM users WHERE id = ?";
+            $safe_stmt = $pdo->prepare($safe_query);
+            $safe_stmt->execute([$payload]);
+            $safe_results = $safe_stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $result .= "<p><strong>안전한 쿼리:</strong></p>";
+            $result .= "<pre class='safe-result'>" . htmlspecialchars($safe_query) . "\n매개변수: [" . htmlspecialchars($payload) . "]</pre>";
+            $result .= "<p><strong>결과:</strong> " . count($safe_results) . "개 레코드 (SQL 인젝션 방어됨)</p>";
+            
+            if (count($safe_results) > 0) {
+                $result .= "<p class='success'>🛡️ Prepared Statement로 인해 악의적인 SQL 코드가 무력화되었습니다.</p>";
+            } else {
+                $result .= "<p class='success'>🛡️ 유효한 ID가 아니므로 결과가 없습니다. SQL 인젝션이 방어되었습니다.</p>";
+            }
+            
+        } catch (PDOException $safe_error) {
+            $result .= "<p class='success'>🛡️ 안전한 처리 중: " . htmlspecialchars($safe_error->getMessage()) . "</p>";
+        }
+        
+        $result .= "</div>";
+        
+        // 보안 권장사항
+        $result .= "<div class='security-recommendations'>";
+        $result .= "<h4>🔒 SQL Injection 방어 권장사항</h4>";
+        $result .= "<ul>";
+        $result .= "<li><strong>Prepared Statements:</strong> 매개변수화된 쿼리 사용 (가장 효과적)</li>";
+        $result .= "<li><strong>입력 검증:</strong> 사용자 입력의 타입, 길이, 형식 검증</li>";
+        $result .= "<li><strong>이스케이프 처리:</strong> 특수 문자를 적절히 이스케이프</li>";
+        $result .= "<li><strong>최소 권한:</strong> 데이터베이스 계정에 필요한 최소 권한만 부여</li>";
+        $result .= "<li><strong>오류 메시지 숨김:</strong> 상세한 데이터베이스 오류 정보 노출 금지</li>";
+        $result .= "<li><strong>WAF 사용:</strong> 웹 애플리케이션 방화벽으로 SQL 인젝션 패턴 차단</li>";
+        $result .= "</ul>";
         $result .= "</div>";
         
     } catch (Exception $e) {
-        $error = "<div class='error-box' style='background: #f8d7da; border-color: #f5c6cb; color: #721c24; padding: 10px; margin: 10px 0; border: 1px solid; border-radius: 4px;'>";
-        $error .= "쿼리 실행 중 오류 발생: " . htmlspecialchars($e->getMessage());
-        $error .= "</div>";
+        $error = "전체 처리 중 오류 발생: " . htmlspecialchars($e->getMessage());
     }
 
     return ['result' => $result, 'error' => $error];
