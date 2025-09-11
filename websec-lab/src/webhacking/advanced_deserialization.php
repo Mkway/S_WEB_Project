@@ -589,6 +589,100 @@ class AdvancedDeserializationTest {
         return $this->last_api_request_info;
     }
     
+    private function callJavaAPI($action, $command = 'whoami', $payload_hex = '') {
+        $api_url = 'http://vulnerability_node_app:3000/java/';
+        $timeout = 15; // 15초 타임아웃 (Java 처리 시간 고려)
+        
+        try {
+            $endpoint = '';
+            $post_data = [];
+            
+            switch ($action) {
+                case 'generate_payload':
+                    $endpoint = 'generate_payload';
+                    $post_data = [
+                        'gadget' => 'CommonsBeanutils1', // 가장 안정적인 가젯
+                        'command' => $command
+                    ];
+                    break;
+                    
+                case 'vulnerable_deserialize':
+                    $endpoint = 'vulnerable_deserialize';
+                    // 파일 업로드 시뮬레이션을 위한 데이터
+                    $post_data = [
+                        'payload_hex' => $payload_hex
+                    ];
+                    break;
+                    
+                default:
+                    return ['error' => 'Unknown Java API action'];
+            }
+            
+            // API 요청 정보 저장
+            $full_url = $api_url . $endpoint;
+            $this->last_api_request_info = [
+                'url' => $full_url,
+                'method' => 'POST',
+                'data' => $post_data,
+                'headers' => [
+                    'Content-Type: application/json',
+                    'User-Agent: WebSec-Lab-PHP-Client/1.0'
+                ]
+            ];
+            
+            // cURL 요청
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $full_url,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode($post_data),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => $timeout,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'User-Agent: WebSec-Lab-PHP-Client/1.0'
+                ],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_FOLLOWLOCATION => true
+            ]);
+            
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curl_error = curl_error($ch);
+            curl_close($ch);
+            
+            if ($curl_error) {
+                return [
+                    'error' => 'API 연결 실패: ' . $curl_error,
+                    'suggestion' => 'Node.js API 서버가 실행 중인지 확인하세요'
+                ];
+            }
+            
+            if ($http_code !== 200) {
+                return [
+                    'error' => 'API 응답 오류',
+                    'http_code' => $http_code,
+                    'response' => $response
+                ];
+            }
+            
+            $result = json_decode($response, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return [
+                    'error' => 'JSON 파싱 실패',
+                    'raw_response' => $response
+                ];
+            }
+            
+            return $result;
+            
+        } catch (Exception $e) {
+            return [
+                'error' => 'API 호출 중 예외 발생: ' . $e->getMessage()
+            ];
+        }
+    }
+    
     private function callNodeJsAPI($payload_type, $custom_payload = '') {
         $api_url = 'http://vulnerability_node_app:3000/nodejs/';
         $timeout = 10; // 10초 타임아웃
@@ -749,23 +843,81 @@ class AdvancedDeserializationTest {
                     break;
                     
                 case 'java_ysoserial':
-                    $result .= "<h5>☕ Java ysoserial 페이로드:</h5>";
-                    $gadgets = [
-                        'CommonsBeanutils1' => 'Apache Commons BeanUtils',
-                        'CommonsCollections1' => 'Apache Commons Collections 3.1-3.2.1',
-                        'CommonsCollections6' => 'Apache Commons Collections 3.1',
-                        'Groovy1' => 'Groovy 1.7-2.4',
-                        'Spring1' => 'Spring Core 4.1.4-5.0.1'
-                    ];
+                    $result .= "<h5>☕ Java ysoserial 페이로드 - 실제 생성 및 테스트:</h5>";
                     
-                    $result .= "<p><strong>명령어:</strong> " . htmlspecialchars($command) . "</p>";
-                    $result .= "<p><strong>사용 가능한 Gadget 체인:</strong></p>";
+                    // 실제 Node.js API로 페이로드 생성 테스트
+                    $java_result = $this->callJavaAPI('generate_payload', $command);
                     
-                    foreach ($gadgets as $gadget => $version) {
-                        $result .= "<div style='margin: 10px 0; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #dc3545;'>";
-                        $result .= "<strong>$gadget</strong> ($version)<br>";
-                        $result .= "<code>ysoserial.jar $gadget \"$command\"</code>";
+                    if ($java_result && isset($java_result['success']) && $java_result['success']) {
+                        // API 요청 정보 표시
+                        $api_request_info = $this->getLastApiRequestInfo();
+                        if ($api_request_info) {
+                            $result .= "<div style='background: #2a2a2a; color: #ffd700; padding: 15px; border-radius: 5px; margin: 10px 0;'>";
+                            $result .= "<h6>📤 실제 API 요청:</h6>";
+                            $result .= "<div style='margin-bottom: 10px;'><strong>URL:</strong> " . htmlspecialchars($api_request_info['url']) . "</div>";
+                            $result .= "<div style='margin-bottom: 10px;'><strong>Method:</strong> POST</div>";
+                            $result .= "<div style='margin-bottom: 10px;'><strong>Payload:</strong></div>";
+                            $result .= "<pre style='background: #1a1a1a; padding: 10px; border-radius: 3px;'>" . htmlspecialchars(json_encode($api_request_info['data'], JSON_PRETTY_PRINT)) . "</pre>";
+                            $result .= "</div>";
+                        }
+                        
+                        // API 응답 표시
+                        $result .= "<div style='background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 5px; margin: 10px 0;'>";
+                        $result .= "<h6>📥 실제 API 응답:</h6>";
+                        $result .= "<pre>" . htmlspecialchars(json_encode($java_result, JSON_PRETTY_PRINT)) . "</pre>";
                         $result .= "</div>";
+                        
+                        // 페이로드 정보 표시
+                        if (isset($java_result['payloadFile'])) {
+                            $result .= "<div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;'>";
+                            $result .= "<h6>🎯 생성된 페이로드 정보:</h6>";
+                            $result .= "<p><strong>Gadget:</strong> " . htmlspecialchars($java_result['gadget'] ?? '') . "</p>";
+                            $result .= "<p><strong>명령어:</strong> " . htmlspecialchars($java_result['command'] ?? '') . "</p>";
+                            $result .= "<p><strong>페이로드 크기:</strong> " . ($java_result['payloadSize'] ?? 0) . " bytes</p>";
+                            $result .= "<p><strong>파일 경로:</strong> " . htmlspecialchars($java_result['payloadFile'] ?? '') . "</p>";
+                            $result .= "</div>";
+                        }
+                        
+                        // 실제 역직렬화 테스트 시도
+                        if (isset($java_result['payloadHex'])) {
+                            $result .= "<div style='background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin: 10px 0;'>";
+                            $result .= "<h6>🚀 실제 역직렬화 테스트 중...</h6>";
+                            
+                            $deserialize_result = $this->callJavaAPI('vulnerable_deserialize', '', $java_result['payloadHex']);
+                            if ($deserialize_result) {
+                                $result .= "<pre>" . htmlspecialchars(json_encode($deserialize_result, JSON_PRETTY_PRINT)) . "</pre>";
+                                
+                                if (isset($deserialize_result['success']) && $deserialize_result['success']) {
+                                    $result .= "<p><strong>⚠️ 역직렬화 성공!</strong> 실제 환경에서는 명령어가 실행될 수 있습니다.</p>";
+                                }
+                            }
+                            $result .= "</div>";
+                        }
+                    } else {
+                        // 기본 가젯 정보 표시 (API 연결 실패 시)
+                        $gadgets = [
+                            'CommonsBeanutils1' => 'Apache Commons BeanUtils',
+                            'CommonsCollections1' => 'Apache Commons Collections 3.1-3.2.1',
+                            'CommonsCollections6' => 'Apache Commons Collections 3.1',
+                            'Groovy1' => 'Groovy 1.7-2.4',
+                            'Spring1' => 'Spring Core 4.1.4-5.0.1'
+                        ];
+                        
+                        $result .= "<p><strong>명령어:</strong> " . htmlspecialchars($command) . "</p>";
+                        $result .= "<p><strong>사용 가능한 Gadget 체인:</strong></p>";
+                        
+                        foreach ($gadgets as $gadget => $version) {
+                            $result .= "<div style='margin: 10px 0; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #dc3545;'>";
+                            $result .= "<strong>$gadget</strong> ($version)<br>";
+                            $result .= "<code>ysoserial.jar $gadget \"$command\"</code>";
+                            $result .= "</div>";
+                        }
+                        
+                        if ($java_result && isset($java_result['error'])) {
+                            $result .= "<div style='background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0;'>";
+                            $result .= "<p><strong>API 연결 실패:</strong> " . htmlspecialchars($java_result['error']) . "</p>";
+                            $result .= "</div>";
+                        }
                     }
                     break;
                     
