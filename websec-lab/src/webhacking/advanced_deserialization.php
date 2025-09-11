@@ -1237,8 +1237,8 @@ O:11:"SystemShell":2:{s:3:"cmd";s:8:"rm -rf /";s:6:"target";s:4:"root";}
                 <p><strong>실제 Node.js API와 연동하여</strong> 다양한 직렬화 라이브러리 취약점을 테스트합니다.</p>
                 
                 <div class="info-output" style="margin-bottom: 15px;">
-                    <p><strong>🚀 실시간 API 테스트:</strong> Node.js 서버가 실행 중이면 실제 공격 구문이 처리됩니다!</p>
-                    <p><strong>🎯 API 서버 시작:</strong> <code>cd node_api && npm install && npm start</code></p>
+                    <p><strong>🚀 실시간 API 테스트:</strong> 기존 Node.js 컨테이너와 연동하여 실제 공격 구문이 처리됩니다!</p>
+                    <p><strong>🎯 연동 상태:</strong> <code>vulnerability_node_app</code> 컨테이너가 실행 중이면 자동으로 테스트됩니다.</p>
                 </div>
                 
                 <form method="post">
