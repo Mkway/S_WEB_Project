@@ -73,16 +73,23 @@ $references = [
 $query_input = htmlspecialchars($_POST['payload'] ?? '');
 $db_type = htmlspecialchars($_POST['db_type'] ?? 'mongodb');
 
+// 선택된 옵션 처리를 위한 변수들
+$mongodb_selected = ($db_type === 'mongodb') ? 'selected' : '';
+$couchdb_selected = ($db_type === 'couchdb') ? 'selected' : '';
+$redis_selected = ($db_type === 'redis') ? 'selected' : '';
+$elasticsearch_selected = ($db_type === 'elasticsearch') ? 'selected' : '';
+$cassandra_selected = ($db_type === 'cassandra') ? 'selected' : '';
+
 $test_form_ui = <<<HTML
 <form method="post" class="test-form">
     <h3>🧪 NoSQL 쿼리/명령 테스트</h3>
     <label for="db_type">🗄️ 데이터베이스 유형 선택:</label><br>
     <select id="db_type" name="db_type">
-        <option value="mongodb" {$db_type === 'mongodb' ? 'selected' : ''}>MongoDB</option>
-        <option value="couchdb" {$db_type === 'couchdb' ? 'selected' : ''}>CouchDB</option>
-        <option value="redis" {$db_type === 'redis' ? 'selected' : ''}>Redis</option>
-        <option value="elasticsearch" {$db_type === 'elasticsearch' ? 'selected' : ''}>Elasticsearch</option>
-        <option value="cassandra" {$db_type === 'cassandra' ? 'selected' : ''}>Cassandra</option>
+        <option value="mongodb" $mongodb_selected>MongoDB</option>
+        <option value="couchdb" $couchdb_selected>CouchDB</option>
+        <option value="redis" $redis_selected>Redis</option>
+        <option value="elasticsearch" $elasticsearch_selected>Elasticsearch</option>
+        <option value="cassandra" $cassandra_selected>Cassandra</option>
     </select><br><br>
     
     <label for="payload">🎯 NoSQL 쿼리/명령 입력:</label><br>
