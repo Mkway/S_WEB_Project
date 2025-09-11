@@ -146,7 +146,7 @@ $test_logic_callback = function($form_data) {
         $response_sim .= "쿼리가 정상적으로 처리될 것으로 예상됩니다.";
     }
 
-    return ['result' => "<pre>{"$response_sim"}</pre>", 'error' => $error];
+    return ['result' => "<pre>{$response_sim}</pre>", 'error' => $error];
 };
 
 // 7. TestPage 인스턴스 생성 및 실행
