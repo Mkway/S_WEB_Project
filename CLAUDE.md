@@ -186,3 +186,27 @@ Following CLAUDE.md workflow: Work on S_WEB_Project websec-lab. Use TodoWrite fo
 ```
 
 *이 파일은 효율적인 Claude Code 개발을 위한 시스템 가이드입니다.*
+
+---
+
+## 🛡️ PayloadsAllTheThings 취약점 구현 프롬프트
+
+### 📝 구현 시 사용할 프롬프트
+```
+다음 취약점을 PayloadsAllTheThings 기반으로 구현해주세요:
+
+취약점: [취약점명]
+언어: [PHP/Node.js/Python/Java/Go]
+
+요구사항:
+✅ 실제 동작하는 취약점 (Docker 환경, 시뮬레이션 아님)
+✅ 간단하고 명확한 코드 (10-20줄 이내)
+✅ 교육적 문서 출력 (백엔드 동작, 원리, 테스트, 구현)
+✅ PayloadsAllTheThings 페이로드 활용
+✅ 취약한 버전 vs 안전한 버전 비교
+
+구현 패턴: 실제 실행 → 결과 확인 → 보안 권장사항
+```
+
+### 🎯 목표
+PayloadsAllTheThings 58개 취약점 완전 구현 (상세 계획은 /planning/ 참고)
